@@ -110,9 +110,9 @@ static struct proc *
 allocproc(void)
 {
   struct proc *p;
-
+  //进程表中寻找一个 UNUSED 的进程槽
   for (p = proc; p < &proc[NPROC]; p++) {
-    acquire(&p->lock);
+    acquire(&p->lock);//获取进程锁，确保独占访问
     if (p->state == UNUSED) {
       goto found;
     } else {
@@ -122,17 +122,18 @@ allocproc(void)
   return 0;
 
 found:
+  //初始化基本信息
   p->pid = allocpid();
-  p->state = USED;
+  p->state = USED;//注意这里还没有变成 RUNNABLE，因为后面还有很多资源要准备。
 
-  // Allocate a trapframe page.
+  // 给 trapframe 分配内存
   if ((p->trapframe = (struct trapframe *)kalloc()) == 0) {
     freeproc(p);
     release(&p->lock);
     return 0;
   }
 
-  // An empty user page table.
+  // 创建该进程的用户页表
   p->pagetable = proc_pagetable(p);
   if (p->pagetable == 0) {
     freeproc(p);
@@ -140,8 +141,7 @@ found:
     return 0;
   }
 
-  // Set up new context to start executing at forkret,
-  // which returns to user space.
+  // 初始化内核上下文 context
   memset(&p->context, 0, sizeof(p->context));
   p->context.ra = (uint64)forkret;
   p->context.sp = p->kstack + PGSIZE;
