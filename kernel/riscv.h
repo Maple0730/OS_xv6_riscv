@@ -1,22 +1,21 @@
 #ifndef __ASSEMBLER__
 
-// which hart (core) is this?
-static inline uint64
-r_mhartid()
+static inline uint64// which hart (core) is this? 这是那一个hart
+r_mhartid() 
 {
   uint64 x;
   asm volatile("csrr %0, mhartid" : "=r"(x));
   return x;
 }
 
-// Machine Status Register, mstatus
+// Machine Status Register, mstatus 机器状态寄存器
 
 #define MSTATUS_MPP_MASK (3L << 11) // previous mode.
 #define MSTATUS_MPP_M    (3L << 11)
 #define MSTATUS_MPP_S    (1L << 11)
 #define MSTATUS_MPP_U    (0L << 11)
 
-static inline uint64
+static inline uint64//读mstatus 机器状态寄存器
 r_mstatus()
 {
   uint64 x;
@@ -24,7 +23,7 @@ r_mstatus()
   return x;
 }
 
-static inline void
+static inline void//写mstatus 机器状态寄存器
 w_mstatus(uint64 x)
 {
   asm volatile("csrw mstatus, %0" : : "r"(x));
@@ -33,6 +32,7 @@ w_mstatus(uint64 x)
 // machine exception program counter, holds the
 // instruction address to which a return from
 // exception will go.
+// 机器异常程序计数器，保存异常返回时要跳转的指令地址
 static inline void
 w_mepc(uint64 x)
 {
@@ -344,7 +344,7 @@ sfence_vma()
   asm volatile("sfence.vma zero, zero");
 }
 
-typedef uint64 pte_t;
+typedef uint64 pte_t;//PTE的值
 typedef uint64 *pagetable_t; // 512 PTEs
 
 #endif // __ASSEMBLER__
@@ -352,14 +352,14 @@ typedef uint64 *pagetable_t; // 512 PTEs
 #define PGSIZE  4096 // bytes per page
 #define PGSHIFT 12   // bits of offset within a page
 
-#define PGROUNDUP(sz)  (((sz) + PGSIZE - 1) & ~(PGSIZE - 1))
+#define PGROUNDUP(sz)  (((sz) + PGSIZE - 1) & ~(PGSIZE - 1))//不对齐的字节数向上对齐到下一页边界
 #define PGROUNDDOWN(a) (((a)) & ~(PGSIZE - 1))
 
-#define PTE_V (1L << 0) // valid
-#define PTE_R (1L << 1)
-#define PTE_W (1L << 2)
-#define PTE_X (1L << 3)
-#define PTE_U (1L << 4) // user can access
+#define PTE_V (1L << 0) // valid有效
+#define PTE_R (1L << 1) //read 可读
+#define PTE_W (1L << 2) //write i可写
+#define PTE_X (1L << 3) //可执行
+#define PTE_U (1L << 4) // U can access用户访问权限位
 
 // shift a physical address to the right place for a PTE.
 #define PA2PTE(pa) ((((uint64)pa) >> 12) << 10)
@@ -371,7 +371,7 @@ typedef uint64 *pagetable_t; // 512 PTEs
 // extract the three 9-bit page table indices from a virtual address.
 #define PXMASK         0x1FF // 9 bits
 #define PXSHIFT(level) (PGSHIFT + (9 * (level)))
-#define PX(level, va)  ((((uint64)(va)) >> PXSHIFT(level)) & PXMASK)
+#define PX(level, va)  ((((uint64)(va)) >> PXSHIFT(level)) & PXMASK)//从虚拟地址 va 中提取指定层级 level 的页表索引
 
 // one beyond the highest possible virtual address.
 // MAXVA is actually one bit less than the max allowed by

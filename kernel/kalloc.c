@@ -13,24 +13,24 @@ void freerange(void *pa_start, void *pa_end);
 
 extern char end[]; // first address after kernel.
                    // defined by kernel.ld.
-
+//一页空闲物理页
 struct run {
   struct run *next;
 };
-
+//空闲列表
 struct {
   struct spinlock lock;
   struct run *freelist;
 } kmem;
 
-void
+void//初始化内存分配器
 kinit()
 {
   initlock(&kmem.lock, "kmem");
   freerange(end, (void *)PHYSTOP);
 }
 
-void
+void//批量把一段内存加入空闲链表
 freerange(void *pa_start, void *pa_end)
 {
   char *p;
@@ -43,7 +43,7 @@ freerange(void *pa_start, void *pa_end)
 // which normally should have been returned by a
 // call to kalloc().  (The exception is when
 // initializing the allocator; see kinit above.)
-void
+void//归还一页物理内存
 kfree(void *pa)
 {
   struct run *r;
@@ -65,7 +65,7 @@ kfree(void *pa)
 // Allocate one 4096-byte page of physical memory.
 // Returns a pointer that the kernel can use.
 // Returns 0 if the memory cannot be allocated.
-void *
+void *//分配一页物理内存
 kalloc(void)
 {
   struct run *r;
