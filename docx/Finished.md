@@ -1,6 +1,6 @@
-entry.S
+entry.S     //ok
 kernel.asm
-kernel.ld
+kernel.ld   //ok
 kernel.sym
 kernelvec.S
 swtch.S
