@@ -1,8 +1,8 @@
         # qemu -kernel loads the kernel at 0x80000000
         # and causes each hart (i.e. CPU) to jump there.
-        # kernel.ld causes the following code to
-        # be placed at 0x80000000.
-.section .text
+        # kernel.ld places this dedicated entry section first
+        # so _entry always lands at 0x80000000.
+.section .text.entry
 .global _entry
 _entry:
         # set up a stack for C.
