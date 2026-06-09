@@ -95,6 +95,14 @@ sys_kill(void)
   return kkill(pid);
 }
 
+// print process list
+uint64
+sys_ps(void)
+{
+  procdump();
+  return 0;
+}
+
 // return how many clock tick interrupts have occurred
 // since start.
 uint64
