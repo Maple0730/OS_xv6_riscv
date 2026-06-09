@@ -132,10 +132,11 @@ main(int argc, char *argv[])
   iappend(rootino, &de, sizeof(de));
 
   for (i = 2; i < argc; i++) {
-    // get rid of "user/"
-    char *shortname;
-    if (strncmp(argv[i], "user/", 5) == 0)
-      shortname = argv[i] + 5;
+    // Use the final path component so host-side build paths
+    // do not leak into the file names stored in the xv6 image.
+    char *shortname = strrchr(argv[i], '/');
+    if (shortname)
+      shortname += 1;
     else
       shortname = argv[i];
 

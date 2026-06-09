@@ -1,48 +1,128 @@
-xv6 is a re-implementation of Dennis Ritchie's and Ken Thompson's Unix
-Version 6 (v6).  xv6 loosely follows the structure and style of v6,
-but is implemented for a modern RISC-V multiprocessor using ANSI C.
+# xv6-riscv
 
-ACKNOWLEDGMENTS
+这是一个基于 MIT xv6-riscv 的教学操作系统项目仓库。代码运行在 RISC-V 架构上，适合用来学习一个小型 Unix-like 内核的启动、内存管理、进程管理、中断与陷阱、文件系统以及系统调用机制。
 
-xv6 is inspired by John Lions's Commentary on UNIX 6th Edition (Peer
-to Peer Communications; ISBN: 1-57398-013-7; 1st edition (June 14,
-2000)).  See also https://pdos.csail.mit.edu/6.1810/, which provides
-pointers to on-line resources for v6.
+本仓库保留了 xv6 的整体结构，同时针对课程学习和实验开发做了整理。当前构建产物已经统一输出到 `build/` 目录，不再散落在源码目录中。
 
-The following people have made contributions: Russ Cox (context switching,
-locking), Cliff Frey (MP), Xiao Yu (MP), Nickolai Zeldovich, and Austin
-Clements.
+## 项目目标
 
-We are also grateful for the bug reports and patches contributed by
-Abhinavpatel00, Takahiro Aoyagi, Marcelo Arroyo, Hirbod Behnam, Silas
-Boyd-Wickizer, Anton Burtsev, carlclone, Ian Chen, clivezeng, Dan
-Cross, Cody Cutler, Mike CAT, Tej Chajed, Asami Doi,Wenyang Duan,
-echtwerner, eyalz800, Nelson Elhage, Saar Ettinger, Alice Ferrazzi,
-Nathaniel Filardo, flespark, Peter Froehlich, Yakir Goaron, Shivam
-Handa, Matt Harvey, Bryan Henry, jaichenhengjie, Jim Huang, Matúš
-Jókay, John Jolly, Alexander Kapshuk, Anders Kaseorg, kehao95,
-Wolfgang Keller, Jungwoo Kim, Jonathan Kimmitt, Eddie Kohler, Vadim
-Kolontsov, Austin Liew, Bruce Lowekamp, l0stman, Pavan Maddamsetti,
-Imbar Marinescu, Yandong Mao, Matan Shabtay, Hitoshi Mitake, Carmi
-Merimovich, mes900903, Mark Morrissey, mtasm, Joel Nider, Hayato Ohhashi,
-OptimisticSide, papparapa, phosphagos, Harry Porter, Greg Price, Zheng
-qhuo, Quancheng, RayAndrew, Jude Rich, segfault, Ayan Shafqat, Eldar
-Sehayek, Yongming Shen, Fumiya Shigemitsu, snoire, Taojie, Cam Tenny,
-tyfkda, Warren Toomey, Stephen Tu, Alissa Tung, Rafael Ubal, unicornx,
-Amane Uehara, Pablo Ventura, Luc Videau, Xi Wang, WaheedHafez, Keiichi
-Watanabe, Lucas Wolf, Nicolas Wolovick, wxdao, Grant Wu, x653, Andy
-Zhang, Jindong Zhang, Icenowy Zheng, ZhUyU1997, and Zou Chang Wei.
+- 学习从机器启动到内核进入调度器的完整流程
+- 理解 xv6 的核心子系统实现
+- 在原始 xv6 的基础上继续完成课程实验与功能扩展
 
-ERROR REPORTS
+## 目录结构
 
-Please send errors and suggestions to Frans Kaashoek and Robert Morris
-(kaashoek,rtm@mit.edu).  The main purpose of xv6 is as a teaching
-operating system for MIT's 6.1810, so we are more interested in
-simplifications and clarifications than new features.
+```text
+.
+|-- kernel/     # 内核源码
+|-- user/       # 用户态程序
+|-- mkfs/       # 文件系统镜像构建工具
+|-- docx/       # 实验文档、报告等材料
+|-- build/      # 构建输出目录
+|-- Makefile    # 构建脚本
+|-- test-xv6.py # 测试脚本
+`-- README
+```
 
-BUILDING AND RUNNING XV6
+`build/` 目录中的典型内容：
 
-You will need a RISC-V "newlib" tool chain from
-https://github.com/riscv/riscv-gnu-toolchain, and qemu compiled for
-riscv64-softmmu.  Once they are installed, and in your shell
-search path, you can run "make qemu".
+- `build/kernel/`：内核目标文件、依赖文件、反汇编和最终内核
+- `build/user/`：用户程序目标文件、符号表、反汇编和可执行文件
+- `build/mkfs/`：`mkfs` 工具
+- `build/fs.img`：xv6 文件系统镜像
+
+## 依赖环境
+
+需要提前安装以下工具：
+
+- RISC-V 交叉编译工具链，例如 `riscv64-unknown-elf-gcc`
+- QEMU 的 RISC-V 模拟器，例如 `qemu-system-riscv64`
+- `make`
+- `gdb`（可选，用于调试）
+
+如果工具不在默认路径中，可以通过 `TOOLPREFIX` 指定前缀。
+
+## 构建与运行
+
+构建整个项目：
+
+```bash
+make
+```
+
+启动 xv6：
+
+```bash
+make qemu
+```
+
+使用 GDB 调试：
+
+```bash
+make qemu-gdb
+```
+
+清理构建产物：
+
+```bash
+make clean
+```
+
+## 常用说明
+
+### 1. 构建产物位置
+
+现在所有生成文件默认都在 `build/` 下，包括：
+
+- `.o`
+- `.d`
+- 用户态可执行文件
+- 内核镜像
+- `mkfs`
+- `fs.img`
+
+这样源码目录会更干净，也更方便后续继续调整构建系统。
+
+### 2. 默认启动方式
+
+`make qemu` 会使用：
+
+- `build/kernel/kernel` 作为内核镜像
+- `build/fs.img` 作为文件系统镜像
+
+### 3. 学习顺序建议
+
+如果你准备系统学习这个项目，建议按下面顺序阅读：
+
+1. `kernel/entry.S`
+2. `kernel/start.c`
+3. `kernel/main.c`
+4. `kernel/proc.c`
+5. `kernel/trap.c`
+6. `kernel/vm.c`
+7. `kernel/fs.c` 与 `kernel/file.c`
+
+这条线路基本对应“启动 -> 进入内核 -> 进程 -> 陷阱/系统调用 -> 内存 -> 文件系统”。
+
+如果你当前的工作重点是“虚拟内存 + 文件系统”两条线，可以直接看这份专题文档：
+
+- [docx/vm-fs-study-path.md](/home/hanshuo/office/OS/xv6-riscv/docx/vm-fs-study-path.md)
+
+## 项目来源
+
+本项目基于 MIT 的 xv6-riscv：
+
+- 课程主页：<https://pdos.csail.mit.edu/6.1810/>
+- xv6 代码风格与整体设计延续自教学用途的 Unix V6 简化实现
+
+如果你要继续做课程实验，建议在理解原始 xv6 行为后，再逐步加入自己的功能修改。
+
+## 后续开发建议
+
+- 将实验要求和实现记录持续整理到 `docx/`
+- 每完成一个阶段后及时提交 Git
+- 对较大的功能改动，优先补充测试或最小验证脚本
+
+## 许可证
+
+本仓库沿用上游 xv6 项目的许可证，详见 [LICENSE](/home/hanshuo/office/OS/xv6-riscv/LICENSE)。
