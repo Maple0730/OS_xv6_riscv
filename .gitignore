@@ -8,5 +8,6 @@ _*
 /mkfs/mkfs
 /kernel/kernel
 /user/usys.S
+/learn/
 .gdbinit
 TAGS
