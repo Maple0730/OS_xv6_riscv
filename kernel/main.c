@@ -17,6 +17,8 @@ void main()
     printf("xv6 kernel is booting\n");
     printf("\n");
     kinit();                 // 初始化物理页分配器
+    kheapinit();             // 初始化内核堆分配器
+    kmalloctest();           // 自测内核堆分配器
     kvminit();               // 创建内核页表（建立虚拟地址映射）
     kvminithart();           // 切换到内核页表（开启分页）
     procinit();              // 初始化进程表，为每个进程分配内核栈

@@ -15,6 +15,7 @@ OBJS = \
   $(BK)/printf.o \
   $(BK)/uart.o \
   $(BK)/kalloc.o \
+  $(BK)/kmalloc.o \
   $(BK)/spinlock.o \
   $(BK)/string.o \
   $(BK)/main.o \
