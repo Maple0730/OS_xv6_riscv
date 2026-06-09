@@ -18,6 +18,13 @@ struct context {
   uint64 s11;
 };
 
+#define NWCHAN 64
+
+struct waitbucket {
+  struct spinlock lock;
+  struct proc *head;
+};
+
 // Per-CPU state.
 struct cpu {
   struct proc *proc;      // The process running on this cpu, or null.
@@ -88,6 +95,9 @@ struct proc {
   int killed;                    // 若非零，表示进程已被杀死，应退出
   int xstate;                    // 退出状态，将返回给父进程的 wait()
   int pid;                       // 进程ID进程标识符
+  struct proc *wnext;            // 等待队列中的后继进程
+  struct proc *wprev;            // 等待队列中的前驱进程
+  struct waitbucket *wbucket;    // 当前挂接的等待桶
 
   // wait_lock must be held when using this:
   struct proc *parent;           // 父进程指针（需持有 wait_lock 访问）

@@ -9,6 +9,7 @@
 struct cpu cpus[NCPU];
 
 struct proc proc[NPROC];
+struct waitbucket waittable[NWCHAN];
 
 struct proc *initproc;
 
@@ -17,6 +18,9 @@ struct spinlock pid_lock;
 
 extern void forkret(void);
 static void freeproc(struct proc *p);
+static struct waitbucket *waitbucket_for(void *chan);
+static void waitlist_insert(struct waitbucket *wb, struct proc *p);
+static void waitlist_remove(struct waitbucket *wb, struct proc *p);
 
 extern char trampoline[]; // trampoline.S
 
@@ -51,10 +55,17 @@ procinit(void)
 
   initlock(&pid_lock, "nextpid");
   initlock(&wait_lock, "wait_lock");
+  for (int i = 0; i < NWCHAN; i++) {
+    initlock(&waittable[i].lock, "waitbucket");
+    waittable[i].head = 0;
+  }
   for (p = proc; p < &proc[NPROC]; p++) {
     initlock(&p->lock, "proc");
     p->state = UNUSED;
     p->kstack = KSTACK((int)(p - proc));
+    p->wnext = 0;
+    p->wprev = 0;
+    p->wbucket = 0;
   }
 }
 
@@ -100,6 +111,39 @@ allocpid()
   release(&pid_lock);
 
   return pid;
+}
+
+static struct waitbucket *
+waitbucket_for(void *chan)
+{
+  return &waittable[((uint64)chan) % NWCHAN];
+}
+
+static void
+waitlist_insert(struct waitbucket *wb, struct proc *p)
+{
+  p->wnext = wb->head;
+  p->wprev = 0;
+  if (wb->head)
+    wb->head->wprev = p;
+  wb->head = p;
+  p->wbucket = wb;
+}
+
+static void
+waitlist_remove(struct waitbucket *wb, struct proc *p)
+{
+  if (p->wprev)
+    p->wprev->wnext = p->wnext;
+  else if (wb->head == p)
+    wb->head = p->wnext;
+
+  if (p->wnext)
+    p->wnext->wprev = p->wprev;
+
+  p->wnext = 0;
+  p->wprev = 0;
+  p->wbucket = 0;
 }
 
 // Look in the process table for an UNUSED proc.
@@ -166,6 +210,9 @@ freeproc(struct proc *p)
   p->parent = 0;
   p->name[0] = 0;
   p->chan = 0;
+  p->wnext = 0;
+  p->wprev = 0;
+  p->wbucket = 0;
   p->killed = 0;
   p->xstate = 0;
   p->state = UNUSED;
@@ -543,21 +590,18 @@ void
 sleep(void *chan, struct spinlock *lk)
 {
   struct proc *p = myproc();
+  struct waitbucket *wb = waitbucket_for(chan);
 
-  // Must acquire p->lock in order to
-  // change p->state and then call sched.
-  // Once we hold p->lock, we can be
-  // guaranteed that we won't miss any wakeup
-  // (wakeup locks p->lock),
-  // so it's okay to release lk.
-
+  acquire(&wb->lock);
   acquire(&p->lock); //DOC: sleeplock1
   release(lk);
 
   // Go to sleep.
   p->chan = chan;
+  waitlist_insert(wb, p);
   p->state = SLEEPING;
 
+  release(&wb->lock);
   sched();
 
   // Tidy up.
@@ -573,17 +617,23 @@ sleep(void *chan, struct spinlock *lk)
 void
 wakeup(void *chan)
 {
+  struct waitbucket *wb = waitbucket_for(chan);
   struct proc *p;
+  struct proc *next;
 
-  for (p = proc; p < &proc[NPROC]; p++) {
+  acquire(&wb->lock);
+  for (p = wb->head; p != 0; p = next) {
+    next = p->wnext;
     if (p != myproc()) {
       acquire(&p->lock);
       if (p->state == SLEEPING && p->chan == chan) {
+        waitlist_remove(wb, p);
         p->state = RUNNABLE;
       }
       release(&p->lock);
     }
   }
+  release(&wb->lock);
 }
 
 // Kill the process with the given pid.
@@ -595,17 +645,38 @@ kkill(int pid)
   struct proc *p;
 
   for (p = proc; p < &proc[NPROC]; p++) {
+    struct waitbucket *wb;
+
     acquire(&p->lock);
-    if (p->pid == pid) {
-      p->killed = 1;
-      if (p->state == SLEEPING) {
-        // Wake process from sleep().
-        p->state = RUNNABLE;
-      }
+    if (p->pid != pid) {
       release(&p->lock);
-      return 0;
+      continue;
+    }
+
+    p->killed = 1;
+    wb = p->wbucket;
+    release(&p->lock);
+
+    if (wb)
+      acquire(&wb->lock);
+    acquire(&p->lock);
+    if (p->pid != pid) {
+      release(&p->lock);
+      if (wb)
+        release(&wb->lock);
+      continue;
+    }
+
+    p->killed = 1;
+    if (p->state == SLEEPING) {
+      if (wb && p->wbucket == wb)
+        waitlist_remove(wb, p);
+      p->state = RUNNABLE;
     }
     release(&p->lock);
+    if (wb)
+      release(&wb->lock);
+    return 0;
   }
   return -1;
 }
