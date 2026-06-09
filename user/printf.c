@@ -6,16 +6,54 @@
 
 static char digits[] = "0123456789ABCDEF";
 
+#define PRINTF_BUF_SIZE 256
+
+struct bufstate {
+  char *buf;     // current buffer pointer
+  int len;       // bytes written so far
+  int cap;       // total buffer capacity
+  int on_heap;   // whether buf is malloc'd (needs free)
+};
+
+// Append one character to the buffer. If the buffer is full,
+// double its capacity via malloc so the entire printf result
+// fits in a single write() — keeping console output atomic.
 static void
-putc(int fd, char c)
+bufputc(struct bufstate *bs, char c)
 {
-  write(fd, &c, 1);
+  if (bs->len >= bs->cap) {
+    int newcap = bs->cap * 2;
+    char *newbuf = malloc(newcap);
+    if (newbuf == 0) {
+      // malloc failed — flush what we have and continue with
+      // the original buffer (output will be split but not lost).
+      write(1, bs->buf, bs->len);
+      bs->len = 0;
+      return;
+    }
+    // copy old content to new buffer
+    for (int j = 0; j < bs->len; j++)
+      newbuf[j] = bs->buf[j];
+    if (bs->on_heap)
+      free(bs->buf);
+    bs->buf = newbuf;
+    bs->cap = newcap;
+    bs->on_heap = 1;
+  }
+  bs->buf[bs->len++] = c;
 }
 
 static void
-printint(int fd, long long xx, int base, int sgn)
+bufputs(struct bufstate *bs, const char *s)
 {
-  char buf[20];
+  for (; *s; s++)
+    bufputc(bs, *s);
+}
+
+static void
+printint(struct bufstate *bs, long long xx, int base, int sgn)
+{
+  char tmp[20];
   int i, neg;
   unsigned long long x;
 
@@ -29,23 +67,23 @@ printint(int fd, long long xx, int base, int sgn)
 
   i = 0;
   do {
-    buf[i++] = digits[x % base];
+    tmp[i++] = digits[x % base];
   } while ((x /= base) != 0);
   if (neg)
-    buf[i++] = '-';
+    tmp[i++] = '-';
 
   while (--i >= 0)
-    putc(fd, buf[i]);
+    bufputc(bs, tmp[i]);
 }
 
 static void
-printptr(int fd, uint64 x)
+printptr(struct bufstate *bs, uint64 x)
 {
   int i;
-  putc(fd, '0');
-  putc(fd, 'x');
+  bufputc(bs, '0');
+  bufputc(bs, 'x');
   for (i = 0; i < (sizeof(uint64) * 2); i++, x <<= 4)
-    putc(fd, digits[x >> (sizeof(uint64) * 8 - 4)]);
+    bufputc(bs, digits[x >> (sizeof(uint64) * 8 - 4)]);
 }
 
 // Print to the given fd. Only understands %d, %x, %p, %c, %s.
@@ -53,7 +91,15 @@ void
 vprintf(int fd, const char *fmt, va_list ap)
 {
   char *s;
+  char stackbuf[PRINTF_BUF_SIZE];
+  struct bufstate bs;
   int c0, c1, c2, i, state;
+
+  // start with a stack buffer; grow to heap if needed
+  bs.buf = stackbuf;
+  bs.len = 0;
+  bs.cap = PRINTF_BUF_SIZE;
+  bs.on_heap = 0;
 
   state = 0;
   for (i = 0; fmt[i]; i++) {
@@ -62,7 +108,7 @@ vprintf(int fd, const char *fmt, va_list ap)
       if (c0 == '%') {
         state = '%';
       } else {
-        putc(fd, c0);
+        bufputc(&bs, c0);
       }
     } else if (state == '%') {
       c1 = c2 = 0;
@@ -71,49 +117,55 @@ vprintf(int fd, const char *fmt, va_list ap)
       if (c1)
         c2 = fmt[i + 2] & 0xff;
       if (c0 == 'd') {
-        printint(fd, va_arg(ap, int), 10, 1);
+        printint(&bs, va_arg(ap, int), 10, 1);
       } else if (c0 == 'l' && c1 == 'd') {
-        printint(fd, va_arg(ap, uint64), 10, 1);
+        printint(&bs, va_arg(ap, uint64), 10, 1);
         i += 1;
       } else if (c0 == 'l' && c1 == 'l' && c2 == 'd') {
-        printint(fd, va_arg(ap, uint64), 10, 1);
+        printint(&bs, va_arg(ap, uint64), 10, 1);
         i += 2;
       } else if (c0 == 'u') {
-        printint(fd, va_arg(ap, uint32), 10, 0);
+        printint(&bs, va_arg(ap, uint32), 10, 0);
       } else if (c0 == 'l' && c1 == 'u') {
-        printint(fd, va_arg(ap, uint64), 10, 0);
+        printint(&bs, va_arg(ap, uint64), 10, 0);
         i += 1;
       } else if (c0 == 'l' && c1 == 'l' && c2 == 'u') {
-        printint(fd, va_arg(ap, uint64), 10, 0);
+        printint(&bs, va_arg(ap, uint64), 10, 0);
         i += 2;
       } else if (c0 == 'x') {
-        printint(fd, va_arg(ap, uint32), 16, 0);
+        printint(&bs, va_arg(ap, uint32), 16, 0);
       } else if (c0 == 'l' && c1 == 'x') {
-        printint(fd, va_arg(ap, uint64), 16, 0);
+        printint(&bs, va_arg(ap, uint64), 16, 0);
         i += 1;
       } else if (c0 == 'l' && c1 == 'l' && c2 == 'x') {
-        printint(fd, va_arg(ap, uint64), 16, 0);
+        printint(&bs, va_arg(ap, uint64), 16, 0);
         i += 2;
       } else if (c0 == 'p') {
-        printptr(fd, va_arg(ap, uint64));
+        printptr(&bs, va_arg(ap, uint64));
       } else if (c0 == 'c') {
-        putc(fd, va_arg(ap, uint32));
+        bufputc(&bs, va_arg(ap, uint32));
       } else if (c0 == 's') {
         if ((s = va_arg(ap, char *)) == 0)
           s = "(null)";
-        for (; *s; s++)
-          putc(fd, *s);
+        bufputs(&bs, s);
       } else if (c0 == '%') {
-        putc(fd, '%');
+        bufputc(&bs, '%');
       } else {
         // Unknown % sequence.  Print it to draw attention.
-        putc(fd, '%');
-        putc(fd, c0);
+        bufputc(&bs, '%');
+        bufputc(&bs, c0);
       }
 
       state = 0;
     }
   }
+
+  // flush everything in one write — atomic thanks to console's writelock
+  if (bs.len > 0)
+    write(fd, bs.buf, bs.len);
+
+  if (bs.on_heap)
+    free(bs.buf);
 }
 
 void

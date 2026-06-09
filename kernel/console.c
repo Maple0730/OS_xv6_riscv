@@ -46,6 +46,7 @@ consputc(int c)
 
 struct {
   struct spinlock lock;
+  struct sleeplock writelock;  // serializes console writes
 
   // input circular buffer
 #define INPUT_BUF_SIZE 128
@@ -65,6 +66,8 @@ consolewrite(int user_src, uint64 src, int n)
   char buf[32]; // move batches from user space to uart.
   int i = 0;
 
+  acquiresleep(&cons.writelock);
+
   while (i < n) {
     int nn = sizeof(buf);
     if (nn > n - i)
@@ -74,6 +77,8 @@ consolewrite(int user_src, uint64 src, int n)
     uartwrite(buf, nn);
     i += nn;
   }
+
+  releasesleep(&cons.writelock);
 
   return i;
 }
@@ -190,6 +195,7 @@ void
 consoleinit(void)
 {
   initlock(&cons.lock, "cons");
+  initsleeplock(&cons.writelock, "cons_write");
 
   uartinit();
 

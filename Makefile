@@ -172,6 +172,7 @@ UPROGS=\
 	$(BU)/_logstress\
 	$(BU)/_forphan\
 	$(BU)/_dorphan\
+	$(BU)/_pipetest\
 	$(BU)/_ps\
 
 $(FSIMG): $(BM)/mkfs README $(UPROGS) | $(B)
