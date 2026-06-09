@@ -60,6 +60,10 @@ void            ireclaim(int);
 void*           kalloc(void);
 void            kfree(void *);
 void            kinit(void);
+void            kheapinit(void);
+void*           kmalloc(uint);
+void            kmfree(void *);
+void            kmalloctest(void);
 
 // log.c
 void            initlog(int, struct superblock*);
