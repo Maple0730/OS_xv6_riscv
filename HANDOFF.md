@@ -138,6 +138,7 @@
 - [README](/home/hanshuo/office/OS/xv6-riscv/README)：当前仓库说明文档，已重写
 - [Makefile](/home/hanshuo/office/OS/xv6-riscv/Makefile)：当前构建系统核心
 - [HANDOFF.md](/home/hanshuo/office/OS/xv6-riscv/HANDOFF.md)：本交接文档
+- [docx/vm-fs-study-path.md](/home/hanshuo/office/OS/xv6-riscv/docx/vm-fs-study-path.md)：虚拟内存与文件系统专题学习路径
 
 ## 7. 新会话可直接使用的提示词
 

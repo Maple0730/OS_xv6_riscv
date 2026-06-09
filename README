@@ -104,6 +104,10 @@ make clean
 
 这条线路基本对应“启动 -> 进入内核 -> 进程 -> 陷阱/系统调用 -> 内存 -> 文件系统”。
 
+如果你当前的工作重点是“虚拟内存 + 文件系统”两条线，可以直接看这份专题文档：
+
+- [docx/vm-fs-study-path.md](/home/hanshuo/office/OS/xv6-riscv/docx/vm-fs-study-path.md)
+
 ## 项目来源
 
 本项目基于 MIT 的 xv6-riscv：
