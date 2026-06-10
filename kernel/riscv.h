@@ -344,6 +344,16 @@ sfence_vma()
   asm volatile("sfence.vma zero, zero");
 }
 
+// SBI shutdown: ecall from supervisor mode to machine mode (OpenSBI).
+// SBI legacy extension: a7 = 0x08 (SHUTDOWN), a6 = 0
+static inline void
+sbi_shutdown(void)
+{
+  asm volatile("li a7, 0x08\n\t"
+               "li a6, 0\n\t"
+               "ecall");
+}
+
 typedef uint64 pte_t;//PTE的值
 typedef uint64 *pagetable_t; // 512 PTEs
 

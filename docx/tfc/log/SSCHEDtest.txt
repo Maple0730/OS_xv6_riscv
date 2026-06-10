@@ -1,0 +1,97 @@
+$ fcfstest
+=== FCFS Scheduler Test ===
+Parent PID: 3, started at tick 223
+Creating 5 child processes...
+
+Child 0 (PID=4) started at tick 224
+Child 0 (PID=4) finished at tick 224 (took 0 ticks)
+Child 1 (PID=5) started at tick 225
+Child 1 (PID=5) finished at tick 225 (took 0 ticks)
+Child 2 (PID=6) started at tick 226
+Child 2 (PID=6) finished at tick 226 (took 0 ticks)
+Child 3 (PID=7) started at tick 227
+Child 3 (PID=7) finished at tick 227 (took 0 ticks)
+
+Parent waiting for childreChild 4 n(PI...
+Child PID=4 exiDte=8) ds, time: 228
+taChild PID=5 exited, time: 228
+Chilrted at tickd PID=6 exite d2,2 8tim
+e: 228
+Child PID=7 exiteCdh,i tld ime: 228
+4 (PID=8) finished at tick 228 (took 0 ticks)
+Child PID=8 exited, time: 229
+
+=== FCFS Test Complete ===
+Total time: 7 ticks
+
+--- Analysis ---
+If FCFS is working correctly:
+  - Lower PID processes should complete first
+  - Completion order should roughly match creation order
+$ mlfqtest
+=== MLFQ Scheduler Test ===
+Parent PID: 9, started at tick 281
+
+Creating 3 SHORT jobs...
+Creating 2 LONG jobs...
+  [SHCreating 2 MORT] Job 1 I (XED  jobs...
+
+ [SParenHOtR wTa]i tJoibng  f0or all ch il(dPrIeDn.=P10). started
+I.
+ D =[S1H ORT1] Job)   s0 t(PaI[Drt=Se10)  fidn
+ ished Hin   [SHORT] JoO0R[T Lti]ckONs 
+G]J oJb ob 0 (PID=13)b   s Cth1ia lrd( PPItDed=
+ID2 (PID = [1L2O)N Gs] 10 exited =1t1aat r)t eftdini
+icks 282
+hed in 1 ticks
+  [SHOJRT]o Job 2 (PbID  C=12)hild PID=11 exited at  tick 282
+finished in  01 ti (PID=13cks
+) f  Chiinishld PID=12 exedi [Lted at tick 283
+O inN 1 ticks
+  Child PG] Job 1ID (=1PI D3= exited 1at tick 284) started
+ 4
+[MIXED ]    [MIX[LONG] Job 1 (PID=14) Jofinished in 4b t ick0s
+ (PIED=D15])  sJtarobt 1 (PID=16) starteed
+d 
+ Child PID=14 exited at tick 286
+  [MIXED] Job 0   [MIX(PID=15E) finDi]s Job 1 (PID=16) finished in 8 htickse
+ d  Cihn i8 lticks
+d PID=16 exited at tick 289
+  Child PID=15 exited at tick 289
+
+=== MLFQ Test Complete ===
+Total time: 8 ticks
+
+--- Analysis ---
+If MLFQ is working correctly:
+  1. SHORT jobs should complete first (high priority queue)
+  2. LONG jobs may be demoted to lower priority
+  3. MIXED jobs should have moderate response time
+  4. With priority boost, no job should starve
+$ csw
+=== Context Switch Overhead Test ===
+Parent PID: 17
+Testing with 4 children, each doing 50 pauses
+
+Parent  d oPaiusng some  woe rchildk ...
+0 (PID=18) starting
+  Pause child  1P (PIauD=se1
+9W) aiti nsgtar tifncogrh
+i children... 
+l Pause dc 2 (PID=20) shtailrtd ing
+3 (PID=21) starting
+  Pause child 0 (PID=18) finished in 50 ticks
+  Pause child 1 (PID=19)  fi ni  shed in Pause child 2 (PID=20) finished in 51 ti5cks1
+ ticks
+Pause child 3 (PID=21) finished in 51 ticks
+
+=== Results ===
+Total time: 51 ticks
+Children completed their work while parent was running.
+
+--- Analysis ---
+Context switch overhead includes:
+  - Timer interrupt handling
+  - Scheduler invocation
+  - Context save/restore (swtch)
+  - Process selection

@@ -17,6 +17,10 @@
 // end -- start of kernel page allocation area
 // PHYSTOP -- end RAM used by the kernel
 
+// qemu's test device for clean shutdown (write exits qemu)
+// see hw/misc/sifive_test.c in qemu
+#define TEST_DEVICE 0x100000L
+
 // qemu puts UART registers here in physical memory.
 #define UART0     0x10000000L
 #define UART0_IRQ 10

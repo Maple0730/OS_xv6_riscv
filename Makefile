@@ -172,7 +172,13 @@ UPROGS=\
 	$(BU)/_logstress\
 	$(BU)/_forphan\
 	$(BU)/_dorphan\
+	$(BU)/_pipetest\
 	$(BU)/_ps\
+	$(BU)/_fcfstest\
+	$(BU)/_mlfqtest\
+	$(BU)/_csw\
+	$(BU)/_throughput\
+	$(BU)/_halt\
 
 $(FSIMG): $(BM)/mkfs README $(UPROGS) | $(B)
 	$(BM)/mkfs $@ README $(UPROGS)

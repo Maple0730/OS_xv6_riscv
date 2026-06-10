@@ -1,0 +1,103 @@
+$ fcfstest
+=== FCFS Scheduler Test ===
+Parent PID: 3, started at tick 165
+Workload: 4 children, 20000 iterations each
+Expected: PID order should match completion order
+
+Child 0 (PID=4) started at tick 165
+Child 1 (PID=5) stChilda 2rt e(Pd ID=a6t) s ttairtcked a t t1ic6k6 167
+
+Child 0 (PID=4) finished at tick 169 (took 4 ticks)
+
+Parent waiting for children...
+  -> Child PID=4 exited
+Child 3 (PID=7) started at tick 169
+Child 3 (PID=7) finished at tick 172 (took 3 ticks)Child 2 (PID=6) finiCh
+shied at tick 172 (tookl 5  -> Cdh i1ld PID=7  (PID=5) finishe dt aitce tick 172 (txited
+ook 6 ticks)
+  -> Child PID=5 exited
+ks)
+  -> Child PID=6 exited
+
+=== FCFS Test Results ===
+Total time: 9 ticks
+First exited: PID=4, Last exited: PID=6
+
+--- Verification ---
+If exit order follows PID order, FCFS behavior is supported.
+
+--- Timing Analysis ---
+Workload per child: 20000 * 1000 = 20000000 iterations
+$ mlfqtest
+=== MLFQ Scheduler Test ===
+Parent PID: 8, started at tick 213
+
+Workload: 3 SHORT, 2 LONG, 2 MIXED jobs
+
+Creating 3 SHORT jobs...
+Creating 2 LONG jobs ...
+ [SHORT] JCor eatb [ SHOinRTg]1  Jo2b  ( M0P (IPXIIEDD=D=  1jobs.9..)0 s) stta
+rted at tick 214art
+ed at tick 214
+
+  [PSHORT]  arent waiting f or  [LaJll childob re  [MIXED] Job 0 n.(..
+0P (PID=9 ) finish  [LONG]ed at tick 215 (elapsed=1)[
+ [SSHHORT] JORT] o  ChildJob 1 (PID=10) PID=9 exited at  tick f216
+b inished at tick2 215 (elapsed= Job 0 (PID=12)  s1ta)
+ (P ID=11) startedI at tick 214
+D=14) starte  [CrSHORT] Job 2 (PID=11) finished ahitld PIDt t=iec10 dexik t2e17 (elapsedd =a3t)
+ tick 2 17at
+ tick 214
+  Child PIODN=G]1 J1 obexited at ti  [cLkON 21  8
+[MIGXE]D  Job 01d at tick 215
+]  (PID=(12) fPIinD=i1 s3Job hed at tick 21) 8s (elapts1e (aPrtd=4)ed at tIiD=
+1c5k)  st21ar4t
+ed at tick 215
+  Child PID=12 exited at tick 219 
+ [LONG] Job 1 (PID=13) finished at tick 220 (elapsed=6)
+  Child PID=13 exited at tick 220
+  [MIXED ] [ MJob 0IXED] Job 1 (PID=15) fi (nPIiD=14) finished ats tick 227 (elapsed=he12)
+d at tick 227 (elapsed=12)
+  Child PID=14 exited at tick 227
+  Child PID=15 exited at tick 227
+
+=== MLFQ Test Results ===
+Total time: 15 ticks
+
+--- Analysis ---
+Expected MLFQ behavior:
+  1. SHORT jobs: Should complete fastest (high priority queue)
+  2. LONG jobs: May take longer (demoted to lower queue)
+  3. MIXED jobs: Moderate time (alternating CPU/I/O)
+
+Priority queue timeslices:
+  Queue 0 (highest): 5ms
+  Queue 1 (medium): 10ms
+  Queue 2 (lowest): 20ms
+$ csw
+=== Context Switch Overhead Test ===
+Parent PID: 16
+Testing with 4 children, each doing 50 pauses
+
+Parent doin  Pause child 0 (PID=17) st  agr tsoPme work...
+ing
+a
+Wauisting e c hilfd o r1 children...
+  Pause child  (Pa3 PID=18) sutars(et icnhg
+PilID=d20 ) starti2 (PIDng=
+19) starting
+  P a uPaseus e cchhild 1 (PIild 0 D(=1P8)I fiDn=i17) finisshheedd  inin 51 ticks
+ 51 ticks
+  Pause child 2 (PID =19) finishe dP ian 52 ticuks
+se child 3 (PID=20) finished in 52 ticks
+
+=== Results ===
+Total time: 52 ticks
+Children completed their work while parent was running.
+
+--- Analysis ---
+Context switch overhead includes:
+  - Timer interrupt handling
+  - Scheduler invocation
+  - Context save/restore (swtch)
+  - Process selection

@@ -82,8 +82,23 @@ usertrap(void)
     kexit(-1);
 
   // give up the CPU if this is a timer interrupt.
-  if (which_dev == 2)
+  if (which_dev == 2) {
+#if SCHED_ALGORITHM == SCHED_MLFQ
+    // MLFQ 模式：统计时间片使用
+    p->timeslice_used++;
+    int ts = get_timeslice(p->queue_level);
+    if (p->timeslice_used >= ts) {
+      // 时间片用完，降级到低优先级队列
+      if (p->queue_level < MLFQ_LEVELS - 1) {
+        p->queue_level++;
+      }
+      p->timeslice_used = 0;
+      yield();
+    }
+#else
     yield();
+#endif
+  }
 
   prepare_return();
 
@@ -174,9 +189,8 @@ clockintr()
   }
 
   // ask for the next timer interrupt. this also clears
-  // the interrupt request. 1000000 is about a tenth
-  // of a second.
-  w_stimecmp(r_time() + 1000000);
+  // the interrupt request. TICKSLICE is configured in param.h
+  w_stimecmp(r_time() + TICKSLICE);
 }
 
 // check if it's an external interrupt or software interrupt,

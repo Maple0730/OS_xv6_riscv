@@ -112,4 +112,11 @@ struct proc {
   struct file *ofile[NOFILE];    // 打开的文件描述符表
   struct inode *cwd;             // 当前工作目录的 inode
   char name[16];                 // 进程名称（调试用）
+
+  // 调度相关字段
+  uint64 ctime;                 // 进程创建时间（ticks）
+  int queue_level;              // MLFQ 队列级别 (0=最高, 1=中, 2=最低)
+  int timeslice_used;           // 本时间片已用 tick 数
+  uint64 last_sched;           // 上次被调度的时间（ticks）
+  int priority;                 // 进程优先级 (0-10, 0最高)
 };
