@@ -15,12 +15,14 @@ struct proc *initproc;
 
 int nextpid = 1;
 struct spinlock pid_lock;
+uint64 mlfq_last_boost;
 
 extern void forkret(void);
 static void freeproc(struct proc *p);
 static struct waitbucket *waitbucket_for(void *chan);
 static void waitlist_insert(struct waitbucket *wb, struct proc *p);
 static void waitlist_remove(struct waitbucket *wb, struct proc *p);
+static void mlfq_boost_priority(void);
 
 extern char trampoline[]; // trampoline.S
 
@@ -59,6 +61,7 @@ procinit(void)
     initlock(&waittable[i].lock, "waitbucket");
     waittable[i].head = 0;
   }
+  mlfq_last_boost = 0;
   for (p = proc; p < &proc[NPROC]; p++) {
     initlock(&p->lock, "proc");
     p->state = UNUSED;
@@ -66,6 +69,11 @@ procinit(void)
     p->wnext = 0;
     p->wprev = 0;
     p->wbucket = 0;
+    p->ctime = 0;
+    p->queue_level = 0;
+    p->timeslice_used = 0;
+    p->last_sched = 0;
+    p->priority = DEFAULT_PRIORITY;
   }
 }
 
@@ -169,6 +177,11 @@ found:
   //初始化基本信息
   p->pid = allocpid();
   p->state = USED;//注意这里还没有变成 RUNNABLE，因为后面还有很多资源要准备。
+  p->ctime = ticks;
+  p->queue_level = 0;
+  p->timeslice_used = 0;
+  p->last_sched = 0;
+  p->priority = DEFAULT_PRIORITY;
 
   // 给 trapframe 分配内存
   if ((p->trapframe = (struct trapframe *)kalloc()) == 0) {
@@ -216,6 +229,11 @@ freeproc(struct proc *p)
   p->killed = 0;
   p->xstate = 0;
   p->state = UNUSED;
+  p->ctime = 0;
+  p->queue_level = 0;
+  p->timeslice_used = 0;
+  p->last_sched = 0;
+  p->priority = DEFAULT_PRIORITY;
 }
 
 // Create a user page table for a given process, with no user memory,
@@ -347,6 +365,8 @@ kfork(void)
 
   acquire(&np->lock);
   np->state = RUNNABLE;
+  np->queue_level = 0;
+  np->timeslice_used = 0;
   release(&np->lock);
 
   return pid;
@@ -471,16 +491,23 @@ kwait(uint64 addr)
 void
 scheduler(void)
 {
+#if SCHED_ALGORITHM == SCHED_FCFS
+  fcfs_scheduler();
+#elif SCHED_ALGORITHM == SCHED_MLFQ
+  mlfq_scheduler();
+#else
+  rr_scheduler();
+#endif
+}
+
+void
+rr_scheduler(void)
+{
   struct proc *p;
   struct cpu *c = mycpu();
 
   c->proc = 0;
   for (;;) {
-    // The most recent process to run may have had interrupts
-    // turned off; enable them to avoid a deadlock if all
-    // processes are waiting. Then turn them back off
-    // to avoid a possible race between an interrupt
-    // and wfi.
     intr_on();
     intr_off();
 
@@ -488,22 +515,142 @@ scheduler(void)
     for (p = proc; p < &proc[NPROC]; p++) {
       acquire(&p->lock);
       if (p->state == RUNNABLE) {
-        // Switch to chosen process.  It is the process's job
-        // to release its lock and then reacquire it
-        // before jumping back to us.
         p->state = RUNNING;
+        p->last_sched = ticks;
         c->proc = p;
         swtch(&c->context, &p->context);
-
-        // Process is done running for now.
-        // It should have changed its p->state before coming back.
         c->proc = 0;
         found = 1;
       }
       release(&p->lock);
     }
     if (found == 0) {
-      // nothing to run; stop running on this core until an interrupt.
+      asm volatile("wfi");
+    }
+  }
+}
+
+void
+fcfs_scheduler(void)
+{
+  struct proc *p;
+  struct proc *best;
+  struct cpu *c = mycpu();
+  uint64 min_ctime;
+
+  c->proc = 0;
+  for (;;) {
+    intr_on();
+    intr_off();
+
+    min_ctime = (uint64)-1;
+    best = 0;
+
+    for (p = proc; p < &proc[NPROC]; p++) {
+      acquire(&p->lock);
+      if (p->state == RUNNABLE && p->ctime < min_ctime) {
+        min_ctime = p->ctime;
+        best = p;
+      }
+      release(&p->lock);
+    }
+
+    if (best) {
+      acquire(&best->lock);
+      if (best->state == RUNNABLE) {
+        best->state = RUNNING;
+        best->last_sched = ticks;
+        c->proc = best;
+        swtch(&c->context, &best->context);
+        c->proc = 0;
+      }
+      release(&best->lock);
+    } else {
+      asm volatile("wfi");
+    }
+  }
+}
+
+int
+get_timeslice(int queue_level)
+{
+  switch (queue_level) {
+  case 0:
+    return MLFQ_Q0_TIME;
+  case 1:
+    return MLFQ_Q1_TIME;
+  default:
+    return MLFQ_Q2_TIME;
+  }
+}
+
+void
+mlfq_enqueue(struct proc *p)
+{
+  (void)p;
+}
+
+static void
+mlfq_boost_priority(void)
+{
+  struct proc *p;
+
+  for (p = proc; p < &proc[NPROC]; p++) {
+    acquire(&p->lock);
+    if (p->state == RUNNABLE || p->state == RUNNING) {
+      p->queue_level = 0;
+      p->timeslice_used = 0;
+    }
+    release(&p->lock);
+  }
+}
+
+void
+mlfq_scheduler(void)
+{
+  struct proc *p;
+  struct proc *best;
+  struct cpu *c = mycpu();
+  int best_level;
+  uint64 best_ctime;
+
+  c->proc = 0;
+  for (;;) {
+    intr_on();
+    intr_off();
+
+    if (ticks - mlfq_last_boost >= MLFQ_BOOST_TICKS) {
+      mlfq_boost_priority();
+      mlfq_last_boost = ticks;
+    }
+
+    best = 0;
+    best_level = MLFQ_LEVELS;
+    best_ctime = (uint64)-1;
+
+    for (p = proc; p < &proc[NPROC]; p++) {
+      acquire(&p->lock);
+      if (p->state == RUNNABLE &&
+          (p->queue_level < best_level ||
+           (p->queue_level == best_level && p->ctime < best_ctime))) {
+        best = p;
+        best_level = p->queue_level;
+        best_ctime = p->ctime;
+      }
+      release(&p->lock);
+    }
+
+    if (best) {
+      acquire(&best->lock);
+      if (best->state == RUNNABLE) {
+        best->state = RUNNING;
+        best->last_sched = ticks;
+        c->proc = best;
+        swtch(&c->context, &best->context);
+        c->proc = 0;
+      }
+      release(&best->lock);
+    } else {
       asm volatile("wfi");
     }
   }
@@ -543,6 +690,12 @@ yield(void)
   struct proc *p = myproc();
   acquire(&p->lock);
   p->state = RUNNABLE;
+#if SCHED_ALGORITHM == SCHED_MLFQ
+  if (p->timeslice_used >= get_timeslice(p->queue_level) &&
+      p->queue_level < MLFQ_LEVELS - 1)
+    p->queue_level++;
+  p->timeslice_used = 0;
+#endif
   sched();
   release(&p->lock);
 }
@@ -629,6 +782,7 @@ wakeup(void *chan)
       if (p->state == SLEEPING && p->chan == chan) {
         waitlist_remove(wb, p);
         p->state = RUNNABLE;
+        p->timeslice_used = 0;
       }
       release(&p->lock);
     }
@@ -672,6 +826,7 @@ kkill(int pid)
       if (wb && p->wbucket == wb)
         waitlist_remove(wb, p);
       p->state = RUNNABLE;
+      p->timeslice_used = 0;
     }
     release(&p->lock);
     if (wb)

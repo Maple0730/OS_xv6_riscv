@@ -1,0 +1,35 @@
+$ throughput
+=== Throughput Test ===
+Running 8 processes with 2000000 iterations each
+
+=== Results ===
+Total time: 5 ticks
+Average per process: ~0 ticks
+Ticks per iteration: ~0
+$ csw
+=== Context Switch Overhead Test ===
+Parent PID: 12
+Testing with 4 children, each doing 50 pauses
+
+Parent doing some work...
+
+Wait in g foPr c hailduresn.e .c. P
+hilda u s P0a u(PIDse =e  Paus13) s tcahrtilidn 1child 2 g 
+(PID=14() Pseta rtichnIgD
+=il1d 3 (PID5) =s1t6a) rstitnag
+rting
+  Pause child 0 (PID =1  P 3) finisheadu   sie n 5P1 ticks
+achPauise child 1 (PldID 2 =(PID=15) finis14) fhinished iedn in 5 1 ticks
+use chil5d1 ticks
+ 3 (PID=16) finished in 51 ticks
+
+=== Results ===
+Total time: 52 ticks
+Children completed their work while parent was running.
+
+--- Analysis ---
+Context switch overhead includes:
+  - Timer interrupt handling
+  - Scheduler invocation
+  - Context save/restore (swtch)
+  - Process selection

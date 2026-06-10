@@ -12,3 +12,32 @@
 #define FSSIZE      2000              // size of file system in blocks
 #define MAXPATH     128               // maximum file path name
 #define USERSTACK   1                 // user stack pages
+
+// ============================================
+// 调度算法配置
+// ============================================
+// 调度算法选择: 0=RR, 1=FCFS, 2=MLFQ
+#define SCHED_RR      0  // 时间片轮转（默认）
+#define SCHED_FCFS    1  // 先来先服务
+#define SCHED_MLFQ    2  // 多级反馈队列
+
+// 默认调度算法
+#ifndef SCHED_ALGORITHM
+#define SCHED_ALGORITHM SCHED_MLFQ
+#endif
+
+// MLFQ 调度参数
+#define MLFQ_LEVELS      3       // 队列层数 (0=最高, 1=中, 2=最低)
+#define MLFQ_Q0_TIME     500000  // Queue 0 时间片（5ms, 500000 ticks）
+#define MLFQ_Q1_TIME     1000000 // Queue 1 时间片（10ms）
+#define MLFQ_Q2_TIME     2000000 // Queue 2 时间片（20ms）
+#define MLFQ_BOOST_TICKS 200     // 每 200 ticks 提升一次优先级（防止饥饿）
+
+// FCFS/RR 共用时间片（默认10ms）
+#ifndef TICKSLICE
+#define TICKSLICE 1000000  // 1000000 ticks ≈ 10ms
+#endif
+
+// 优先级配置（用于 FCFS 和 MLFQ）
+#define MAX_PRIORITY 10     // 最大优先级（数值越小优先级越高）
+#define DEFAULT_PRIORITY 5 // 默认优先级
