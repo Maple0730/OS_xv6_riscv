@@ -178,6 +178,7 @@ UPROGS=\
 	$(BU)/_mlfqtest\
 	$(BU)/_csw\
 	$(BU)/_throughput\
+	$(BU)/_halt\
 
 $(FSIMG): $(BM)/mkfs README $(UPROGS) | $(B)
 	$(BM)/mkfs $@ README $(UPROGS)

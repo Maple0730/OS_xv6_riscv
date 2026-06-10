@@ -27,8 +27,9 @@ start()
   // disable paging for now.
   w_satp(0);
 
-  // delegate all interrupts and exceptions to supervisor mode.
-  w_medeleg(0xffff);
+  // delegate all interrupts and exceptions to supervisor mode,
+  // except ecall from S-mode (bit 9) — must stay in M-mode for SBI.
+  w_medeleg(0xffff & ~(1L << 9));
   w_mideleg(0xffff);
   w_sie(r_sie() | SIE_SEIE | SIE_STIE);
 

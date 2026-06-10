@@ -163,7 +163,12 @@ main(void)
       cmd++;
     if (*cmd == '\n') // is a blank command
       continue;
-    if (cmd[0] == 'c' && cmd[1] == 'd' && cmd[2] == ' ') {
+    if (cmd[0] == 'h' && cmd[1] == 'a' && cmd[2] == 'l' && cmd[3] == 't' &&
+        (cmd[4] == '\n' || cmd[4] == ' ' || cmd[4] == '\0')) {
+      // Shutdown: call halt() directly in the shell, no need to fork.
+      printf("shutting down...\n");
+      halt();
+    } else if (cmd[0] == 'c' && cmd[1] == 'd' && cmd[2] == ' ') {
       // Chdir must be called by the parent, not the child.
       cmd[strlen(cmd) - 1] = 0; // chop \n
       if (chdir(cmd + 3) < 0)

@@ -110,3 +110,8 @@ ps:
  li a7, SYS_ps
  ecall
  ret
+.global halt
+halt:
+ li a7, SYS_halt
+ ecall
+ ret

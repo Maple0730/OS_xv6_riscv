@@ -115,3 +115,14 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+// shut down the machine: write to qemu's test device to exit qemu.
+// the test device is at 0x100000 in qemu's virt machine;
+// any write to it causes qemu to exit gracefully.
+uint64
+sys_halt(void)
+{
+  volatile uint32 *test_dev = (volatile uint32 *)TEST_DEVICE;
+  *test_dev = 0x5555;
+  return 0;
+}
