@@ -1,0 +1,84 @@
+$ fcfstest
+=== FCFS Scheduler Test ===
+Parent PID: 3, started at tick 54
+Workload: 4 children, 5000 iterations each
+Expected: PID order should match completion order
+
+Child 0 (PID=4) started at tick 55
+Child 1 (PID=5) started at tick 56
+Child 0 (PID=4) finished at tick 56 (took 1 ticks, order=0)
+Child 2 (PID=6) started aCt hitld 1 (PID=5) finished at tick 57 (took 1 ticks,ick 57
+ order=0)
+Child 2 (PID=6) finished at tick 57 (took 0 ticks, order=0)
+
+Parent waiting for childreCn...
+  h-> Cihild PID=4 exited
+ld  -> Child PID=5 exi t3 (PID=7) startede at tick 5d
+ 8 -> Child PID=6 e
+xited
+Child 3 (PID=7) finished at tick 59 (took 1 ticks, order=0)
+  -> Child PID=7 exited
+
+=== FCFS Test Results ===
+Total time: 6 ticks
+First exited: PID=4, Last exited: PID=7
+
+--- Verification ---
+PASS: Lower PID processes completed first (FCFS order confirmed)
+
+--- Timing Analysis ---
+Workload per child: 5000 * 1000 = 5000000 iterations
+$ mlfqtest
+=== MLFQ Scheduler Test ===
+Parent PID: 8, started at tick 114
+
+Workload: 3 SHORT, 2 LONG, 2 MIXED jobs
+
+Creating 3 SHORT jobs...
+Creating 2 LONG job s...
+C  [Sre [ating 2 MIXED j obsH.O R.T.
+] Job 0 
+Par (P ID[=Men9S)HtO RTs] t aJrowbt eaid at1 t (iPcIk D=ti110)n s1tg a5
+rtefod at tick 115
+  [SHORTr ]a lJlob  children...
+0   I[XSED(P]HI OJoD=Rb 9)1 f (iTP]n JIioDb=s 15h)1 esdta (rP Iat ti[DS=10ck 116 (ela) finHiORT] pseshedd= a1t )Jot
+icb k 11 6 2( e la(pPsIedD=1)=
+11) started at[ LOtN G]i Child Pc IJkoD=b 9 exited  at 115ti
+  c[MkIXE D] Job 0 (ted117
+ 0a  t  (tPID=12) st  Child[ PID=10 exited at tick 118
+arted at tick 1SHORT] Jo1b5 
+ [LONG] Job 1   2 ([ (LPONGI]P DJIo=bD 0= (1PI1D=112))  ffiinisnhii3cshe)dk  115ed at tick a1t 1ti8ckPI 1D=1184) ( el aps(e dstarted at tick 115
+
+s=3t)a
+elaprtedse   Cahild PID=12 exitedd a=t 2t)
+ick t119
+ tick 115
+  Child PID=11 exited at tick 119
+  [LONG] Job 1 (PID=13) finished at tick 119 (elapsed=4)
+  Child PID=13 exited at tick 120
+  [MIXED] Job 0 (PID=14) finished at tick 123 (elapsed=8)
+  Child PID=14 exited at tick 123
+  [MIXED] Job 1 (PID=15) finished at tick 124 (elapsed=9)
+  Child PID=15 exited at tick 124
+
+=== MLFQ Test Results ===
+Total time: 10 ticks
+
+--- Analysis ---
+Expected MLFQ behavior:
+  1. SHORT jobs: Should complete fastest (high priority queue)
+  2. LONG jobs: May take longer (demoted to lower queue)
+  3. MIXED jobs: Moderate time (alternating CPU/I/O)
+
+Priority queue timeslices:
+  Queue 0 (highest): 5ms
+  Queue 1 (medium): 10ms
+  Queue 2 (lowest): 20ms
+$ throughput
+=== Throughput Test ===
+Running 8 processes with 100000 iterations each
+
+=== Results ===
+Total time: 0 ticks
+Average per process: ~0 ticks
+Ticks per iteration: ~0

@@ -174,6 +174,10 @@ UPROGS=\
 	$(BU)/_dorphan\
 	$(BU)/_pipetest\
 	$(BU)/_ps\
+	$(BU)/_fcfstest\
+	$(BU)/_mlfqtest\
+	$(BU)/_csw\
+	$(BU)/_throughput\
 
 $(FSIMG): $(BM)/mkfs README $(UPROGS) | $(B)
 	$(BM)/mkfs $@ README $(UPROGS)
