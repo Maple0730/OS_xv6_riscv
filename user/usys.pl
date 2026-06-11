@@ -43,3 +43,5 @@ entry("sbrk");
 entry("pause");
 entry("uptime");
 entry("ps");
+entry("halt");
+entry("lseek");
