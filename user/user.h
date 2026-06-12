@@ -6,6 +6,7 @@ struct stat;
 int fork(void);
 int exit(int) __attribute__((noreturn));
 int wait(int *);
+int waitpid(int pid, int *status);
 int pipe(int *);
 int write(int, const void *, int);
 int read(int, void *, int);
@@ -37,6 +38,7 @@ int lseek(int, int, int);
 #define SYS_shmget    29
 #define SYS_shmat     30
 #define SYS_shmdt     31
+#define SYS_waitpid   33
 int sem_open(int value);
 int sem_wait(int sem_id);
 int sem_post(int sem_id);

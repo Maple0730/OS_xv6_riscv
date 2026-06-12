@@ -15,6 +15,11 @@ wait:
  li a7, SYS_wait
  ecall
  ret
+.global waitpid
+waitpid:
+ li a7, SYS_waitpid
+ ecall
+ ret
 .global pipe
 pipe:
  li a7, SYS_pipe

@@ -605,3 +605,207 @@ ps          # 查看进程状态
 | MLFQ 调度 | 基本验证 | 需更大负载测试 |
 | 时间片机制 | 待验证 | 测试时间过短 |
 | 优先级降级 | 待验证 | 需要长作业测试 |
+
+---
+
+## waitpid 系统调用实现
+
+### 1. 实现概述
+
+`waitpid` 系统调用已在 xv6-riscv 中实现，支持按 PID 等待特定子进程退出，完善了父子进程关系管理。
+
+### 2. 内核实现
+
+#### `kernel/proc.c` - kwaitpid() 函数
+
+```c
+int
+kwaitpid(int pid, uint64 addr)
+{
+  struct proc *pp;
+  int havekids;
+  struct proc *p = myproc();
+
+  acquire(&wait_lock);
+
+  for (;;) {
+    havekids = 0;
+
+    // Scan through table looking for exited children.
+    for (pp = proc; pp < &proc[NPROC]; pp++) {
+      // Only consider children of this process
+      if (pp->parent != p)
+        continue;
+
+      // If pid != -1, only consider the specific child
+      if (pid != -1 && pp->pid != pid)
+        continue;
+
+      acquire(&pp->lock);
+      havekids = 1;
+
+      if (pp->state == ZOMBIE) {
+        int ret_pid = pp->pid;
+        // Copy exit status to user space
+        if (addr != 0 && copyout(p->pagetable, addr, (char *)&pp->xstate,
+                                 sizeof(pp->xstate)) < 0) {
+          release(&pp->lock);
+          release(&wait_lock);
+          return -1;
+        }
+        freeproc(pp);
+        release(&pp->lock);
+        release(&wait_lock);
+        return ret_pid;
+      }
+      release(&pp->lock);
+    }
+
+    // No point waiting if we don't have matching children.
+    if (!havekids || killed(p)) {
+      release(&wait_lock);
+      return -1;
+    }
+
+    // Wait for a child to exit.
+    sleep(p, &wait_lock);
+  }
+}
+```
+
+### 3. 系统调用接口
+
+| 编号 | 系统调用 | 参数 |
+|------|----------|------|
+| 33 | `SYS_waitpid` | pid, status_addr |
+
+### 4. 用户态 API
+
+```c
+int waitpid(int pid, int *status);
+```
+
+**参数说明**：
+- `pid`: 要等待的子进程 PID，-1 表示等待任意子进程
+- `status`: 存储子进程退出状态的指针
+
+**返回值**：
+- 成功：返回退出的子进程 PID
+- 失败：返回 -1
+
+### 5. 测试程序
+
+`user/waitpidtest.c` 包含以下测试用例：
+
+| 测试 | 描述 |
+|------|------|
+| Test 1 | `waitpid(-1, &status)` - 等待任意子进程 |
+| Test 2 | `waitpid(specific_pid, &status)` - 等待特定子进程 |
+| Test 3 | 等待多个子进程 |
+| Test 4 | `waitpid(9999, &status)` - 等待不存在的 PID |
+
+### 6. 编译验证
+
+```bash
+cd /home/tfc/OS/OS_xv6_riscv
+make clean && make
+# 编译成功，无错误
+```
+
+### 7. 运行测试
+
+```bash
+make qemu
+# 在 xv6 shell 中
+waitpidtest
+```
+
+### 8. 测试结果分析
+
+**日志文件**：`docx/tfc/log/waitpidtest.txt`
+
+#### 8.1 Test 1: waitpid(-1, &status) - 等待任意子进程
+
+**结果**：✅ PASSED
+
+```
+PASSED: waitpid(-1, &status) returned pid=6, status=42
+```
+
+**分析**：
+- 子进程正确退出并返回状态值 42
+- `waitpid(-1)` 能够正确等待任意子进程
+- 行为与 `wait()` 一致
+
+#### 8.2 Test 2: waitpid(specific_pid, &status) - 等待特定子进程
+
+**结果**：✅ PASSED
+
+```
+PASSED: waitpid(7, &status) returned pid=7, status=100
+PASSED: waitpid(8, &status) returned pid=8, status=200
+```
+
+**分析**：
+- 父进程先创建了第一个子进程（sleep 10 ticks 后退出），再创建第二个子进程（立即退出）
+- `waitpid(7, &status)` 正确阻塞等待第一个子进程，直到它退出
+- `waitpid(8, &status)` 正确等待第二个子进程
+- 核心功能验证成功
+
+#### 8.3 Test 3: waitpid(-1, &status) - 等待多个子进程
+
+**结果**：✅ PASSED
+
+```
+Collected child: pid=9, status=10
+Collected child: pid=10, status=11
+Collected child: pid=11, status=12
+PASSED: All 3 children collected with waitpid(-1, &status)
+```
+
+**分析**：
+- 父进程成功创建 3 个子进程
+- 循环调用 `waitpid(-1, &status)` 依次收集所有子进程
+- 每个子进程的退出状态正确传递
+
+#### 8.4 Test 4: waitpid(invalid_pid, &status) - 等待不存在的 PID
+
+**结果**：✅ PASSED
+
+```
+PASSED: waitpid(9999, &status) correctly returned -1 (no such child)
+```
+
+**分析**：
+- 当指定的 PID 不存在时，`waitpid` 正确返回 -1
+- 错误处理逻辑正确
+
+### 9. 总结
+
+| 测试 | 状态 | 说明 |
+|------|------|------|
+| Test 1 | ✅ PASSED | 等待任意子进程功能正确 |
+| Test 2 | ✅ PASSED | 等待特定 PID 子进程功能正确 |
+| Test 3 | ✅ PASSED | 多次等待收集多个子进程正确 |
+| Test 4 | ✅ PASSED | 错误处理（不存在的 PID）正确 |
+
+**waitpid 系统调用已验证的功能**：
+- ✅ 等待任意子进程（pid=-1）
+- ✅ 等待特定 PID 子进程（pid>0）
+- ✅ 正确传递子进程退出状态
+- ✅ 错误处理（不存在的 PID 返回 -1）
+- ✅ 资源回收（僵尸进程正确清理）
+
+### 10. 实现要点
+
+- 复用现有的 `kwait()` 遍历逻辑
+- 当 `pid = -1` 时，等待任意子进程（行为与 `wait()` 相同）
+- 当 `pid > 0` 时，只等待指定 PID 的子进程
+- 如果指定的子进程不存在或不是当前进程的子进程，返回 -1
+- 正确处理僵尸进程的资源回收和状态传递
+
+- 复用现有的 `kwait()` 遍历逻辑
+- 当 `pid = -1` 时，等待任意子进程（行为与 `wait()` 相同）
+- 当 `pid > 0` 时，只等待指定 PID 的子进程
+- 如果指定的子进程不存在或不是当前进程的子进程，返回 -1
+- 正确处理僵尸进程的资源回收和状态传递

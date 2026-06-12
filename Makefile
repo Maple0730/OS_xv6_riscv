@@ -185,6 +185,7 @@ UPROGS=\
 	$(BU)/_semtest1\
 	$(BU)/_semtest2\
 	$(BU)/_semtest3\
+	$(BU)/_waitpidtest
 
 $(FSIMG): $(BM)/mkfs README $(UPROGS) | $(B)
 	$(BM)/mkfs $@ README $(UPROGS)

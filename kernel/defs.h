@@ -104,6 +104,7 @@ void            sched(void);
 void            sleep(void*, struct spinlock*);
 void            userinit(void);
 int             kwait(uint64);
+int             kwaitpid(int pid, uint64 addr);
 void            wakeup(void*);
 void            yield(void);
 void            rr_scheduler(void) __attribute__((noreturn));
