@@ -28,6 +28,26 @@ int ps(void);
 int halt(void);
 int lseek(int, int, int);
 
+// Semaphore system calls
+#define SYS_sem_open  24
+#define SYS_sem_wait  25
+#define SYS_sem_post  26
+#define SYS_sem_get   27
+#define SYS_sem_close 28
+#define SYS_shmget    29
+#define SYS_shmat     30
+#define SYS_shmdt     31
+int sem_open(int value);
+int sem_wait(int sem_id);
+int sem_post(int sem_id);
+int sem_get(int sem_id, int *value);
+int sem_close(int sem_id);
+
+// Shared memory system calls
+int shmget(int key, uint64 *addr);
+int shmat(int key, uint64 *addr);
+int shmdt(uint64 addr);
+
 // ulib.c
 int stat(const char *, struct stat *);
 char *strcpy(char *, const char *);

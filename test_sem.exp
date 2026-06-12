@@ -1,0 +1,20 @@
+#!/usr/bin/expect -f
+
+set timeout 60
+spawn make qemu
+expect {
+    "init: starting" {
+        sleep 1
+        send "semtest2\r"
+        expect {
+            "Mutex Test" {}
+            timeout { puts "Timeout waiting for mutex test"; exit 1 }
+        }
+        expect {
+            "PASSED" { puts "\n\n=== TEST PASSED ==="; exit 0 }
+            "FAILED" { puts "\n\n=== TEST FAILED ==="; exit 1 }
+            timeout { puts "Timeout"; exit 1 }
+        }
+    }
+    timeout { puts "Timeout waiting for boot"; exit 1 }
+}

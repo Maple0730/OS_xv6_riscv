@@ -22,4 +22,12 @@
 #define SYS_close  21
 #define SYS_ps     22
 #define SYS_halt   23
-#define SYS_lseek  24
+#define SYS_sem_open  24
+#define SYS_sem_wait  25
+#define SYS_sem_post  26
+#define SYS_sem_get   27
+#define SYS_sem_close 28
+#define SYS_shmget    29
+#define SYS_shmat     30
+#define SYS_shmdt     31
+#define SYS_lseek     32

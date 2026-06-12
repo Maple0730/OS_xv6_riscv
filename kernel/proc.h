@@ -20,6 +20,12 @@ struct context {
 
 #define NWCHAN 64
 
+// Shared memory regions
+#define NSHM 16  // Maximum number of shared memory regions
+#define PGSIZE 4096
+
+// Forward declaration - actual definition is in shm.h
+
 struct waitbucket {
   struct spinlock lock;
   struct proc *head;

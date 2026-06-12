@@ -22,6 +22,7 @@ void main()
     kvminit();               // 创建内核页表（建立虚拟地址映射）
     kvminithart();           // 切换到内核页表（开启分页）
     procinit();              // 初始化进程表，为每个进程分配内核栈
+    seminit();               // 初始化信号量表
     trapinit();              // 初始化 trap 数据结构（如中断向量表）
     trapinithart();          // 在当前 hart 上安装 trap 处理函数（设置 stvec）
     plicinit();              // 初始化 PLIC（平台级中断控制器）全局配置

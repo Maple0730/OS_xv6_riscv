@@ -1,0 +1,1845 @@
+$ semtest1
+=== Semaphore Basic Test ===
+
+Test 1: Create semaphore with value=1
+PASS: sem_open returned sem_id=0
+
+Test 2: Get initial value
+PASS: initial value=1
+
+Test 3: sem_wait (P operation)
+PASS: value after wait=0
+
+Test 4: Fork child to do sem_post (V operation)
+  Parent (PID=4): doing sem_wait (will block)
+[sem_wait] pid=4 sem=0 value=0 -> sleepi  ng
+Child (PID=5): doing sem_post
+[sem_post] pid=5 sem=0 value=-1
+[sem_post] pid=5 sem=0 -> waking up waiter
+ [sem_wait] pid=4 sem=0 -> woke up
+ Child: sem_post done
+  Parent: woke up after 0 ticks
+
+Test 5: Close semaphore
+PASS: sem_close succeeded
+
+=== All Basic Tests PASSED ===
+$ semtest2
+=== Semaphore Mutex Test ===
+
+Creating 4 children, each doing 100 wait/signal pairs
+Total semaphore operations: 800
+
+Mutex semaphore created: sem_id=0
+
+Cr[sem_post] pid=7 sem=0 value=0
+[sem_post] pied=7 sem=0 value=0
+a[tsem_post] pid=7 sem=0 value=0
+[sem_post] pid=7 sem=0 value=0
+[seedm_post]  pid=7 sem=0 value=0
+child [sem_0post] pid=7 s em=0 value=0
+[swiem_post] pid=7 sem=0 value=0
+[sem_post] pid=7 sem=0 value=0
+[sem_poth Pst] pid=7 sem=0 value=0
+ID[sem_post] pid=7 sem=0 value=0
+[sem_post] pid=7 sem=0 value=0
+[sem_post] pid=7 sem=0 value=0
+[sem_post] pid=7= sem=0 value=0
+[sem_post] pid=7 sem=0 value=0
+[sem_post] pid=7 sem=0 value=0
+[sem_post] pid=7 sem=0 value=0
+7[sem_post] pid=7 
+sem=0 value=0
+C[sem_postr] pid=7 sem=0 value=0
+[sem_post] pid=7 sem=0 value=0
+[easem_potst] pid=7 sem=0 value=0ed child 
+[sem_post] pid=7 sem=0 value=0
+1[sem_post] pid=7 sem=0 value=0
+ with PID=8[sem_wait] pid=8 sem=0 value=0 -> sl
+Ceeping
+r[sem_poest] pida=7 stem=0 valuee=-1d
+[sem_post]  pidc=7 sem=0 -> wahking uip waliter
+d[se 2m_wait]  pid=9 sem=0 value=0 -> sleeping
+w[isetm_wait]h pid =7 sem=0 value=-1 -> sleeping
+PID=9
+[sem_wait] pid=8 sem=0 -> woke up
+C[sem_post] pid=8 sem=0 value=-2
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-1 -> sleeping
+[sem_wairt] pid=7 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-2
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=-1 -> sleeping
+e[sem_wait] pid=9 sem=0 -> woke upate
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-2
+[sem_post] pid=8 sed child 3 wm=0 -> waking ith PID=1up waiter
+[sem_wait] pid=8 sem=0 value=-1 -> sleeping
+0
+
+Wai[stinem_post] g fpid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-1
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=0 -> sleeping
+or chil[sem_wait] pid=9 sem=0 value=d-1 -> sleeping
+r[sem_weait] pid=n8  sem=0 -> woket up
+[sem_wait] pid=10 sem=0 value=-2 -> sleeping
+[osem_post ] pid=8 sem=0 value=-3
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-2 -> sleeping
+complete..[sem_wait] pid=7 .sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-3
+[sem_post] pid=7 s
+em=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=-2 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-3
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-2 -> sleeping
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-3
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=-2 -> sleeping
+[sem_post] pid=8 sem=0 value=-3
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-2
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=-1 -> sleeping
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-2
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=-1 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-2
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_post] pid=9 sem=0 value=-1
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=0 -> sleeping
+[sem_wait] pid=8 sem=0 value=-1 -> sleeping
+[sem_wait] pid=9 sem=0 value=-2 -> sleeping
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-3
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=-2 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-3
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=-2 -> sleeping
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-3
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=-2 -> sleeping
+[sem_post] pid=8 sem=0 value=-3
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-2
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=-1 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-2
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-1 -> sleeping
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-2
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=-1 -> sleeping
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-1
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=0 -> sleeping
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-2
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=-1 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-2
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=-1 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_wait] pid=8 sem=0 value=-2 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-3
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_post] pid=10 sem=0 value=-2
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=-1 -> sleeping
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-2
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=-1 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_wait] pid=9 sem=0 value=-2 -> sleeping
+[sem_post] pid=8 sem=0 value=-3
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-2 -> sleeping
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-3
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-2
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=-1 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_wait] pid=7 sem=0 value=-2 -> sleeping
+[sem_post] pid=9 sem=0 value=-3
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-2
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=-1 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-2
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_wait] pid=10 sem=0 value=-2 -> sleeping
+[sem_post] pid=8 sem=0 value=-3
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-2 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-3
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=-2 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-3
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-2
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=-1 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-2
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-2
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=-1 -> sleeping
+[sem_wait] pid=10 sem=0 value=-2 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-3
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_wait] pid=8 sem=0 value=-2 -> sleeping
+[sem_post] pid=7 sem=0 value=-3
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-2
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=-1 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_wait] pid=10 sem=0 value=-2 -> sleeping
+[sem_post] pid=7 sem=0 value=-3
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=-2 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-3
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-2 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-3
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-2
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=-1 -> sleeping
+[sem_wait] pid=10 sem=0 value=-2 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-3
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_post] pid=8 sem=0 value=-2
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-1 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-2
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-1
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=0 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_wait] pid=10 sem=0 value=-1 -> sleeping
+[sem_wait] pid=9 sem=0 value=-2 -> sleeping
+[sem_post] pid=8 sem=0 value=-3
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-2 -> sleeping
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-3
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=-2 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-3
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-2
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=-1 -> sleeping
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-2
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=-1 -> sleeping
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-2
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=-1 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-2
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_post] pid=9 sem=0 value=-1
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=0 -> sleeping
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-1
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=0 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_wait] pid=10 sem=0 value=-1 -> sleeping
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-1 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-2
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=-1 -> sleeping
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-2
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=-1 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_wait] pid=9 sem=0 value=-2 -> sleeping
+[sem_post] pid=10 sem=0 value=-3
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=-2 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-3
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-2
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_post] pid=7 sem=0 value=-1
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=0 -> sleeping
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_wait] pid=8 sem=0 value=-2 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-3
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=-2 -> sleeping
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-3
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=-2 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-3
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-2 -> sleeping
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-3
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=-2 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-3
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-2 -> sleeping
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-3
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=-2 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-3
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-2 -> sleeping
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-3
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=-2 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-3
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-2
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=-1 -> sleeping
+[sem_post] pid=10 sem=0 value=-2
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=-1 -> sleeping
+[sem_wait] pid=8 sem=0 value=-2 -> sleeping
+[sem_post] pid=9 sem=0 value=-3
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-2 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-3
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=-2 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-3
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-2 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-3
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-2
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_post] pid=7 sem=0 value=-1
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=0 -> sleeping
+[sem_wait] pid=10 sem=0 value=-1 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-2
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-1 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-2
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-1 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-2
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-1 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-2
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-1 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-2
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-1 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-2
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-1 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-2
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-1 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-2
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-1 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-2
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-1 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-2
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-1 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-2
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=-1 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-2
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=-1 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_wait] pid=8 sem=0 value=-1 -> sleeping
+[sem_post] pid=7 sem=0 value=-2
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-2
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=-1 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_wait] pid=8 sem=0 value=-2 -> sleeping
+[sem_post] pid=10 sem=0 value=-3
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=-2 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-3
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-2 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-3
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=-2 -> sleeping
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-3
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=-2 -> sleeping
+[sem_post] pid=9 sem=0 value=-3
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-2 -> sleeping
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-3
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-2
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-1 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-2
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-1
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=0 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-1
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=0 -> sleeping
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_wait] pid=7 sem=0 value=-2 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-3
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-2
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=-1 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_wait] pid=10 sem=0 value=-2 -> sleeping
+[sem_post] pid=9 sem=0 value=-3
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-2
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_post] pid=7 sem=0 value=-2
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=-1 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-2
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_post] pid=10 sem=0 value=-1
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=0 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-1
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=0 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_wait] pid=8 sem=0 value=-1 -> sleeping
+[sem_post] pid=10 sem=0 value=-2
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=-1 -> sleeping
+[sem_wait] pid=9 sem=0 value=-2 -> sleeping
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-3
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=-2 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-3
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-2 -> sleeping
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-3
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=-2 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-3
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-1 -> sleeping
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-2
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-2
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-1 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-2
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=-1 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-2
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-1 -> sleeping
+[sem_post] pid=10 sem=0 value=-2
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-1
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=0 -> sleeping
+[sem_wait] pid=10 sem=0 value=-1 -> sleeping
+[sem_wait] pid=7 sem=0 value=-2 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-3
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-2 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-3
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=-2 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-3
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-2 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-3
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=-2 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-3
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-2 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-3
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=-2 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-3
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-2 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-3
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=-2 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-3
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-2 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-3
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=-2 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-3
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-2 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-3
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=-2 -> sleeping
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-3
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-2 -> sleeping
+[sem_post] pid=8 sem=0 value=-3
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-2 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-3
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-2
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=-1 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_wait] pid=8 sem=0 value=-2 -> sleeping
+[sem_post] pid=10 sem=0 value=-3
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-2
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=-1 -> sleeping
+[sem_wait] pid=10 sem=0 value=-2 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-3
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-2 -> sleeping
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-3
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_post] pid=8 sem=0 value=-2
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=-1 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-2
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_post] pid=10 sem=0 value=-1
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=0 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-1
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=0 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-1
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=0 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-1
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=0 -> sleeping
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_wait] pid=8 sem=0 value=-2 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-3
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_wait] pid=10 sem=0 value=-2 -> sleeping
+[sem_post] pid=7 sem=0 value=-3
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_wait] pid=7 sem=0 value=-2 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-3
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=-2 -> sleeping
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-3
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=-1 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-2
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=-1 -> sleeping
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-2
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=-1 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-2
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-1
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=0 -> sleeping
+[sem_post] pid=8 sem=0 value=-1
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=0 -> sleeping
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_wait] pid=10 sem=0 value=-2 -> sleeping
+[sem_post] pid=7 sem=0 value=-3
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=-2 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-3
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-2 -> sleeping
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-3
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=-2 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-3
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-2
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-1 -> sleeping
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_wait] pid=10 sem=0 value=-2 -> sleeping
+[sem_post] pid=7 sem=0 value=-3
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=-2 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-3
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-2
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=-1 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_wait] pid=10 sem=0 value=-2 -> sleeping
+[sem_post] pid=8 sem=0 value=-3
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-2 -> sleeping
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-3
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=-2 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-3
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-2 -> sleeping
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-3
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_wait] pid=7 sem=0 value=-2 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-3
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-2 -> sleeping
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-3
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_post] pid=8 sem=0 value=-2
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_post] pid=10 sem=0 value=-1
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=0 -> sleeping
+[sem_wait] pid=7 sem=0 value=-1 -> sleeping
+[sem_wait] pid=10 sem=0 value=-2 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-3
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-2 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-3
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-2 -> sleeping
+[sem_post] pid=7 sem=0 value=-3
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=-2 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-3
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=-1 -> sleeping
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-2
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=-1 -> sleeping
+[sem_wait] pid=9 sem=0 value=-2 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-3
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-2 -> sleeping
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-3
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_post] pid=7 sem=0 value=-2
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=-1 -> sleeping
+[sem_wait] pid=10 sem=0 value=-2 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-3
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-2 -> sleeping
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-3
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_post] pid=10 sem=0 value=-2
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=-1 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-2
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=-1 -> sleeping
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-2
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=-1 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-2
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_post] pid=9 sem=0 value=-1
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=0
+[sem_post] pid=7 sem=0 value=0
+[sem_post] pid=7 sem=0 value=0
+[sem_post] pid=10 sem=0 value=0
+[sem_post] pid=10 sem=0 value=0
+[sem_wait] pid=7 sem=0 value=0 -> sleeping
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_wait] pid=8 sem=0 value=-2 -> sleeping
+[sem_post] pid=10 sem=0 value=-3
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-2
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_wait] pid=8 sem=0 value=-1 -> sleeping
+[sem_post] pid=7 sem=0 value=-2
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_wait] pid=7 sem=0 value=-1 -> sleeping
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-2
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=-1 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=-1 -> sleeping
+[sem_wait] pid=9 sem=0 value=-2 -> sleeping
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-3
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=-2 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-3
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_post] pid=10 sem=0 value=-2
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-1 -> sleeping
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-2
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-1
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=0 -> sleeping
+[sem_wait] pid=7 sem=0 value=-1 -> sleeping
+[sem_wait] pid=10 sem=0 value=-2 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-3
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-2 -> sleeping
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-3
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=-2 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-3
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-2 -> sleeping
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-3
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_post] pid=10 sem=0 value=-2
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=-1 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-2
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=-1 -> sleeping
+[sem_wait] pid=8 sem=0 value=-2 -> sleeping
+[sem_post] pid=9 sem=0 value=-3
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-2
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-1
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=0 -> sleeping
+[sem_wait] pid=10 sem=0 value=-1 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-2
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-1 -> sleeping
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_wait] pid=9 sem=0 value=-2 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-3
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_post] pid=7 sem=0 value=-2
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=-1 -> sleeping
+[sem_wait] pid=7 sem=0 value=-2 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-3
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_wait] pid=8 sem=0 value=-2 -> sleeping
+[sem_post] pid=9 sem=0 value=-3
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-2 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-3
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-2
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_post] pid=8 sem=0 value=-1
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=0 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_wait] pid=7 sem=0 value=-1 -> sleeping
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_wait] pid=10 sem=0 value=-2 -> sleeping
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-3
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=-2 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-3
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_wait] pid=8 sem=0 value=-2 -> sleeping
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-3
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=7 sem=0 value=-2 -> sleeping
+[sem_post] pid=10 sem=0 value=-3
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=-2 -> sleeping
+[sem_wait] pid=7 sem=0 -> woke up
+[sem_post] pid=7 sem=0 value=-3
+[sem_post] pid=7 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-2
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-1 -> sleeping
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-1
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=0 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-1
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=0 -> sleeping
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-2
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=-1 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_post] pid=8 sem=0 value=-2
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-1 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-2
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_post] pid=9 sem=0 value=-1
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_wait] pid=10 sem=0 value=0 -> sleeping
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_post] pid=8 sem=0 value=-2
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-1 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-2
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_post] pid=10 sem=0 value=-1
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_wait] pid=8 sem=0 value=0 -> sleeping
+[sem_post] pid=9 sem=0 value=-1
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=0 -> sleeping
+[sem_wait] pid=10 sem=0 value=-1 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-2
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-1 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-2
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=-1 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-2
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_wait] pid=10 sem=0 value=-1 -> sleeping
+[sem_post] pid=8 sem=0 value=-2
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-1 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-2
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=-1 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_post] pid=8 sem=0 value=-1
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=0 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-1
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=0 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-1
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=0 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-1
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=0
+[sem_wait] pid=8 sem=0 value=0 -> sleeping
+[sem_wait] pid=10 sem=0 value=-1 -> sleeping
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-1
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=0
+[sem_post] pid=10 sem=0 value=0
+[sem_post] pid=8 sem=0 value=0
+[sem_post] pid=8 sem=0 value=0
+[sem_post] pid=10 sem=0 value=0
+[sem_post] pid=10 sem=0 value=0
+[sem_wait] pid=8 sem=0 value=0 -> sleeping
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_post] pid=10 sem=0 value=-2
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=-1 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_post] pid=8 sem=0 value=-1
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=0 -> sleeping
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-2
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=-1 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-2
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-1 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-2
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_post] pid=9 sem=0 value=-1
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_wait] pid=9 sem=0 value=0 -> sleeping
+[sem_wait] pid=10 sem=0 value=-1 -> sleeping
+[sem_post] pid=8 sem=0 value=-2
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-1 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-1
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=0 -> sleeping
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-2
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-1 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-1
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=0 -> sleeping
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-2
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-1 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-2
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=-1 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_post] pid=8 sem=0 value=-1
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=0 -> sleeping
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-2
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=-1 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-2
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_post] pid=9 sem=0 value=-1
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=0 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_wait] pid=8 sem=0 value=-1 -> sleeping
+[sem_post] pid=10 sem=0 value=-2
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=-1 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-2
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-1 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-2
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=-1 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-2
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_post] pid=9 sem=0 value=-1
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=0 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-1
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=0 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-1
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=0 -> sleeping
+[sem_wait] pid=10 sem=0 value=-1 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-2
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=-1 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-2
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-1 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-2
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=-1 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-2
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-1 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-2
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=-1 -> sleeping
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-1
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=0 -> sleeping
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_post] pid=8 sem=0 value=-2
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_wait] pid=8 sem=0 value=-1 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-2
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=-1 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-2
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-1 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_post] pid=10 sem=0 value=-1
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=0 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_post] pid=8 sem=0 value=-2
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-1 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-2
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=-1 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-2
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=-1 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-2
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-1 -> sleeping
+[sem_post] pid=10 sem=0 value=-2
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=-1 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-2
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=-1 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-2
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-1 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-2
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=-1 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-2
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-1 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-2
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=-1 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-2
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-1 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-2
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=-1 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-2
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-1 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-2
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=-1 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_post] pid=8 sem=0 value=-2
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-1 -> sleeping
+[sem_post] pid=10 sem=0 value=-2
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-1
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=0 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-1
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=0 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-1
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=0 -> sleeping
+[sem_wait] pid=10 sem=0 value=-1 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-2
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-1 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-2
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=-1 -> sleeping
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-2
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-1 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-2
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-1 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-2
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=-1 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=9 sem=0 value=-1 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-2
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=-1 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-2
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=-1 -> sleeping
+[sem_wait] pid=9 sem=0 -> woke up
+[sem_post] pid=9 sem=0 value=-2
+[sem_post] pid=9 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-1
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=0 -> sleeping
+[sem_post] pid=10 sem=0 value=-1
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=10 sem=0 value=0 -> sleeping
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=-1
+[sem_post] pid=8 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 value=0 -> sleeping
+[sem_wait] pid=10 sem=0 -> woke up
+[sem_post] pid=10 sem=0 value=-1
+[sem_post] pid=10 sem=0 -> waking up waiter
+[sem_wait] pid=8 sem=0 -> woke up
+[sem_post] pid=8 sem=0 value=0
+
+All 4 children completed successfully
+Semaphore coordination worked correctly
+
+=== Mutex Test PASSED ===
+Multiple processes successfully shared the mutex semaphore
+$ semtest3
+=== Producer-Consumer Test ===
+
+Configuration:
+  Buffer size: 5
+  Producers: 2 (each produces 10 items)
+  Consumers: 2
+  Total items to produce: 20
+
+Semaphores created: empty=0, full=1, mutex=2
+
+Creating 2 producers...
+  Created producer 0 with PID=12
+ [sem_wait] pid=13 sem=2 value=0 -> sleeping
+ Created producer 1 with PID=13
+Creating 2 consumers...
+ [sem _wait] pid=14 sem=1 value=0 Cr-> sleeping
+eated consumer 0 with PID=14
+ [sem_wait] pid=15 sem=1 value=-1 -> sleeping
+ Created consumer 1 with PID=15
+
+Waiting for all producers and consumers to finish...
+  Producer 0: produced item 0
+[sem_post] pid=12 sem=2 value=-1
+[sem_post] pid=12 sem=2 -> waking up waiter
+[sem_post] pid=12 sem=1 value=-2
+[sem_post] pid=12 sem=1 -> waking up waiter
+[sem_wait] pid=13 sem=2 -> woke up
+[sem_wait] pid=14 sem=1 -> woke up
+[sem_wait] pid=14 sem=2  value=0 -> sleeping
+[sem_wait] pid=15 sem=1 - Producer > woke up
+[sem_wait] pid=12 sem=2 value=-1 -> sleeping
+[sem_wait] pid=15 sem=2 value=-12 ->: sleeping
+ produced item 0
+[sem_post] pid=13 sem=2 value=-3
+[sem_post] pid=13 sem=2 -> waking up waiter
+[sem_post] pid=13 sem=1 value=-1
+[sem_post] pid=13 sem=1 -> waking up waiter
+[sem_wait] pid=13 sem=2 value=-2 -> sleeping
+[sem_wait] pid=12 sem=2 -> woke up
+[sem_wait] pid=14 sem=2 -> woke up
+[sem_wait] pid=15 sem=2 -> woke up
+  Producer 0: produced item 1
+[  Csem_post] pid=12 sem=2 vaonlue=-3
+[sem_post] pid=12 sem=2 -> waking up waiter
+[sem_post] pid=12 sem=1 value=0
+[sem_waitsu] pid=13 sem=2 -> woke up
+[sem_wmait] pid=12 sem=2 vealue=-r2 -> sleeping
+ 0: consumed item 0
+[sem_post] pid=14 sem=2 value=-3
+[sem_post] pid=14  sem=2 -> waking  up waitePr
+[sem_wait] pid=12 sem=2 -> woke up
+[sem_post] pid=14 sem=0 value=0
+rod[sem_wait] pid=14 sem=2 value=-2 -> sleeping
+ucer 1: produced item 1
+[sem_post] pid=13 sem=2 value=-3
+[sem_post] pid=13 sem=2 -> waking up w ait er
+Pro[sedm_post] pid=ucer13 sem=1  value=0
+[sem_wait] pid=14 sem=2 -> woke up
+[sem_wait] pid=130 sem=2 value=-2 -> sleeping
+: produced item 2
+[sem_post] pid=12 sem=2 value=-3
+[sem_post] pid=12 sem=2 -> waking up waiter
+[sem_post] pid=12 sem=1 value=1
+[sem_wait] pid=12 sem=0 value=0 -> slee ping
+ [sem_wait]C pid=13 semon=2 -> swoke up
+umer 0: consumed item 1
+[sem_post] pid=14 sem=2 value=-2
+[sem _post] pid=14 s em=2 Pr-> waking uop waidter
+[ucer 1: prodsem_upost] pid=14 sem=0 valuec=-1
+[sem_post] pid=14 sem=e0 -d> waking up waiter
+[sem_wai t] pidi=14 sem=2 tvalue=-1 -> sleepeing
+[sm em_wait] pid=12 sem=0 -> woke up
+[sem_wait] pid=12 sem=2 value=-22 
+-> sleeping
+[sem_po st] pid=13 sem=2 value=-3
+[sem_post] pid=13 sem=2 - > waking upC waiter
+[sem_wait] pid=12 sem=2 -> woke up
+[sem_wait] pid=14 sem=2 -> woke up
+on[sem_post] pid=13 sem=1 value=1
+[sem_wait] pid=13 sem=0 value=0 -> sleeping
+sumer 1: consumed item 0
+[sem_post] pid=15   Producersem=2 value=-2
+[sem_post] pid=15  sem=2 -> waking up waiter
+[sem_post] pid=15 sem=0 value=-1
+[sem_post] pid=15 sem=0 -> waking up waiter
+[sem_wait] pid=15 sem=2 value=-1 -> sleeping
+0:[sem_wait] pid=13 sem=0 -> woke up
+[s em_wait] pid=13 sem=produced2 value=-2 -> sleeping
+ item 3
+[sem_post] pid=12 sem=2 value= -3
+[sem_post] pid =12 sem=2 -> wakiCng up waiter
+o[sem_wait] pid=13 sem=2 -> woke up
+[sem_wait] pid=15 sem=2 -> woke up
+[sem_post] pid=12 sem=1 value=1
+[sem_wnait] pid=12 sem=0 value=0 -> sleeping
+sumer 0: consumed item 2
+[s  Prem_post] pid=14 sem=2 value=-2
+[sem_post] pid=14 sem=2 -> waking up waiter
+[sem_post] pid=14 sem=0 value=-1
+[sem_post] pid=14 sem=0 -> waking up waiteoducerr
+[sem_wait] pid=14 sem=2 value=-1 -> sleeping
+ [sem_wait] pid=121 sem=0 -> woke up
+[: produced siem_wait] pid=12 stem=2 value=-2 -> sleeeping
+m 3
+[sem_post] pid=13 sem=2 value=-3
+[sem_post] pid=13 sem=2 -> waking up waiter
+[sem_post] pid=1 3 sem=1 value=1 
+[sem_wait] pid=12 sem=2 -> woke up
+[sem_wait] pid=14 sem=2 -> woke up
+C[sem_waito] pid=1n3 sem=0 valuse=0 -> sleepingu
+mer 1: consumed item 1
+[sem_post] pid=15 sem=2 value=-2
+[sem_post] pid=15 sem=2 -> waking up waiter
+[sem_pos  Prodt] pid=15 sem=0 value=-1
+[sem_post] ucepid=15 sem=0 -> waking up waiter
+[sem_wait] pid=15 sem=2 value=-1 -> sleeping
+[sem_wait] pid=13 sem=0 -> woke up
+r 0: p[sem_wait] pid=13 sem=2 value=-2 -> sleeping
+roduced item 4
+[sem_post] pid=12 sem=2 value=-3
+[sem_post] pid=12 sem=2 -> waking up waiter
+[sem_post] pid=12 sem=1 val  Consumeue=1
+[sem_wait] pid=12 sem=0 value=0 -> sleeping
+r[sem_wait] pid=13 sem=2 -> woke up
+[sem_wait] pid=15 sem=2 -> woke up
+ 0: consumed item 3
+[sem_post] pid=14 sem=2 value=-2
+[sem_post ] pi d=14 sem=2 -> waking upP waiter
+[sem_post] rpid=14 sem=0 value=-1
+[sem_post] pid=14 sem=0 -> wakiong up waiter
+[sem_wait] pid=14 sem=2 value=-1 -> sleeping
+d[sem_wait] pid=12 sem=0 -> woke up
+[sem_wait] pid=1u2 sem=ce2 valuer 1=-2 -> sle:eping
+ produced item 4
+[sem_po  st] pCid=13 semo=2 value=-3
+[sem_posnt] pid=13s sem=2 -> uwaking ump waiter
+[sem_wait] pid=12 sem=2 -> woke up
+[sem_wait] pid=14 sem=2 -> er 1: consuwoke up
+[sem_post] pid=13 semme=1 value=1
+[sem_wait] pid=13 sem=0 value=0 -> sleeping
+d item 2
+[sem_post] pid=15 sem=2 value=-2
+[sem_post] pid=15 sem=2  -> waking up wa iter
+Pro[sdem_poust] pid=15 semc=0 value=-1
+[seem_post] pid=r15 sem=0 -> waking up  waiter
+0[sem_wait] pid=13 sem=0 -> woke up
+[sem_wait] pid=13 sem=2 value=-1 -> sleeping
+: p[sremo_wait] pidudc=15 semed =2 ivalue=-2 -> sleepingt
+em 5
+[sem_post] pid=12 sem=2 value=-3
+[sem_post] pid=12 sem=2 -> waking up waiter
+[sem_post] pid=12 sem=1 value=1
+[sem_wait] pid=12 sem=0 value=0 -> s leeping
+[sem_ wait] pid=13 Csem=2 o-> wokne up
+[sem_wait] spid=15 sem=2 -> wouke up
+mer 0: consumed item 4
+[sem_post] pid=14 sem=2 value=-2
+[sem_post] pid=14 sem=2 -> waking up waiter
+[sem_post] pid=14 sem=0 value=-1
+[sem_pos t] pid=14 s Pem=0 -> waking up wraiter
+[sem_wait] odpid=u14 semc=2 vaeluer=-1 -> 1 sleepin:g
+ p[sem_wait] pidr=12 sem=0 -> woke up
+[sem_waitod] puid=12 sem=2 value=-2 -> scleepiedng
+ item 5
+[sem_post] pid=13 sem=2 value=  -3
+[sem_post] pConsumerid=13 sem=2 -> waking up waiter
+[sem_post] pid=13 sem=1 value=1
+[sem_wait] pid=12 sem=2 -> woke up
+[sem_wait] pid=13 sem=0 value=0 -> sleeping
+[ sem_wait] pid=14 sem=2 -> woke up
+1: consumed item 3
+[sem_post] pid=15 sem=2 value=-2
+[sem_post] pid=15 sem=2 -> waking up waiter
+[s  em_post] pid=15 sem=0 value=-1
+[sem_post] pid=15 sem=0 -> waking up waiter
+[sem_wait] pid=15 sem=2 value=-1 -> sleeping
+[sem_wait] pid=13 sem=0 -> woke up
+[sem_wait] pid=13 sem=2 value=-2 -> sleeping
+Producer 0: produced item 6
+[sem_post] pid=12 sem=2 value=-3
+[sem_post] pid=12 sem=2 -> waking up waiter
+[sem_post] pid=12 sem=1 value  Consu=1
+[mer sem_wait] pid=13 sem=2 -> woke up
+0[sem_wait] pid=12 sem=0 value=0 -> sleeping
+: consumed it[sem_wait] pid=15 sem=2 -> woke up
+em 5
+[sem_post] pid=14 sem=2 value=-2
+[sem_post] pid=14 sem=2 -> waking up waiter
+[sem_post] pid=14 sem=0 va lue=-1
+[sem_post] pid P=14 sem=0 -> waking uproducer  waiter
+1[sem_wait] pid=14 sem=2 value=-1 -> sleeping
+[sem_wait] pid=12 sem=0 -> woke up
+:[s pem_wait] pid=r12 sem=2oduced item value=-2 -> s leeping
+6
+ [s em_post] pid=13 seCom=2 value=-3
+[sem_npost] pid=13 sem=2 -> waking up waiter
+[ssem_post] pid=13 sem=1 value=1
+[sem_wait] pid=13 sem=0 value=0 -> sleeping
+ume[semr _w1ait] pid=12 s:em=2 -> woke  upc
+[sem_wait] pid=14 sem=2 -> woke up
+onsumed item 4
+[sem_post] pid=15 sem=2 value=-2
+[sem_post] pid=15 sem=2 -> waking up waiter
+ [sem_post] pid=15 sem=0 value=-1
+[sem_post] pid=15 sem=0 -> waking up waiter
+[sem_wait] pid=15 sem=2 value=-1 -> sleeping
+ [sem_wait] pid=13 sem=0 -> woke up
+[sem_wait] pid=13 sem=2 value=-2 ->P sleepinrg
+oducer 0: produced item 7
+[sem_  post] pid=12 sem=2 value=-3
+Cons[seum_post] mpid=12 sem=2 -> waking up waiter
+e[rsem_post] pid=12  sem=01 value:=1
+[sem_wait] pid= co13 sem=2 -> woke up
+nsumed it[sem_wait] pid=15 sem=2 -> woke up
+em 6
+[  Prodsem_post] pid=14 sem=2 value=-2
+[sem_post] pid=14 sem=2 -> wakinguc up waiter
+er [sem_wait] pid=12 sem=0 value=0 -> sleeping
+1[sem_post] pid=14 sem=0 value=-1
+[sem_post] pid=14 sem=0 -> waking up waiter
+[sem_wait] : propid=14 sem=2 value=-1 -> sleeping
+[sem_wait] pid=1d2 sem=0 -> woke up
+[sem_wait] piud=12 sem=2 value=-2c e-> sleeping
+d item 7
+[sem_post] pid=13 sem=2 value=-3
+[sem_post] pid=13 sem=2 -> waking up wa  iter
+[sem_post] pid=13 sem=1 vaClue=1
+[sem_wait] pid=13 sem=0 value=0 -> sleeping
+[sem_wait] pid=12 sem=2 -> woke up
+[sem_wait] pid=14 sem=2 on-> woke up
+sumer 1: consumed item 5
+[sem_  post] pid=15 sem=2 value=Prod-2
+[sem_post] pid=15 sem=u2 -> wakcing up waeiter
+[r 0: psem_post] pid=15 sem=0 varlue=-1
+[soduem_post] pid=15 sem=0 -> wacedking up waiter
+ it[sem_waite] pid=15 sm em=82 value=-1 -> sleeping
+
+[sem_wait] pid=13 sem=0 -> woke up
+[sem_wait] pid=13 sem=2 value=-2 -> sleeping
+  Co[nsem_post] spid=12 sem=2 valuue=-3
+[sem_posmt] pid=12 sem=2 -> waking up waiter
+[sem_post] pid=12 sem=1 value=1
+[sem_wait] pid=12 sem=0 value=0 -> seleeping
+[sem_wrait ] pid=13 sem=2 0-> woke up
+: c[sem_wait] piodn=15 sesm=2 -u> woke mup
+ed item 7
+[sem_post] pid=14 sem=2 value=-2
+[sem_post] pid=14 sem=2 -> waking up waiter
+ [sem_pos t] pid=14 sem=0 Pvalue=-1
+[sem_post] pid=14 sem=0r ->o waking up waiter
+d[sem_wait] pid=12 sem=0 -> woke up
+[sem_wait] pid=12 sem=2 value=-1 -> sleeping
+u[sem_wait] pid=14 sem=2 value=-2 -> sleeping
+cer 1: produced item 8
+[sem_post] pid=13 sem=2 value=-3
+[sem_post] pid=13 sem=2 -> waking up waiter
+[sem_post] pid=13 sem=1 value=1
+[sem_wait] pid=13 sem=0 value=0 -> sleeping
+  Consumer 1[sem_w: consait] pid=12 sem=2 -> woke up
+u[sem_wait] pid=14 sem=2 -> woke up
+med item 6
+[ s em_post] pidP=15 sem=2 varlue=-2
+[sem_post] pid=15o sem=2 -> waking up waiter
+d[seum_post] pid=1c5 esem=0 vralue 0:=-1
+[sem_post]  pid=15 spem=0 -r> waking uop waiter
+duc[sem_ewait] pdid= 15 sem=2i value=-1 t-> sleepeing
+m[sem_wait]  pid=13 sem=0 -> woke up
+9[sem_w
+ait] pid=13 sem=2 val  ue=-2 C-> sleeping
+on[sem_post] pid=12 sem=2 value=-3
+[sem_post] pid=12 sem=2 -> waking up waiter
+[sem_post] pid=12 sem=1 value=1
+[sem_wait] spid=13 sem=2 -> wokue up
+m[ser em_wait] p0:id=15 se cm=2 ->o woke nup
+sumed item 8
+[sem_post] pid=14 sem=2 va  Prolue=-2
+[sem_post] pid=14 sem=2 -> wakindug up waicter
+[ser em_po1st] pid=14 sem=0 v:alue=0
+ p[sem_wait] pid=14 sem=2 value=-1 -> sleeping
+roduced item 9
+[sem_post] pid=13 sem=2 value=-2
+[sem_post] pid=13 sem=2 -> waking up waiter
+[sem_post] pid=13 sem=1 value=1
+[sem_wait] pid=14 sem=2 -> woke up
+  Consumer 0: consumed item 9
+[sem_post] pid=14 sem=2 value=-1
+[sem_post] pid=14 sem=2 -> waking up waiter
+[sem_post] pid=14 sem=0 value=1
+  Consumer 1: consumed item 7
+[sem_post] pid=15 sem=2 value=0
+[sem_post] pid=15 sem=0 value=2
+  Consumer 1: consumed item 8
+[sem_post] pid=15 sem=2 value=0
+[sem_post] pid=15 sem=0 value=3
+  Consumer 1: consumed item 9
+[sem_post] pid=15 sem=2 value=0
+[sem_post] pid=15 sem=0 value=4
+
+All 2 producers and 2 consumers completed.
+Total semaphore operations: 120
+
+=== Producer-Consumer Test PASSED ===
+Semaphore synchronization worked correctly across processes.

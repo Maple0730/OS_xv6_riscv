@@ -5,6 +5,7 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "defs.h"
+#include "shm.h"
 
 struct cpu cpus[NCPU];
 
@@ -62,6 +63,7 @@ procinit(void)
     waittable[i].head = 0;
   }
   mlfq_last_boost = 0;
+  shminit();  // Initialize shared memory system
   for (p = proc; p < &proc[NPROC]; p++) {
     initlock(&p->lock, "proc");
     p->state = UNUSED;
