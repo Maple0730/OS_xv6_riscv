@@ -6,53 +6,51 @@
 
 ## 已完成
 
-### FCFS 与 MLFQ 调度算法实现
+### 信号量机制实现
 
 #### 内核修改
 
-- `kernel/proc.h` - 添加调度相关字段
-- `kernel/param.h` - 添加调度算法参数
-- `kernel/proc.c` - 实现 RR/FCFS/MLFQ 调度器
-- `kernel/trap.c` - 时间片用完处理
-- `kernel/defs.h` - 函数声明
+- `kernel/sem.h` - 信号量数据结构定义
+- `kernel/sem.c` - 内核信号量函数实现 (sem_init, sem_wait, sem_post, sem_get, sem_close)
+- `kernel/main.c` - 添加 seminit() 调用
+- `kernel/defs.h` - 添加信号量函数声明
+- `kernel/syscall.h` - 添加系统调用编号 (SYS_sem_open ~ SYS_sem_close)
+- `kernel/sysproc.c` - 实现信号量系统调用入口
+- `kernel/syscall.c` - 添加分发条目
+- `Makefile` - 添加 sem.o 编译目标
+
+#### 用户态接口
+
+- `user/sem.h` - 用户API头文件
+- `user/sem.c` - 用户态包装函数
+- `user/usys.pl` - 添加桩代码生成
 
 #### 测试程序
 
-- `user/fcfstest.c` - FCFS 调度测试
-- `user/mlfqtest.c` - MLFQ 调度测试
-- `user/csw.c` - 上下文切换测试
+- `user/semtest1.c` - 基本 P/V 操作测试
+- `user/semtest2.c` - 互斥锁测试
+- `user/semtest3.c` - 生产者-消费者测试
 
 ---
 
-## 待实施
+## 测试验证
 
-### 1. 调度算法验证测试
+### 编译与运行
 
-**状态**: 待测试
+```bash
+cd /home/tfc/OS/OS_xv6_riscv
+make clean && make
+make qemu
+```
 
-**验证步骤**:
-1. 使用 RR 调度器运行测试
-2. 使用 FCFS 调度器运行测试
-3. 使用 MLFQ 调度器运行测试
-4. 对比分析结果
+### 在 xv6 shell 中运行测试
 
-### 2. 性能测试
-
-**状态**: 待测试
-
-**测试内容**:
-- 吞吐量测试
-- 响应时间测试
-- 上下文切换开销测试
-
-### 3. 边界条件测试
-
-**状态**: 待测试
-
-**测试场景**:
-- 进程数超过队列容量
-- 优先级提升机制
-- 多核调度
+```bash
+semtest1    # 基本信号量测试
+semtest2    # 互斥锁测试
+semtest3    # 生产者-消费者测试
+ps          # 查看进程状态
+```
 
 ---
 
@@ -60,4 +58,4 @@
 
 - 设计文档：`docx/tfc/FCFS_MLFQ_Scheduler_Design.md`
 - 已完成任务：`docx/tfc/Done.md`
-- 测试指南：见 `docx/tfc/Done.md`
+- 信号量实现详情：见 `kernel/sem.c`

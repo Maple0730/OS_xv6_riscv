@@ -115,3 +115,43 @@ halt:
  li a7, SYS_halt
  ecall
  ret
+.global sem_open
+sem_open:
+ li a7, SYS_sem_open
+ ecall
+ ret
+.global sem_wait
+sem_wait:
+ li a7, SYS_sem_wait
+ ecall
+ ret
+.global sem_post
+sem_post:
+ li a7, SYS_sem_post
+ ecall
+ ret
+.global sem_get
+sem_get:
+ li a7, SYS_sem_get
+ ecall
+ ret
+.global sem_close
+sem_close:
+ li a7, SYS_sem_close
+ ecall
+ ret
+.global shmget
+shmget:
+ li a7, SYS_shmget
+ ecall
+ ret
+.global shmat
+shmat:
+ li a7, SYS_shmat
+ ecall
+ ret
+.global shmdt
+shmdt:
+ li a7, SYS_shmdt
+ ecall
+ ret

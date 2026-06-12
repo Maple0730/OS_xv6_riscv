@@ -7,7 +7,7 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "fs.h"
-
+#include "shm.h"
 
 //内核页表
 pagetable_t kernel_pagetable;
@@ -194,9 +194,9 @@ uvmunmap(pagetable_t pagetable, uint64 va, uint64 npages, int do_free)
     panic("uvmunmap: not aligned");
 
   for (a = va; a < va + npages * PGSIZE; a += PGSIZE) {
-    if ((pte = walk(pagetable, a, 0)) == 0) // 叶子页表项已分配？
+    if ((pte = walk(pagetable, a, 0)) == 0)
       continue;
-    if ((*pte & PTE_V) == 0) // 物理页已分配？
+    if ((*pte & PTE_V) == 0)
       continue;
     if (do_free) {
       uint64 pa = PTE2PA(*pte);
@@ -296,9 +296,9 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
 
   for (i = 0; i < sz; i += PGSIZE) {
     if ((pte = walk(old, i, 0)) == 0)
-      continue; // 页表项尚未分配
+      continue;
     if ((*pte & PTE_V) == 0)
-      continue; // 物理页尚未分配
+      continue;
     pa = PTE2PA(*pte);
     flags = PTE_FLAGS(*pte);
     if ((mem = kalloc()) == 0)

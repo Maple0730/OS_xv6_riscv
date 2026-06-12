@@ -5,10 +5,13 @@ struct file;
 struct inode;
 struct pipe;
 struct proc;
+struct shm;
 struct spinlock;
 struct sleeplock;
 struct stat;
 struct superblock;
+
+#include "shm.h"
 
 // bio.c
 void            binit(void);
@@ -128,6 +131,28 @@ void            acquiresleep(struct sleeplock*);
 void            releasesleep(struct sleeplock*);
 int             holdingsleep(struct sleeplock*);
 void            initsleeplock(struct sleeplock*, char*);
+
+// sem.c
+void            seminit(void);
+int             sem_init(int, int);
+int             sem_open(int*, int);
+int             sem_wait(int);
+int             sem_post(int);
+int             sem_get(int, int*);
+int             sem_close(int);
+
+// shm.c
+void            shminit(void);
+int             is_shm_pa(uint64);
+
+struct shm {
+  char *addr;
+  uint64 phys_addr;
+  int refcount;
+  int key;
+};
+#define NSHM 16
+extern struct shm shm_table[NSHM];
 
 // string.c
 int             memcmp(const void*, const void*, uint);

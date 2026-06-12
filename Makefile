@@ -26,6 +26,8 @@ OBJS = \
   $(BK)/trap.o \
   $(BK)/syscall.o \
   $(BK)/sysproc.o \
+  $(BK)/sem.o \
+  $(BK)/shm.o \
   $(BK)/bio.o \
   $(BK)/fs.o \
   $(BK)/log.o \
@@ -179,6 +181,9 @@ UPROGS=\
 	$(BU)/_csw\
 	$(BU)/_throughput\
 	$(BU)/_halt\
+	$(BU)/_semtest1\
+	$(BU)/_semtest2\
+	$(BU)/_semtest3\
 
 $(FSIMG): $(BM)/mkfs README $(UPROGS) | $(B)
 	$(BM)/mkfs $@ README $(UPROGS)

@@ -126,3 +126,83 @@ sys_halt(void)
   *test_dev = 0x5555;
   return 0;
 }
+
+uint64
+sys_sem_open(void)
+{
+  int value;
+  argint(0, &value);
+
+  int sem_id;
+  int ret = sem_open(&sem_id, value);
+  if (ret < 0) {
+    return -1;
+  }
+  return sem_id;
+}
+
+uint64
+sys_sem_wait(void)
+{
+  int sem_id;
+  argint(0, &sem_id);
+  return sem_wait(sem_id);
+}
+
+uint64
+sys_sem_post(void)
+{
+  int sem_id;
+  argint(0, &sem_id);
+  return sem_post(sem_id);
+}
+
+uint64
+sys_sem_get(void)
+{
+  int sem_id;
+  uint64 addr;
+  argint(0, &sem_id);
+  argaddr(1, &addr);
+
+  int value;
+  int ret = sem_get(sem_id, &value);
+  if (ret < 0) {
+    return -1;
+  }
+
+  struct proc *p = myproc();
+  if (copyout(p->pagetable, addr, (char *)&value, sizeof(value)) < 0) {
+    return -1;
+  }
+  return 0;
+}
+
+uint64
+sys_sem_close(void)
+{
+  int sem_id;
+  argint(0, &sem_id);
+  return sem_close(sem_id);
+}
+
+uint64
+sys_shmdt(void)
+{
+  // Shared memory disabled
+  return -1;
+}
+
+uint64
+sys_shmget(void)
+{
+  // Shared memory disabled
+  return -1;
+}
+
+uint64
+sys_shmat(void)
+{
+  // Shared memory disabled
+  return -1;
+}

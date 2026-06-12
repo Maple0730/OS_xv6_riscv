@@ -104,6 +104,14 @@ extern uint64 sys_mkdir(void);
 extern uint64 sys_close(void);
 extern uint64 sys_ps(void);
 extern uint64 sys_halt(void);
+extern uint64 sys_sem_open(void);
+extern uint64 sys_sem_wait(void);
+extern uint64 sys_sem_post(void);
+extern uint64 sys_sem_get(void);
+extern uint64 sys_sem_close(void);
+extern uint64 sys_shmget(void);
+extern uint64 sys_shmat(void);
+extern uint64 sys_shmdt(void);
 
 // An array mapping syscall numbers from syscall.h
 // to the function that handles the system call.
@@ -132,6 +140,14 @@ static uint64 (*syscalls[])(void) = {
   [SYS_close]   sys_close,
   [SYS_ps]      sys_ps,
   [SYS_halt]    sys_halt,
+  [SYS_sem_open]  sys_sem_open,
+  [SYS_sem_wait]  sys_sem_wait,
+  [SYS_sem_post]  sys_sem_post,
+  [SYS_sem_get]   sys_sem_get,
+  [SYS_sem_close] sys_sem_close,
+  [SYS_shmget]    sys_shmget,
+  [SYS_shmat]     sys_shmat,
+  [SYS_shmdt]     sys_shmdt,
   // clang-format on
 };
 
