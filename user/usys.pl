@@ -53,3 +53,7 @@ entry("sem_close");
 entry("shmget");
 entry("shmat");
 entry("shmdt");
+entry("socket");
+entry("bind");
+entry("sendto");
+entry("recvfrom");

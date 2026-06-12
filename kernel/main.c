@@ -25,6 +25,8 @@ void main()
     seminit();               // 初始化信号量表
     trapinit();              // 初始化 trap 数据结构（如中断向量表）
     trapinithart();          // 在当前 hart 上安装 trap 处理函数（设置 stvec）
+    virtio_net_init();       // 初始化 virtio-net 网卡（需在 plicinit 之前获取 IRQ）
+    net_init();              // 初始化网络协议栈（ARP 表等）
     plicinit();              // 初始化 PLIC（平台级中断控制器）全局配置
     plicinithart();          // 让当前 hart 能接收 PLIC 设备中断
     binit();                 // 初始化块缓存（buffer cache）

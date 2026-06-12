@@ -113,6 +113,10 @@ extern uint64 sys_sem_close(void);
 extern uint64 sys_shmget(void);
 extern uint64 sys_shmat(void);
 extern uint64 sys_shmdt(void);
+extern uint64 sys_socket(void);
+extern uint64 sys_bind(void);
+extern uint64 sys_sendto(void);
+extern uint64 sys_recvfrom(void);
 
 // An array mapping syscall numbers from syscall.h
 // to the function that handles the system call.
@@ -150,6 +154,10 @@ static uint64 (*syscalls[])(void) = {
   [SYS_shmget]      sys_shmget,
   [SYS_shmat]       sys_shmat,
   [SYS_shmdt]       sys_shmdt,
+  [SYS_socket]       sys_socket,
+  [SYS_bind]         sys_bind,
+  [SYS_sendto]       sys_sendto,
+  [SYS_recvfrom]     sys_recvfrom,
   // clang-format on
 };
 

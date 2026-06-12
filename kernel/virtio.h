@@ -30,6 +30,11 @@
 #define VIRTIO_MMIO_DRIVER_DESC_HIGH	0x094
 #define VIRTIO_MMIO_DEVICE_DESC_LOW	0x0a0 // physical address for used ring, write-only
 #define VIRTIO_MMIO_DEVICE_DESC_HIGH	0x0a4
+#define VIRTIO_MMIO_CONFIG		0x100 // device-specific config space
+
+// virtio-net device ID
+#define VIRTIO_ID_NET  1
+#define VIRTIO_ID_BLK  2
 // clang-format on
 
 // status register bits, from qemu virtio_config.h
@@ -43,6 +48,29 @@
 #define VIRTIO_BLK_F_SCSI           7  /* Supports scsi command passthru */
 #define VIRTIO_BLK_F_CONFIG_WCE     11 /* Writeback mode available in config */
 #define VIRTIO_BLK_F_MQ             12 /* support more than one vq */
+
+// virtio-net feature bits (5.1.3 of virtio spec v1.1)
+#define VIRTIO_NET_F_CSUM            0
+#define VIRTIO_NET_F_GUEST_CSUM      1
+#define VIRTIO_NET_F_CTRL_GUEST_OFFLOADS 2
+#define VIRTIO_NET_F_MAC             5
+#define VIRTIO_NET_F_GUEST_TSO4      7
+#define VIRTIO_NET_F_GUEST_TSO6      8
+#define VIRTIO_NET_F_GUEST_ECN       9
+#define VIRTIO_NET_F_GUEST_UFO       10
+#define VIRTIO_NET_F_HOST_TSO4       11
+#define VIRTIO_NET_F_HOST_TSO6       12
+#define VIRTIO_NET_F_HOST_ECN        13
+#define VIRTIO_NET_F_HOST_UFO        14
+#define VIRTIO_NET_F_MRG_RXBUF       15
+#define VIRTIO_NET_F_STATUS          16
+#define VIRTIO_NET_F_CTRL_VQ         17
+#define VIRTIO_NET_F_CTRL_RX         18
+#define VIRTIO_NET_F_CTRL_VLAN       19
+#define VIRTIO_NET_F_GUEST_ANNOUNCE  21
+#define VIRTIO_NET_F_MQ              22
+#define VIRTIO_NET_F_CTRL_MAC_ADDR   23
+
 #define VIRTIO_F_ANY_LAYOUT         27
 #define VIRTIO_RING_F_INDIRECT_DESC 28
 #define VIRTIO_RING_F_EVENT_IDX     29

@@ -38,7 +38,10 @@ OBJS = \
   $(BK)/sysfile.o \
   $(BK)/kernelvec.o \
   $(BK)/plic.o \
-  $(BK)/virtio_disk.o
+  $(BK)/virtio_disk.o \
+  $(BK)/virtio_net.o \
+  $(BK)/net.o \
+  $(BK)/sysnet.o
 
 # riscv64-unknown-elf- or riscv64-linux-gnu-
 # perhaps in /opt/riscv/bin
@@ -185,6 +188,7 @@ UPROGS=\
 	$(BU)/_semtest1\
 	$(BU)/_semtest2\
 	$(BU)/_semtest3\
+	$(BU)/_udptest\
 
 $(FSIMG): $(BM)/mkfs README $(UPROGS) | $(B)
 	$(BM)/mkfs $@ README $(UPROGS)
@@ -212,6 +216,7 @@ QEMUOPTS = -machine virt -bios none -kernel $(KERNEL) -m 128M -smp $(CPUS) -nogr
 QEMUOPTS += -global virtio-mmio.force-legacy=false
 QEMUOPTS += -drive file=$(FSIMG),if=none,format=raw,id=x0
 QEMUOPTS += -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+QEMUOPTS += -device virtio-net-device,netdev=net0,bus=virtio-mmio-bus.1 -netdev user,id=net0
 
 qemu: check-qemu-version $(KERNEL) $(FSIMG)
 	$(QEMU) $(QEMUOPTS)

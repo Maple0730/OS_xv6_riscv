@@ -31,3 +31,7 @@
 #define SYS_shmat     30
 #define SYS_shmdt     31
 #define SYS_lseek     32
+#define SYS_socket    33
+#define SYS_bind      34
+#define SYS_sendto    35
+#define SYS_recvfrom  36

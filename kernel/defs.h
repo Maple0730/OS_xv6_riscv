@@ -185,6 +185,7 @@ void            uartwrite(char [], int);
 void            uartputc_sync(int);
 
 // vm.c
+extern pagetable_t kernel_pagetable;
 void            kvminit(void);
 void            kvminithart(void);
 void            kvmmap(pagetable_t, uint64, uint64, uint64, int);
@@ -214,6 +215,27 @@ void            plic_complete(int);
 void            virtio_disk_init(void);
 void            virtio_disk_rw(struct buf *, int);
 void            virtio_disk_intr(void);
+
+// virtio_net.c
+void            virtio_net_init(void);
+void            virtio_net_intr(void);
+int             virtio_net_transmit(void *, uint);
+int             virtio_net_receive(void *, uint);
+void            virtio_net_mac(uint8 mac[6]);
+int             virtio_net_irq(void);
+
+// net.c
+void            net_init(void);
+void            net_rx_loop(void);
+int             udp_send(uint32, uint16, uint16, char*, uint);
+int             udp_recv(uint32*, uint16*, uint16*, char*, uint);
+
+// sysnet.c
+void            sock_close(int);
+uint64          sys_socket(void);
+uint64          sys_bind(void);
+uint64          sys_sendto(void);
+uint64          sys_recvfrom(void);
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x) / sizeof((x)[0]))

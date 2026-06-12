@@ -28,6 +28,12 @@ int ps(void);
 int halt(void);
 int lseek(int, int, int);
 
+// Network system calls
+int socket(int, int, int);
+int bind(int, uint32, uint16);
+int sendto(int, char*, int, uint32, uint16);
+int recvfrom(int, char*, int, uint32*, uint16*);
+
 // Semaphore system calls
 #define SYS_sem_open  24
 #define SYS_sem_wait  25
