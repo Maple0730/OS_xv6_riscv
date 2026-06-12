@@ -115,6 +115,11 @@ halt:
  li a7, SYS_halt
  ecall
  ret
+.global lseek
+lseek:
+ li a7, SYS_lseek
+ ecall
+ ret
 .global sem_open
 sem_open:
  li a7, SYS_sem_open
