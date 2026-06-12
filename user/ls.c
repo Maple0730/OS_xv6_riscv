@@ -15,12 +15,10 @@ fmtname(char *path)
     ;
   p++;
 
-  // Return blank-padded name.
+  // Return just the filename, no padding.
   if (strlen(p) >= DIRSIZ)
     return p;
-  memmove(buf, p, strlen(p));
-  memset(buf + strlen(p), ' ', DIRSIZ - strlen(p));
-  buf[sizeof(buf) - 1] = '\0';
+  memmove(buf, p, strlen(p) + 1);  // copy including null terminator
   return buf;
 }
 
