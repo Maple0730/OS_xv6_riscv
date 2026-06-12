@@ -77,6 +77,18 @@ runcmd(struct cmd *cmd)
     if (ecmd->argv[0] == 0)
       exit(1);
     exec(ecmd->argv[0], ecmd->argv);
+    // PATH fallback: if exec fails and path doesn't start with '/',
+    // try the root directory (where all system programs live).
+    if (ecmd->argv[0][0] != '/') {
+      char fullpath[128];
+      char *prog = ecmd->argv[0];
+      // skip leading "./" if present
+      if (prog[0] == '.' && prog[1] == '/')
+        prog += 2;
+      fullpath[0] = '/';
+      strcpy(fullpath + 1, prog);
+      exec(fullpath, ecmd->argv);
+    }
     fprintf(2, "exec %s failed\n", ecmd->argv[0]);
     break;
 
