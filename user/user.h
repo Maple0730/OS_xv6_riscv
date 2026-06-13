@@ -50,6 +50,11 @@ int shmget(int key, uint64 *addr);
 int shmat(int key, uint64 *addr);
 int shmdt(uint64 addr);
 
+// Scheduling system calls
+#define SYS_sched_algorithm 34
+int sched_algorithm(int algo);
+const char* sched_algorithm_name(int algo);
+
 // ulib.c
 int stat(const char *, struct stat *);
 char *strcpy(char *, const char *);

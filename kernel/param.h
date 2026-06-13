@@ -33,6 +33,11 @@
 #define MLFQ_Q2_TIME     2000000 // Queue 2 时间片（20ms）
 #define MLFQ_BOOST_TICKS 200     // 每 200 ticks 提升一次优先级（防止饥饿）
 
+// MLFQ 调试开关：设置为 1 启用 [MLFQ] 日志输出，设置为 0 关闭
+#ifndef MLFQ_DEBUG
+#define MLFQ_DEBUG 0
+#endif
+
 // FCFS/RR 共用时间片（默认10ms）
 #ifndef TICKSLICE
 #define TICKSLICE 1000000  // 1000000 ticks ≈ 10ms

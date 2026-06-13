@@ -31,4 +31,5 @@
 #define SYS_shmat     30
 #define SYS_shmdt     31
 #define SYS_lseek     32
-#define SYS_waitpid    33
+#define SYS_waitpid   33
+#define SYS_sched_algorithm 34

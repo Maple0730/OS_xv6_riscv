@@ -54,3 +54,4 @@ entry("sem_close");
 entry("shmget");
 entry("shmat");
 entry("shmdt");
+entry("sched_algorithm");

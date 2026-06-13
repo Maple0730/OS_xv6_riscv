@@ -218,3 +218,36 @@ sys_shmat(void)
   // Shared memory disabled
   return -1;
 }
+
+// Change scheduling algorithm at runtime
+// arg0: algo (0=RR, 1=FCFS, 2=MLFQ, -1=query only)
+// returns: current algorithm (or previous if changed), -1 on failure
+uint64
+sys_sched_algorithm(void)
+{
+  int algo;
+  argint(0, &algo);
+
+  // Query mode: algo == -1 returns current algorithm without changing
+  if (algo == -1) {
+    return current_scheduler;
+  }
+
+  // Validate algorithm number
+  if (algo < 0 || algo > 2)
+    return -1;
+
+  acquire(&sched_lock);
+  int old = current_scheduler;
+  current_scheduler = algo;
+  release(&sched_lock);
+
+  return old;
+}
+
+// Get current scheduler algorithm (internal use)
+int
+get_sched_algorithm(void)
+{
+  return current_scheduler;
+}

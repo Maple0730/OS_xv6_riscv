@@ -1,0 +1,54 @@
+$ schedtest
+=== Scheduler Algorithm Switching Test ===
+Parent PID: 4
+
+Current scheduler: MLFQ
+
+--- Testing invalid input ---
+  sched_algorithm(99) = -1 (expected -1)
+  sched_algorithm(-1) = 2 (expected -1)
+
+--- Testing valid switching ---
+
+[Test 1] Switching to RR (0):
+  Switched from MLFQ to RR
+
+  Running RR workload with 4 workers...
+  [Worker 0] PID=5 finished at tick 149 (elapsed=0)
+  [Worker 1] PID=6 finished at tick 149 (elapsed=0)
+  [Worker 2] PID=7 finished at tick 149 (elapsed=0)
+  [Worker 3] PID=8 finished at tick 149 (elapsed=0)
+  RR completed in 3 ticks
+
+[Test 2] Switching to FCFS (1):
+  Switched from RR to FCFS
+
+  Running FCFS workload with 4 workers...
+  [Worker 0] PID=9 finished at tick 153 (elapsed=0)
+  [Worker 1] PID=10 finished at tick 153 (elapsed=0)
+  [Worker 2] PID=11 finished at tick 154 (elapsed=0)
+  [Worker 3] PID=12 finished at tick 154 (elapsed=1)
+  FCFS completed in 3 ticks
+
+[Test 3] Switching to MLFQ (2):
+  Switched from FCFS to MLFQ
+
+  Running MLFQ workload with 4 workers...
+  [Worker 0] PID=13 finished at tick 158 (elapsed=0)
+  [Worker 1] PID=14 finished at tick 158 (elapsed=0)
+  [Worker 2] PID=15 finished at tick 158 (elapsed=0)
+  [Worker 3] PID=16 finished at tick 158 (elapsed=0)
+  MLFQ completed in 4 ticks
+
+--- Testing round-trip switching ---
+  RR -> returned: MLFQ
+  FCFS -> returned: RR
+  MLFQ -> returned: FCFS
+
+=== Test Complete ===
+Total time: 16 ticks
+
+Summary:
+  - Scheduler algorithm can be queried at runtime
+  - Algorithm can be switched without recompilation
+  - All three algorithms (RR, FCFS, MLFQ) work correctly

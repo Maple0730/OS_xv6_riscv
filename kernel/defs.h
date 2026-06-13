@@ -111,6 +111,7 @@ void            rr_scheduler(void) __attribute__((noreturn));
 void            fcfs_scheduler(void) __attribute__((noreturn));
 void            mlfq_scheduler(void) __attribute__((noreturn));
 int             get_timeslice(int queue_level);
+int             get_sched_algorithm(void);
 void            mlfq_enqueue(struct proc *p);
 int             either_copyout(int user_dst, uint64 dst, void *src, uint64 len);
 int             either_copyin(void *dst, int user_src, uint64 src, uint64 len);

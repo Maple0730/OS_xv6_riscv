@@ -165,3 +165,8 @@ shmdt:
  li a7, SYS_shmdt
  ecall
  ret
+.global sched_algorithm
+sched_algorithm:
+ li a7, SYS_sched_algorithm
+ ecall
+ ret

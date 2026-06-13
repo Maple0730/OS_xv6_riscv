@@ -126,3 +126,8 @@ struct proc {
   uint64 last_sched;           // 上次被调度的时间（ticks）
   int priority;                 // 进程优先级 (0-10, 0最高)
 };
+
+// Runtime scheduler switching - global variables declared in proc.c
+extern volatile int current_scheduler;
+extern struct spinlock sched_lock;
+extern const char *sched_algo_name(int algo);

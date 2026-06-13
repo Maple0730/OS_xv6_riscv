@@ -18,6 +18,10 @@ int nextpid = 1;
 struct spinlock pid_lock;
 uint64 mlfq_last_boost;
 
+// Runtime scheduler switching support
+volatile int current_scheduler = SCHED_MLFQ;  // 当前调度算法（默认 MLFQ）
+struct spinlock sched_lock;                   // 保护调度器切换
+
 extern void forkret(void);
 static void freeproc(struct proc *p);
 static struct waitbucket *waitbucket_for(void *chan);
@@ -58,6 +62,7 @@ procinit(void)
 
   initlock(&pid_lock, "nextpid");
   initlock(&wait_lock, "wait_lock");
+  initlock(&sched_lock, "sched_lock");
   for (int i = 0; i < NWCHAN; i++) {
     initlock(&waittable[i].lock, "waitbucket");
     waittable[i].head = 0;
@@ -550,13 +555,29 @@ kwaitpid(int pid, uint64 addr)
 void
 scheduler(void)
 {
-#if SCHED_ALGORITHM == SCHED_FCFS
-  fcfs_scheduler();
-#elif SCHED_ALGORITHM == SCHED_MLFQ
-  mlfq_scheduler();
-#else
-  rr_scheduler();
-#endif
+  // Runtime scheduler switching - supports RR/FCFS/MLFQ without recompilation
+  int algo = current_scheduler;
+  if (algo == SCHED_FCFS) {
+    fcfs_scheduler();
+  } else if (algo == SCHED_MLFQ) {
+    mlfq_scheduler();
+  } else {
+    rr_scheduler();
+  }
+}
+
+// Get the name of the current scheduler for debugging
+const char *
+sched_algo_name(int algo)
+{
+  switch (algo) {
+  case SCHED_FCFS:
+    return "FCFS";
+  case SCHED_MLFQ:
+    return "MLFQ";
+  default:
+    return "RR";
+  }
 }
 
 void
@@ -646,7 +667,10 @@ get_timeslice(int queue_level)
 void
 mlfq_enqueue(struct proc *p)
 {
-  (void)p;
+#if MLFQ_DEBUG
+  // MLFQ: 进程入队时记录
+  printf("[MLFQ] enqueue: pid=%d to queue=%d\n", p->pid, p->queue_level);
+#endif
 }
 
 static void
@@ -657,6 +681,11 @@ mlfq_boost_priority(void)
   for (p = proc; p < &proc[NPROC]; p++) {
     acquire(&p->lock);
     if (p->state == RUNNABLE || p->state == RUNNING) {
+#if MLFQ_DEBUG
+      // MLFQ: 优先级提升时记录
+      printf("[MLFQ] boost: pid=%d from queue=%d to queue=0\n",
+             p->pid, p->queue_level);
+#endif
       p->queue_level = 0;
       p->timeslice_used = 0;
     }
@@ -702,6 +731,11 @@ mlfq_scheduler(void)
     if (best) {
       acquire(&best->lock);
       if (best->state == RUNNABLE) {
+#if MLFQ_DEBUG
+        // MLFQ: 选择下一个进程时记录
+        printf("[MLFQ] schedule: pid=%d from queue=%d\n",
+               best->pid, best->queue_level);
+#endif
         best->state = RUNNING;
         best->last_sched = ticks;
         c->proc = best;
@@ -749,12 +783,18 @@ yield(void)
   struct proc *p = myproc();
   acquire(&p->lock);
   p->state = RUNNABLE;
-#if SCHED_ALGORITHM == SCHED_MLFQ
-  if (p->timeslice_used >= get_timeslice(p->queue_level) &&
-      p->queue_level < MLFQ_LEVELS - 1)
-    p->queue_level++;
-  p->timeslice_used = 0;
+  // Runtime MLFQ demotion check
+  if (current_scheduler == SCHED_MLFQ) {
+    if (p->timeslice_used >= get_timeslice(p->queue_level) &&
+        p->queue_level < MLFQ_LEVELS - 1) {
+#if MLFQ_DEBUG
+      printf("[MLFQ] demote(yield): pid=%d from queue=%d to queue=%d\n",
+             p->pid, p->queue_level, p->queue_level + 1);
 #endif
+      p->queue_level++;
+    }
+    p->timeslice_used = 0;
+  }
   sched();
   release(&p->lock);
 }

@@ -117,7 +117,7 @@ $(BK)/%.o: $(K)/%.S | $(BK)
 tags: $(OBJS)
 	etags kernel/*.S kernel/*.c
 
-ULIB = $(BU)/ulib.o $(BU)/usys.o $(BU)/printf.o $(BU)/umalloc.o
+ULIB = $(BU)/ulib.o $(BU)/usys.o $(BU)/printf.o $(BU)/umalloc.o $(BU)/sched.o
 
 $(BU)/_%: $(BU)/%.o $(ULIB) $(U)/user.ld | $(BU)
 	$(LD) $(LDFLAGS) -T $(U)/user.ld -o $@ $< $(ULIB)
@@ -185,7 +185,8 @@ UPROGS=\
 	$(BU)/_semtest1\
 	$(BU)/_semtest2\
 	$(BU)/_semtest3\
-	$(BU)/_waitpidtest
+	$(BU)/_waitpidtest\
+	$(BU)/_schedtest
 
 $(FSIMG): $(BM)/mkfs README $(UPROGS) | $(B)
 	$(BM)/mkfs $@ README $(UPROGS)
