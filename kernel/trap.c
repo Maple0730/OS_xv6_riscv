@@ -195,8 +195,8 @@ clockintr()
   }
 
   // ask for the next timer interrupt. this also clears
-  // the interrupt request. TICKSLICE is configured in param.h
-  w_stimecmp(r_time() + TICKSLICE);
+  // the interrupt request. Timeslice is runtime configurable
+  w_stimecmp(r_time() + get_rr_fcfs_timeslice());
 }
 
 // check if it's an external interrupt or software interrupt,

@@ -105,8 +105,11 @@ struct proc {
   struct proc *wprev;            // 等待队列中的前驱进程
   struct waitbucket *wbucket;    // 当前挂接的等待桶
 
-  // wait_lock must be held when using this:
+  // wait_lock must be held when using these:
   struct proc *parent;           // 父进程指针（需持有 wait_lock 访问）
+  struct proc *cnext;            // 子进程链表后继（需持有 wait_lock 访问）
+  struct proc *cprev;            // 子进程链表前驱（需持有 wait_lock 访问）
+  int child_count;               // 直接子进程数量（需持有 wait_lock 访问）
 
   // these are private to the process, so p->lock need not be held.
   uint64 kstack;                 // 内核栈的虚拟地址
@@ -131,3 +134,8 @@ struct proc {
 extern volatile int current_scheduler;
 extern struct spinlock sched_lock;
 extern const char *sched_algo_name(int algo);
+
+// Runtime configurable timeslice values
+extern uint64 timeslice_table[MLFQ_LEVELS];
+extern uint64 rr_fcfs_timeslice;
+extern struct spinlock timeslice_lock;

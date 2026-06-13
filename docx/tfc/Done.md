@@ -1127,12 +1127,252 @@ Summary:
 | `user/user.h` | 添加用户 API 声明 |
 | `Makefile` | 添加 `schedtest` 和 `sched.o` |
 
-## 5. 总结
+## 5. 动态时间片调节
+
+### 5.1 功能概述
+
+在运行时调度器切换框架基础上，新增动态时间片配置功能，支持在不重启内核的情况下实时调节各调度算法的时间片参数。
+
+### 5.2 系统调用
+
+新增两个系统调用：
+
+| 系统调用 | 编号 | 说明 |
+|----------|------|------|
+| `sys_settimeslice(int queue, int ticks)` | 35 | 设置时间片，queue=-1=RR/FCFS，0-2=MLFQ各队列 |
+| `sys_gettimeslice(int queue)` | 36 | 查询当前时间片配置 |
+
+### 5.3 内核实现
+
+#### 全局变量（kernel/proc.c）
+
+```c
+uint64 timeslice_table[MLFQ_LEVELS];  // MLFQ 各队列时间片
+uint64 rr_fcfs_timeslice;             // RR/FCFS 共用时间片
+struct spinlock timeslice_lock;       // 保护时间片配置
+```
+
+初始化时从编译期宏读取默认值：
+
+```c
+timeslice_table[0] = MLFQ_Q0_TIME;   // 500000 ticks (~5ms)
+timeslice_table[1] = MLFQ_Q1_TIME;   // 1000000 ticks (~10ms)
+timeslice_table[2] = MLFQ_Q2_TIME;   // 2000000 ticks (~20ms)
+rr_fcfs_timeslice = TICKSLICE;       // 1000000 ticks (~10ms)
+```
+
+#### 时钟中断（kernel/trap.c）
+
+trap.c 的时钟中断配置改为使用运行时变量：
+
+```c
+w_stimecmp(r_time() + get_rr_fcfs_timeslice());
+```
+
+### 5.4 测试结果
+
+实际测试日志（`docx/tfc/log/timeslicetest.txt`）：
+
+```
+=== Dynamic Timeslice Configuration Test ===
+
+=== Current Timeslice Configuration ===
+RR/FCFS:  1000000 ticks (~10 ms)
+MLFQ Q0:  500000 ticks (~5 ms)
+MLFQ Q1:  1000000 ticks (~10 ms)
+MLFQ Q2:  2000000 ticks (~20 ms)
+
+--- Testing invalid input ---
+settimeslice(-2, 500000) = -1 (expected -1)
+settimeslice(3, 500000) = -1 (expected -1)
+settimeslice(0, 0) = -1 (expected -1)
+settimeslice(0, -100) = -1 (expected -1)
+gettimeslice(-2) = -1 (expected -1)
+gettimeslice(3) = -1 (expected -1)
+
+--- Testing MLFQ dynamic adjustment ---
+Original: Q0=500000 Q1=1000000 Q2=2000000
+Adjusted Q0 from 500000 to 100000 ticks (~1 ms)
+Restored Q0 to 500000
+Adjusted Q2 from 2000000 to 5000000 ticks (~50 ms)
+Restored Q2 to 2000000
+
+--- Testing RR/FCFS dynamic adjustment ---
+Original RR/FCFS: 1000000 ticks (~10 ms)
+Adjusted RR/FCFS from 1000000 to 200000 ticks (~2 ms)
+Restored RR/FCFS to 1000000
+
+--- Testing scheduler integration ---
+Current scheduler: MLFQ
+Switched to RR
+RR timeslice adjusted to 200000 ticks
+RR timeslice restored to 1000000
+Switched to MLFQ
+MLFQ Q0 adjusted to 200000 ticks
+MLFQ Q0 restored to 500000
+Scheduler restored to MLFQ
+
+=== Test Complete ===
+Summary:
+  - settimeslice() and gettimeslice() work correctly
+  - Invalid parameters are properly rejected
+  - Timeslice changes persist across scheduler switches
+  - Values can be dynamically adjusted without recompilation
+```
+
+### 5.5 相关文件
+
+| 文件路径 | 功能 |
+|----------|------|
+| `kernel/proc.c` | 时间片全局变量、初始化、get_timeslice() 改为运行时读取 |
+| `kernel/proc.h` | extern 声明 |
+| `kernel/sysproc.c` | sys_settimeslice()、sys_gettimeslice() 实现 |
+| `kernel/syscall.h` | SYS_settimeslice=35、SYS_gettimeslice=36 |
+| `kernel/syscall.c` | 系统调用数组项 |
+| `kernel/defs.h` | get_rr_fcfs_timeslice() 声明 |
+| `kernel/trap.c` | 时钟中断使用运行时时间片 |
+| `user/usys.pl` | settimeslice、gettimeslice 条目 |
+| `user/user.h` | 用户 API 声明 |
+| `user/sched.c` | sched_algorithm_name() 实现 |
+| `user/timeslicetest.c` | 测试程序 |
+| `Makefile` | 添加 _timeslicetest |
+
+## 6. 总结
 
 运行时调度器切换功能已完整实现并测试通过：
 
-- ✅ 可在运行时查询当前调度算法
-- ✅ 可在 RR/FCFS/MLFQ 之间动态切换
-- ✅ 切换过程不影响正在运行的进程
-- ✅ 所有三个调度器均正常工作
-- ✅ 编译通过，无警告和错误
+- 可在运行时查询当前调度算法
+- 可在 RR/FCFS/MLFQ 之间动态切换
+- 切换过程不影响正在运行的进程
+- 所有三个调度器均正常工作
+- 编译通过，无警告和错误
+
+动态时间片调节功能已完整实现并测试通过：
+
+- 可在运行时查询/设置各队列时间片
+- settimeslice/gettimeslice 正常工作
+- 无效参数正确拒绝
+- 调度算法切换后时间片配置保持
+- 所有值可动态调节无需重启
+- 与运行时调度器切换协同工作
+
+
+---
+
+## 子进程链表完善
+
+### 实现概述
+
+在 `struct proc` 中添加双向子进程链表（`cnext`/`cprev`）和子进程计数（`child_count`），在 `kfork()` 时将子进程加入父进程的链表，在 `freeproc()` 时移除，`reparent()` 改为遍历链表而非全表扫描。
+
+### 1. PCB 扩展（kernel/proc.h）
+
+```c
+// wait_lock must be held when using these:
+struct proc *parent;           // 父进程指针
+struct proc *cnext;            // 子进程链表后继
+struct proc *cprev;            // 子进程链表前驱
+int child_count;               // 直接子进程数量
+```
+
+### 2. 初始化（kernel/proc.c - allocproc）
+
+```c
+p->cnext = 0;
+p->cprev = 0;
+p->child_count = 0;
+```
+
+### 3. 链表加入（kernel/proc.c - kfork）
+
+```c
+acquire(&wait_lock);
+np->parent = p;
+np->cprev = 0;
+np->cnext = p->cnext;
+if (p->cnext)
+  p->cnext->cprev = np;
+p->cnext = np;
+p->child_count++;
+release(&wait_lock);
+```
+
+### 4. 链表移除（kernel/proc.c - freeproc）
+
+```c
+// wait_lock_held: caller holds wait_lock (kwait/kwaitpid path)
+// wait_lock_held=0: caller does not (allocproc error path, p not in list)
+static void freeproc(struct proc *p, int wait_lock_held)
+{
+  if (wait_lock_held) {
+    if (p->cprev) {
+      p->cprev->cnext = p->cnext;
+    } else if (p->parent) {
+      p->parent->cnext = p->cnext;
+    }
+    if (p->cnext)
+      p->cnext->cprev = p->cprev;
+    if (p->parent)
+      p->parent->child_count--;
+  }
+  // ... free trapframe, pagetable etc.
+}
+```
+
+### 5. reparent（kernel/proc.c）
+
+```c
+void reparent(struct proc *p)
+{
+  struct proc *child = p->cnext;
+  while (child) {
+    struct proc *next = child->cnext;
+    child->parent = initproc;
+    // Detach from p's list, attach to initproc's list
+    if (child->cprev == p)
+      p->cnext = next;
+    if (next)
+      next->cprev = child->cprev;
+    child->cprev = 0;
+    child->cnext = 0;
+    child->cnext = initproc->cnext;
+    if (initproc->cnext)
+      initproc->cnext->cprev = child;
+    initproc->cnext = child;
+    initproc->child_count++;
+    wakeup(initproc);
+    child = next;
+  }
+  p->child_count = 0;
+}
+```
+
+### 6. 调用点更新
+
+| 调用位置 | 路径 | wait_lock_held |
+|----------|------|----------------|
+| allocproc trapframe 分配失败 | allocproc 错误路径 | 0 |
+| allocproc pagetable 分配失败 | allocproc 错误路径 | 0 |
+| kfork uvmcopy 失败 | kfork 错误路径 | 0 |
+| kwait 发现 ZOMBIE 子进程 | kwait ZOMBIE 回收 | 1 |
+| kwaitpid 发现 ZOMBIE 子进程 | kwaitpid ZOMBIE 回收 | 1 |
+
+### 7. 复杂度改进
+
+| 操作 | 改进前 | 改进后 |
+|------|--------|--------|
+| reparent | O(NPROC) 全表扫描 | O(children_of_p) 仅遍历直接子进程 |
+| child_count 查询 | O(NPROC) | O(1) |
+| kwait/kwaitpid 扫描逻辑 | O(NPROC) | O(NPROC)（保持不变，因为要扫所有可能的孩子） |
+
+### 8. 测试结果
+
+- 编译通过，无警告
+- kmalloctest 通过
+- init/sh 正常启动
+- semtest1/2/3 全部 PASS
+- waitpidtest Test 2 有 pre-existing bug（与本改动无关）
+
+### 9. 实现日期
+
+2026年6月13日

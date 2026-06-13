@@ -170,3 +170,13 @@ sched_algorithm:
  li a7, SYS_sched_algorithm
  ecall
  ret
+.global settimeslice
+settimeslice:
+ li a7, SYS_settimeslice
+ ecall
+ ret
+.global gettimeslice
+gettimeslice:
+ li a7, SYS_gettimeslice
+ ecall
+ ret

@@ -251,3 +251,44 @@ get_sched_algorithm(void)
 {
   return current_scheduler;
 }
+
+// settimeslice - set timeslice for a specific queue or RR/FCFS
+// queue: -1=RR/FCFS, 0=MLFQ_Q0, 1=MLFQ_Q1, 2=MLFQ_Q2
+// ticks: new timeslice in ticks
+// returns 0 on success, -1 on error
+uint64
+sys_settimeslice(void)
+{
+  int queue;
+  int ticks;
+  argint(0, &queue);
+  argint(1, &ticks);
+  if (ticks <= 0)
+    return -1;
+  acquire(&timeslice_lock);
+  if (queue == -1) {
+    rr_fcfs_timeslice = ticks;
+  } else if (queue >= 0 && queue < MLFQ_LEVELS) {
+    timeslice_table[queue] = ticks;
+  } else {
+    release(&timeslice_lock);
+    return -1;
+  }
+  release(&timeslice_lock);
+  return 0;
+}
+
+// gettimeslice - get current timeslice for a specific queue or RR/FCFS
+// queue: -1=RR/FCFS, 0=MLFQ_Q0, 1=MLFQ_Q1, 2=MLFQ_Q2
+// returns timeslice in ticks, -1 on error
+uint64
+sys_gettimeslice(void)
+{
+  int queue;
+  argint(0, &queue);
+  if (queue == -1)
+    return rr_fcfs_timeslice;
+  if (queue >= 0 && queue < MLFQ_LEVELS)
+    return timeslice_table[queue];
+  return -1;
+}

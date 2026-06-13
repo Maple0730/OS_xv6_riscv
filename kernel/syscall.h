@@ -33,3 +33,5 @@
 #define SYS_lseek     32
 #define SYS_waitpid   33
 #define SYS_sched_algorithm 34
+#define SYS_settimeslice   35
+#define SYS_gettimeslice   36

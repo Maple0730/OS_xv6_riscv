@@ -55,3 +55,5 @@ entry("shmget");
 entry("shmat");
 entry("shmdt");
 entry("sched_algorithm");
+entry("settimeslice");
+entry("gettimeslice");

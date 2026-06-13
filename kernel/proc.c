@@ -22,8 +22,13 @@ uint64 mlfq_last_boost;
 volatile int current_scheduler = SCHED_MLFQ;  // 当前调度算法（默认 MLFQ）
 struct spinlock sched_lock;                   // 保护调度器切换
 
+// Runtime configurable timeslice values (ticks)
+uint64 timeslice_table[MLFQ_LEVELS];  // MLFQ 各队列时间片
+uint64 rr_fcfs_timeslice;            // RR/FCFS 共用时间片
+struct spinlock timeslice_lock;      // 保护时间片配置
+
 extern void forkret(void);
-static void freeproc(struct proc *p);
+static void freeproc(struct proc *p, int wait_lock_held);
 static struct waitbucket *waitbucket_for(void *chan);
 static void waitlist_insert(struct waitbucket *wb, struct proc *p);
 static void waitlist_remove(struct waitbucket *wb, struct proc *p);
@@ -63,6 +68,11 @@ procinit(void)
   initlock(&pid_lock, "nextpid");
   initlock(&wait_lock, "wait_lock");
   initlock(&sched_lock, "sched_lock");
+  initlock(&timeslice_lock, "timeslice_lock");
+  timeslice_table[0] = MLFQ_Q0_TIME;
+  timeslice_table[1] = MLFQ_Q1_TIME;
+  timeslice_table[2] = MLFQ_Q2_TIME;
+  rr_fcfs_timeslice = TICKSLICE;
   for (int i = 0; i < NWCHAN; i++) {
     initlock(&waittable[i].lock, "waitbucket");
     waittable[i].head = 0;
@@ -189,10 +199,13 @@ found:
   p->timeslice_used = 0;
   p->last_sched = 0;
   p->priority = DEFAULT_PRIORITY;
+  p->cnext = 0;
+  p->cprev = 0;
+  p->child_count = 0;
 
   // 给 trapframe 分配内存
   if ((p->trapframe = (struct trapframe *)kalloc()) == 0) {
-    freeproc(p);
+    freeproc(p, 0);
     release(&p->lock);
     return 0;
   }
@@ -200,7 +213,7 @@ found:
   // 创建该进程的用户页表
   p->pagetable = proc_pagetable(p);
   if (p->pagetable == 0) {
-    freeproc(p);
+    freeproc(p, 0);
     release(&p->lock);
     return 0;
   }
@@ -216,9 +229,27 @@ found:
 // free a proc structure and the data hanging from it,
 // including user pages.
 // p->lock must be held.
+// wait_lock_held: 1 if caller holds wait_lock (kwait/kwaitpid path),
+//                 0 otherwise (allocproc error path, p not in any child list).
 static void
-freeproc(struct proc *p)
+freeproc(struct proc *p, int wait_lock_held)
 {
+  // Remove from parent's child list.
+  // wait_lock_held=1: caller holds wait_lock (kwait/kwaitpid path)
+  // wait_lock_held=0: caller does not hold wait_lock (allocproc error path)
+  //                  and p is not in any list, so list ops are no-ops
+  if (wait_lock_held) {
+    if (p->cprev) {
+      p->cprev->cnext = p->cnext;
+    } else if (p->parent) {
+      p->parent->cnext = p->cnext;
+    }
+    if (p->cnext)
+      p->cnext->cprev = p->cprev;
+    if (p->parent)
+      p->parent->child_count--;
+  }
+
   if (p->trapframe)
     kfree((void *)p->trapframe);
   p->trapframe = 0;
@@ -228,6 +259,9 @@ freeproc(struct proc *p)
   p->sz = 0;
   p->pid = 0;
   p->parent = 0;
+  p->cnext = 0;
+  p->cprev = 0;
+  p->child_count = 0;
   p->name[0] = 0;
   p->chan = 0;
   p->wnext = 0;
@@ -342,7 +376,7 @@ kfork(void)
 
   // Copy user memory from parent to child.
   if (uvmcopy(p->pagetable, np->pagetable, p->sz) < 0) {
-    freeproc(np);
+    freeproc(np, 0);
     release(&np->lock);
     return -1;
   }
@@ -368,6 +402,12 @@ kfork(void)
 
   acquire(&wait_lock);
   np->parent = p;
+  np->cprev = 0;
+  np->cnext = p->cnext;
+  if (p->cnext)
+    p->cnext->cprev = np;
+  p->cnext = np;
+  p->child_count++;
   release(&wait_lock);
 
   acquire(&np->lock);
@@ -384,14 +424,34 @@ kfork(void)
 void
 reparent(struct proc *p)
 {
-  struct proc *pp;
-
-  for (pp = proc; pp < &proc[NPROC]; pp++) {
-    if (pp->parent == p) {
-      pp->parent = initproc;
-      wakeup(initproc);
+  struct proc *child = p->cnext;
+  while (child) {
+    struct proc *next = child->cnext;
+    child->parent = initproc;
+    // Detach from p's list
+    if (child->cprev == p) {
+      // child is the head of p's child list
+      if (p->cnext == child)
+        p->cnext = next;
+    } else {
+      // shouldn't happen in normal flow, but be safe
+      if (child->cprev)
+        child->cprev->cnext = next;
     }
+    if (next)
+      next->cprev = 0;
+    child->cprev = 0;
+    child->cnext = 0;
+    // Attach to initproc's child list
+    child->cnext = initproc->cnext;
+    if (initproc->cnext)
+      initproc->cnext->cprev = child;
+    initproc->cnext = child;
+    initproc->child_count++;
+    wakeup(initproc);
+    child = next;
   }
+  p->child_count = 0;
 }
 
 // Exit the current process.  Does not return.
@@ -468,7 +528,7 @@ kwait(uint64 addr)
             release(&wait_lock);
             return -1;
           }
-          freeproc(pp);
+          freeproc(pp, 1);
           release(&pp->lock);
           release(&wait_lock);
           return pid;
@@ -526,7 +586,7 @@ kwaitpid(int pid, uint64 addr)
           release(&wait_lock);
           return -1;
         }
-        freeproc(pp);
+        freeproc(pp, 1);
         release(&pp->lock);
         release(&wait_lock);
         return ret_pid;
@@ -654,14 +714,15 @@ fcfs_scheduler(void)
 int
 get_timeslice(int queue_level)
 {
-  switch (queue_level) {
-  case 0:
-    return MLFQ_Q0_TIME;
-  case 1:
-    return MLFQ_Q1_TIME;
-  default:
-    return MLFQ_Q2_TIME;
-  }
+  if (queue_level >= 0 && queue_level < MLFQ_LEVELS)
+    return timeslice_table[queue_level];
+  return timeslice_table[MLFQ_LEVELS - 1];
+}
+
+int
+get_rr_fcfs_timeslice(void)
+{
+  return rr_fcfs_timeslice;
 }
 
 void

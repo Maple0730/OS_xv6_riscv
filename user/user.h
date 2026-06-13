@@ -52,8 +52,12 @@ int shmdt(uint64 addr);
 
 // Scheduling system calls
 #define SYS_sched_algorithm 34
+#define SYS_settimeslice  35
+#define SYS_gettimeslice  36
 int sched_algorithm(int algo);
 const char* sched_algorithm_name(int algo);
+int settimeslice(int queue, int ticks);
+int gettimeslice(int queue);
 
 // ulib.c
 int stat(const char *, struct stat *);
