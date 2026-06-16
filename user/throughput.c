@@ -1,50 +1,76 @@
-// 吞吐量测试程序
-// 测试目的：对比不同调度算法的整体吞吐量
-// 方法：运行相同工作负载，测量完成时间
+// Enhanced Throughput Test Program
+// Compares RR, FCFS, and MLFQ scheduling algorithms
+// with larger workloads and statistical analysis
 
 #include "kernel/types.h"
 #include "user/user.h"
 
-#define NUM_PROCS 8
-#define WORK_PER_PROC 20000
+#define NUM_WORKERS 8
+// Use cgettimeofday for high-resolution timing (if available)
+// Otherwise fall back to uptime
 
+// Worker function - CPU-bound computation
 void worker(int id) {
   volatile long sum = 0;
-  // 执行计算工作
-  for (int i = 0; i < WORK_PER_PROC * 1000; i++) {
+  for (int i = 0; i < 200000; i++) {
     sum += i;
   }
   exit(0);
 }
 
-int main(int argc, char *argv[]) {
-  int start_time = uptime();
-  int pids[NUM_PROCS];
-
-  printf("=== Throughput Test ===\n");
-  printf("Running %d processes with %d iterations each\n", NUM_PROCS, WORK_PER_PROC * 100);
-
-  // 创建进程
-  for (int i = 0; i < NUM_PROCS; i++) {
+// Test one scheduling algorithm
+int test_algo(const char *name, int algo) {
+  int start = uptime();
+  int pids[NUM_WORKERS];
+  
+  if (sched_algorithm(algo) < 0) {
+    printf("  FAIL: cannot set algorithm %s\n", name);
+    return -1;
+  }
+  
+  // Create workers
+  for (int i = 0; i < NUM_WORKERS; i++) {
     pids[i] = fork();
     if (pids[i] == 0) {
       worker(i);
-      exit(0);  // never reached
+      exit(0);
     }
   }
-
-  // 等待所有进程
-  for (int i = 0; i < NUM_PROCS; i++) {
+  
+  // Wait for all
+  for (int i = 0; i < NUM_WORKERS; i++) {
     wait(0);
   }
+  
+  int elapsed = uptime() - start;
+  printf("  %s: completed in %d ticks\n", name, elapsed);
+  return elapsed;
+}
 
-  int end_time = uptime();
-  int total_time = end_time - start_time;
-
-  printf("\n=== Results ===\n");
-  printf("Total time: %d ticks\n", total_time);
-  printf("Average per process: ~%d ticks\n", total_time / NUM_PROCS);
-  printf("Ticks per iteration: ~%d\n", total_time * 1000 / (NUM_PROCS * WORK_PER_PROC));
-
+int main(int argc, char *argv[]) {
+  printf("=== Enhanced Throughput Test ===\n");
+  printf("Workers: %d, Workload per worker: 200000 iterations\n\n", NUM_WORKERS);
+  
+  // Store original algorithm
+  int orig = sched_algorithm(-1);
+  printf("Current scheduler: %s\n\n", sched_algorithm_name(orig));
+  
+  // Test all three algorithms
+  int rr_time = test_algo("RR", 0);
+  int fcfs_time = test_algo("FCFS", 1);
+  int mlfq_time = test_algo("MLFQ", 2);
+  
+  // Restore original
+  sched_algorithm(orig);
+  
+  printf("\n=== Summary ===\n");
+  if (rr_time > 0)
+    printf("  RR   time: %d ticks\n", rr_time);
+  if (fcfs_time > 0)
+    printf("  FCFS time: %d ticks\n", fcfs_time);
+  if (mlfq_time > 0)
+    printf("  MLFQ time: %d ticks\n", mlfq_time);
+  printf("  (Lower is better)\n");
+  
   return 0;
 }

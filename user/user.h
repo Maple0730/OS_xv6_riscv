@@ -46,18 +46,36 @@ int sem_get(int sem_id, int *value);
 int sem_close(int sem_id);
 
 // Shared memory system calls
-int shmget(int key, uint64 *addr);
+// shmget: key (>0), size, shmflg (IPC_CREAT=0x200)
+// returns segment id, or -1 on failure
+int shmget(int key, int size, int shmflg);
+// shmat: key (>0), output addr pointer
+// returns 0 on success, -1 on failure
 int shmat(int key, uint64 *addr);
+// shmdt: user virtual address previously returned by shmat
+// returns 0 on success, -1 on failure
 int shmdt(uint64 addr);
 
 // Scheduling system calls
 #define SYS_sched_algorithm 34
 #define SYS_settimeslice  35
 #define SYS_gettimeslice  36
+#define SYS_cgettimeofday 37
+#define SYS_schedstat     38
 int sched_algorithm(int algo);
 const char* sched_algorithm_name(int algo);
 int settimeslice(int queue, int ticks);
 int gettimeslice(int queue);
+unsigned long cgettimeofday(void);
+
+struct sched_stat {
+  int pid;
+  int queue_level;
+  int sched_count;
+  unsigned long wait_time;
+  unsigned long run_time;
+};
+int schedstat(int pid, struct sched_stat *stat);
 
 // ulib.c
 int stat(const char *, struct stat *);

@@ -51,53 +51,57 @@
 
 - `user/waitpidtest.c` - waitpid 功能测试
 
----
-
-## 未完成
-
-### 共享内存机制
-
-| 项目 | 说明 |
-|------|------|
-| **当前状态** | 部分完成 / 临时回退 |
-| **说明** | 已实现 `shmget` / `shmat` / `shmdt` 相关接口与内核框架，但为修复测试页错误，当前 `sys_shm*` 均返回 `-1`，测试程序已改为不依赖共享内存的版本 |
-| **下一步** | 定位 `SHM_BASE` 页表映射 / `kfork` 复制共享页的异常，恢复用户态共享内存 |
-
-### MLFQ 可观测性增强
+### 共享内存机制完善
 
 #### 内核修改
 
-- `kernel/proc.c` - 添加 `[MLFQ]` 日志：
-  - `mlfq_enqueue()` - 进程入队时记录
-  - `mlfq_boost_priority()` - 优先级提升时记录
-  - `mlfq_scheduler()` - 调度选择时记录
-  - `yield()` - 主动让出时降级记录
+- `kernel/shm.h` - 扩展 `struct shm`（新增 forkcount 字段）
+- `kernel/shm.c` - 完整实现 shmget / shmat / shmdt（含引用计数机制）
+- `kernel/proc.c` - kfork 复制共享内存映射；freeproc 递减引用计数
+- `kernel/vm.c` - uvmunmap 保护共享内存页面不被错误释放
+- `kernel/proc.h` - 添加 `shm_shmidx`、`rqnext`/`rqprev`、统计字段
+- `kernel/sysproc.c` - sys_shmget / sys_shmat / sys_shmdt 实现
+- `kernel/syscall.h` - SYS_shmget=29, SYS_shmat=30, SYS_shmdt=31
 
-- `kernel/trap.c` - 添加 `[MLFQ]` 日志：
-  - 时钟中断处理 - 时间片用完降级时记录
+#### 用户态接口
+
+- `user/user.h` - shmget / shmat / shmdt 用户 API（含 IPC_CREAT 宏）
+- `user/usys.pl` - 桩代码
 
 #### 测试程序
 
-- `user/mlfqtest.c` - MLFQ 调度观测测试（已存在）
+- `user/shmtest.c` - 基础测试 / 父子通信测试 / fork 继承测试
 
----
+### MLFQ 五级队列与调度统计
 
-## 未完成
+#### 内核修改
 
-### 共享内存机制
+- `kernel/param.h` - MLFQ_LEVELS=5，新增 Q3/Q4 时间片常量
+- `kernel/proc.c` - 5级MLFQ调度器（进程表扫描）、mlfq_boost_priority、调度统计收集
+- `kernel/proc.h` - wait_time/run_time/sched_count（统计字段）
+- `kernel/sysproc.c` - sys_schedstat 实现（SYS_schedstat=38）
 
-| 项目 | 说明 |
-|------|------|
-| **当前状态** | 部分完成 / 临时回退 |
-| **说明** | 已实现 `shmget` / `shmat` / `shmdt` 相关接口与内核框架，但为修复测试页错误，当前 `sys_shm*` 均返回 `-1`，测试程序已改为不依赖共享内存的版本 |
-| **下一步** | 定位 `SHM_BASE` 页表映射 / `kfork` 复制共享页的异常，恢复用户态共享内存 |
+#### 测试程序
 
-### 性能评测增强
+- `user/schedstat.c` - 调度统计查看程序
+- `user/schedlatency.c` - 调度延迟测试程序
 
-| 项目 | 说明 |
-|------|------|
-| **当前状态** | 未完成 |
-| **说明** | `throughput` 仍分辨率不足，难以做严格横向比较 |
+### 高精度计时器
+
+#### 内核修改
+
+- `kernel/sysproc.c` - sys_cgettimeofday() 实现（SYS_cgettimeofday=37）
+
+#### 测试程序
+
+- `user/cgettime.c` - 微秒级计时器测试程序
+
+### 性能测试增强
+
+#### 测试程序
+
+- `user/throughput.c` - 重写，三算法对比（RR/FCFS/MLFQ）
+- `user/schedlatency.c` - 调度延迟测试（新增）
 
 ---
 
@@ -114,12 +118,18 @@ make qemu
 ### 在 xv6 shell 中运行测试
 
 ```bash
-semtest1    # 基本信号量测试
-semtest2    # 互斥锁测试
-semtest3    # 生产者-消费者测试
+shmtest    # 共享内存测试
+semtest1   # 基本信号量测试
+semtest2   # 互斥锁测试
+semtest3   # 生产者-消费者测试
 waitpidtest # waitpid 系统调用测试
-mlfqtest    # MLFQ 调度观测测试
-ps          # 查看进程状态
+mlfqtest   # MLFQ 调度观测测试
+schedtest  # 调度算法切换测试
+schedstat  # 调度统计查看
+cgettime   # 高精度计时器测试
+throughput # 吞吐量对比测试
+schedlatency # 调度延迟测试
+ps         # 查看进程状态
 ```
 
 ---
@@ -130,3 +140,4 @@ ps          # 查看进程状态
 - 已完成任务：`docx/tfc/Done.md`
 - 信号量实现详情：见 `kernel/sem.c`
 - waitpid 实现详情：见 `kernel/proc.c`
+- 共享内存实现详情：见 `kernel/shm.c`

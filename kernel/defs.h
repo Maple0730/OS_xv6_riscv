@@ -87,6 +87,8 @@ void            printfinit(void);
 
 // proc.c
 int             cpuid(void);
+int             cgettimeofday(void);
+int             schedstat(int, uint64);
 void            kexit(int);
 int             kfork(void);
 int             growproc(int);
@@ -146,16 +148,10 @@ int             sem_close(int);
 
 // shm.c
 void            shminit(void);
+int             shmget(int, uint64, int);
+int             shmat(int, uint64 *);
+int             shmdt(uint64);
 int             is_shm_pa(uint64);
-
-struct shm {
-  char *addr;
-  uint64 phys_addr;
-  int refcount;
-  int key;
-};
-#define NSHM 16
-extern struct shm shm_table[NSHM];
 
 // string.c
 int             memcmp(const void*, const void*, uint);

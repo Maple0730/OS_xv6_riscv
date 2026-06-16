@@ -72,6 +72,8 @@ procinit(void)
   timeslice_table[0] = MLFQ_Q0_TIME;
   timeslice_table[1] = MLFQ_Q1_TIME;
   timeslice_table[2] = MLFQ_Q2_TIME;
+  timeslice_table[3] = MLFQ_Q3_TIME;
+  timeslice_table[4] = MLFQ_Q4_TIME;
   rr_fcfs_timeslice = TICKSLICE;
   for (int i = 0; i < NWCHAN; i++) {
     initlock(&waittable[i].lock, "waitbucket");
@@ -91,6 +93,10 @@ procinit(void)
     p->timeslice_used = 0;
     p->last_sched = 0;
     p->priority = DEFAULT_PRIORITY;
+    p->shm_shmidx = -1;
+    p->wait_time = 0;
+    p->run_time = 0;
+    p->sched_count = 0;
   }
 }
 
@@ -253,6 +259,13 @@ freeproc(struct proc *p, int wait_lock_held)
   if (p->trapframe)
     kfree((void *)p->trapframe);
   p->trapframe = 0;
+
+  // Release shared memory mapping if this process has one.
+  // We do NOT decrement refcount or call kfree here.
+  // shmdt() is the ONLY place that manages refcount and frees pages.
+  // This prevents double-free: freeproc never tries to kfree a shm page.
+  p->shm_shmidx = -1;
+
   if (p->pagetable)
     proc_freepagetable(p->pagetable, p->sz);
   p->pagetable = 0;
@@ -275,6 +288,10 @@ freeproc(struct proc *p, int wait_lock_held)
   p->timeslice_used = 0;
   p->last_sched = 0;
   p->priority = DEFAULT_PRIORITY;
+  p->shm_shmidx = -1;
+  p->wait_time = 0;
+  p->run_time = 0;
+  p->sched_count = 0;
 }
 
 // Create a user page table for a given process, with no user memory,
@@ -381,6 +398,30 @@ kfork(void)
     return -1;
   }
   np->sz = p->sz;
+
+  // Copy shared memory mappings from parent to child.
+  // If parent has a shared memory page at SHM_BASE, map the same
+  // physical page in the child (without copying data -- same page shared).
+  // Also increment refcount to track the child's reference.
+  pte_t *parent_pte = walk(p->pagetable, SHM_BASE, 0);
+  if (parent_pte != 0 && (*parent_pte & PTE_V)) {
+    uint64 pa = PTE2PA(*parent_pte);
+    uint64 flags = PTE_FLAGS(*parent_pte);
+    if (mappages(np->pagetable, SHM_BASE, SHM_SIZE, pa, flags) != 0) {
+      freeproc(np, 0);
+      release(&np->lock);
+      return -1;
+    }
+    // Increment refcount for the child's reference
+    acquire(&shm_lock);
+    for (int si = 0; si < NSHM; si++) {
+      if (shm_table[si].allocated && shm_table[si].phys_addr == pa) {
+        shm_table[si].refcount++;
+        break;
+      }
+    }
+    release(&shm_lock);
+  }
 
   // copy saved user registers.
   *(np->trapframe) = *(p->trapframe);
@@ -725,25 +766,17 @@ get_rr_fcfs_timeslice(void)
   return rr_fcfs_timeslice;
 }
 
-void
-mlfq_enqueue(struct proc *p)
-{
-#if MLFQ_DEBUG
-  // MLFQ: 进程入队时记录
-  printf("[MLFQ] enqueue: pid=%d to queue=%d\n", p->pid, p->queue_level);
-#endif
-}
-
 static void
 mlfq_boost_priority(void)
 {
   struct proc *p;
 
+  // Note: we do NOT touch mlfq_lock here.
+  // mlfq_enqueue/remove are informational only (not used for scheduling).
   for (p = proc; p < &proc[NPROC]; p++) {
     acquire(&p->lock);
     if (p->state == RUNNABLE || p->state == RUNNING) {
 #if MLFQ_DEBUG
-      // MLFQ: 优先级提升时记录
       printf("[MLFQ] boost: pid=%d from queue=%d to queue=0\n",
              p->pid, p->queue_level);
 #endif
@@ -777,6 +810,8 @@ mlfq_scheduler(void)
     best_level = MLFQ_LEVELS;
     best_ctime = (uint64)-1;
 
+    // Scan proc table for the highest-priority RUNNABLE process.
+    // (mlfq_enqueue/remove are not used for scheduling -- purely informational)
     for (p = proc; p < &proc[NPROC]; p++) {
       acquire(&p->lock);
       if (p->state == RUNNABLE &&
@@ -793,12 +828,16 @@ mlfq_scheduler(void)
       acquire(&best->lock);
       if (best->state == RUNNABLE) {
 #if MLFQ_DEBUG
-        // MLFQ: 选择下一个进程时记录
         printf("[MLFQ] schedule: pid=%d from queue=%d\n",
                best->pid, best->queue_level);
 #endif
+        uint64 now = ticks;
+        if (best->last_sched != 0)
+          best->wait_time += now - best->last_sched;
+        best->sched_count++;
         best->state = RUNNING;
-        best->last_sched = ticks;
+        best->last_sched = now;
+        best->timeslice_used = 0;
         c->proc = best;
         swtch(&c->context, &best->context);
         c->proc = 0;

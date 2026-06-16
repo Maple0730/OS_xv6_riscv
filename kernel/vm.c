@@ -200,7 +200,9 @@ uvmunmap(pagetable_t pagetable, uint64 va, uint64 npages, int do_free)
       continue;
     if (do_free) {
       uint64 pa = PTE2PA(*pte);
-      kfree((void *)pa);
+      // Do not free shared memory pages -- they are managed by shm subsystem
+      if (!is_shm_pa(pa))
+        kfree((void *)pa);
     }
     *pte = 0;
   }

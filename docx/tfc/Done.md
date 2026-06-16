@@ -820,7 +820,7 @@ PASSED: waitpid(9999, &status) correctly returned -1 (no such child)
 
 | 位置 | 日志格式 | 触发条件 |
 |------|----------|----------|
-| `mlfq_enqueue()` | `[MLFQ] enqueue: pid=X to queue=Y` | 进程加入调度队列 |
+| `mlfq_boost_priority()` | `[MLFQ] boost: pid=X from queue=Y to queue=0` | 优先级提升（所有进程重置到 Q0） |
 | `mlfq_boost_priority()` | `[MLFQ] boost: pid=X from queue=Y to queue=0` | 优先级提升（周期性） |
 | `mlfq_scheduler()` | `[MLFQ] schedule: pid=X from queue=Y` | 进程被调度执行 |
 | `yield()` | `[MLFQ] demote(yield): pid=X from queue=Y to queue=Z` | 主动让出时降级 |
@@ -1376,3 +1376,207 @@ void reparent(struct proc *p)
 ### 9. 实现日期
 
 2026年6月13日
+
+---
+
+## 共享内存机制完善
+
+### 实现概述
+
+共享内存（shmget/shmat/shmdt）原为 stub 实现（直接返回 -1）。本次完善实现了完整功能，支持父子进程间通过共享内存页面通信。
+
+### 1. 核心数据结构（kernel/shm.h）
+
+```c
+#define NSHM      16       // 最大共享内存段数
+#define SHM_BASE  0x3FEFE000  // 用户态映射地址
+#define SHM_SIZE  0x1000   // 每段一页（4096字节）
+
+struct shm {
+  char name[32];          // 名称
+  uint64 phys_addr;       // 物理页地址
+  int refcount;           // shmat 引用计数
+  int forkcount;          // kfork 继承计数
+  int allocated;           // 是否已分配
+  int key;                // 用户可见 key
+};
+```
+
+### 2. 系统调用
+
+| 编号 | 调用 | 描述 |
+|------|------|------|
+| 29 | `shmget(key, size, shmflg)` | 创建/获取共享内存段，返回段 ID |
+| 30 | `shmat(key, &addr)` | 将段映射到当前进程，返回用户态地址 |
+| 31 | `shmdt(addr)` | 解除映射 |
+
+### 3. 引用计数机制
+
+共享页面通过单一 `refcount` 管理生命周期：
+- `refcount`：记录调用 `shmat` 的进程数
+- 页面释放条件：`refcount <= 0`（最后一个进程显式调用 `shmdt` 或进程退出时）
+
+### 4. 关键实现
+
+**kfork 复制共享内存映射**（kernel/proc.c）：
+- 遍历 `SHM_BASE` 的 PTE，若父进程已映射，则在子进程页表中建立指向**同一物理页**的映射
+- fork 后两进程共享同一物理页，`refcount` 不变
+
+**shmat 增加引用计数**（kernel/shm.c）：
+- 每次调用 `shmat` 时 `refcount++`，在持有 `shm_lock` 的情况下进行
+
+**shmdt 减少引用计数**（kernel/shm.c）：
+- 验证 `SHM_BASE` 在当前进程的页表中已映射
+- 递减 `refcount`，若 `refcount <= 0` 则释放物理页
+- 解映射页表（`uvmunmap`），跳过 `kfree`（由 shmdt 负责）
+
+**freeproc 保护共享页**（kernel/vm.c）：
+- `uvmunmap` 的 `do_free=1` 时，检查物理地址是否为 shm 页面，若是则跳过 `kfree()`
+
+### 5. 关键文件
+
+| 文件 | 功能 |
+|------|------|
+| `kernel/shm.h` | 数据结构定义 |
+| `kernel/shm.c` | shmget/shmat/shmdt 核心实现 |
+| `kernel/proc.c` | kfork 复制映射、freeproc 释放 |
+| `kernel/vm.c` | uvmunmap 保护 shm 页面 |
+| `kernel/proc.h` | shm_shmidx 字段、shm_lock/shm_table extern |
+| `kernel/defs.h` | 函数声明 |
+| `kernel/sysproc.c` | 系统调用入口 |
+| `kernel/syscall.h` | SYS_shmget=29, SYS_shmat=30, SYS_shmdt=31 |
+| `user/user.h` | 用户 API |
+| `user/shmtest.c` | 测试程序 |
+
+---
+
+## 高精度计时器
+
+### 实现概述
+
+`uptime()` 仅提供 tick 级分辨率（~10ms）。新增 `cgettimeofday()` 系统调用，直接读取 RISC-V `time` CSR（mtime），返回原始周期计数（QEMU 中约 10MHz），可用于微秒级精度计时。
+
+### 系统调用
+
+| 编号 | 调用 | 描述 |
+|------|------|------|
+| 37 | `cgettimeofday()` | 返回 mtime CSR 的 64 位原始周期计数 |
+
+### 实现要点
+
+- 利用 `kernel/riscv.h` 中已有的 `r_time()` 内联函数
+- 内核态直接返回，无需转换（用户态自行除以 CLOCK_HZ 得到微秒）
+- 不需要校准，依赖 QEMU 平台的 CLINT 时钟频率
+
+### 关键文件
+
+| 文件 | 功能 |
+|------|------|
+| `kernel/syscall.h` | SYS_cgettimeofday=37 |
+| `kernel/syscall.c` | 系统调用数组 |
+| `kernel/sysproc.c` | `sys_cgettimeofday()` 实现 |
+| `kernel/defs.h` | 函数声明 |
+| `user/usys.pl` | 桩代码 |
+| `user/user.h` | 用户 API |
+| `user/cgettime.c` | 测试程序 |
+
+---
+
+## MLFQ 五级队列与调度统计
+
+### 扩展概述
+
+将 MLFQ 调度器从 3 级扩展到 5 级队列，并实现调度统计收集。
+
+### 1. 队列参数变化（kernel/param.h）
+
+| 队列 | 优先级 | 时间片（tick ≈ 10ms） | 约等于 |
+|------|--------|------------------------|--------|
+| Q0 | 最高 | 1 | ~10ms |
+| Q1 | 高 | 2 | ~20ms |
+| Q2 | 中 | 4 | ~40ms |
+| Q3 | 低 | 8 | ~80ms |
+| Q4 | 最低 | 15 | ~150ms |
+
+### 2. 调度器实现
+
+`mlfq_scheduler()` 采用进程表扫描方式选择最高优先级进程：
+
+```c
+// Scan proc table for the highest-priority RUNNABLE process.
+for (p = proc; p < &proc[NPROC]; p++) {
+  acquire(&p->lock);
+  if (p->state == RUNNABLE &&
+      (p->queue_level < best_level ||
+       (p->queue_level == best_level && p->ctime < best_ctime))) {
+    best = p;
+    best_level = p->queue_level;
+    best_ctime = p->ctime;
+  }
+  release(&p->lock);
+}
+```
+
+进程表扫描避免了对 `mlfq_lock` 的依赖，消除了 SMP 环境下的潜在死锁风险。
+
+### 3. 调度统计收集
+
+在 `struct proc` 中新增字段：
+
+```c
+uint64 wait_time;   // 累计等待时间（tick）
+uint64 run_time;   // 累计运行时间（tick）
+int sched_count;    // 被调度次数
+```
+
+在 `mlfq_scheduler()` 调度时刻记录 `wait_time += now - p->last_sched`。
+
+### 4. schedstat 系统调用
+
+| 编号 | 调用 | 描述 |
+|------|------|------|
+| 38 | `schedstat(pid, &stats)` | 查询进程的调度统计 |
+
+返回字段：`pid`, `queue_level`, `sched_count`, `wait_time`, `run_time`。
+
+### 5. 关键文件
+
+| 文件 | 功能 |
+|------|------|
+| `kernel/param.h` | MLFQ_LEVELS=5, Q0-Q4 时间片常量 |
+| `kernel/proc.c` | 5级MLFQ调度器、统计收集、优先级提升 |
+| `kernel/proc.h` | wait_time/run_time/sched_count 字段 |
+| `kernel/trap.c` | 时钟中断 MLFQ 逻辑（自动适配 5 级） |
+| `kernel/sysproc.c` | sys_schedstat() 实现 |
+| `kernel/syscall.h` | SYS_schedstat=38 |
+| `user/schedstat.c` | 调度统计查看程序 |
+| `user/schedlatency.c` | 调度延迟测试程序 |
+
+---
+
+## 性能测试程序增强
+
+### 1. throughput.c（重写）
+
+增强后的吞吐量测试程序：
+- 8 个 worker 进程，每个执行 200,000 次循环
+- 依次测试 RR/FCFS/MLFQ 三种调度算法
+- 自动切换并汇总对比结果
+
+### 2. schedlatency.c（新）
+
+调度延迟测试程序：
+- 创建 8 个 worker，按 5 tick 间隔依次创建
+- 观察各 worker 的启动延迟
+- 评估调度器响应性
+
+### 3. cgettime.c（新）
+
+高精度计时器测试程序：
+- 对比 `cgettimeofday()` 与 `uptime()`
+- 展示微秒转换（cycle / CLOCK_HZ）
+- 10 次 busy-loop 迭代测量，输出 min/max/avg
+
+---
+
+**最后更新**：2026年6月15日

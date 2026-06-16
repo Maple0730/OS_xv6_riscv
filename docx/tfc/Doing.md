@@ -150,17 +150,25 @@ flowchart TD
 
 #### 4.1 调度算法切换机制
 
-通过 `kernel/param.h` 中的宏选择：
+实际实现使用运行时切换（无需重新编译）：
 
 ```c
-#define SCHED_RR      0  // 时间片轮转（默认）
-#define SCHED_FCFS    1  // 先来先服务
-#define SCHED_MLFQ    2  // 多级反馈队列
+// kernel/proc.c
+volatile int current_scheduler = SCHED_MLFQ;  // 默认 MLFQ
 
-#ifndef SCHED_ALGORITHM
-#define SCHED_ALGORITHM SCHED_RR  // 默认使用 RR
-#endif
+void scheduler(void) {
+  int algo = current_scheduler;
+  if (algo == SCHED_FCFS) {
+    fcfs_scheduler();
+  } else if (algo == SCHED_MLFQ) {
+    mlfq_scheduler();
+  } else {
+    rr_scheduler();
+  }
+}
 ```
+
+可通过 `sys_sched_algorithm(int algo)` 系统调用（#34）动态切换。
 
 #### 4.2 MLFQ 优先级提升机制
 
@@ -223,24 +231,31 @@ if (which_dev == 2) {
 ### 6. 实现计划
 
 #### Phase 1: FCFS 调度器
-- [ ] 修改 `kernel/proc.h` - 添加 `ctime` 字段
-- [ ] 修改 `kernel/proc.c` - 实现 `fcfs_scheduler()`
-- [ ] 修改 `kernel/param.h` - 添加调度算法宏
-- [ ] 编写 `user/test_fcfs.c`
+- [x] 修改 `kernel/proc.h` - 添加 `ctime` 字段
+- [x] 修改 `kernel/proc.c` - 实现 `fcfs_scheduler()`
+- [x] 修改 `kernel/param.h` - 添加调度算法宏
+- [x] 编写 `user/fcfstest.c`
 
 #### Phase 2: MLFQ 调度器基础
-- [ ] 修改 `kernel/proc.h` - 添加队列字段
-- [ ] 修改 `kernel/proc.c` - 实现 MLFQ 队列管理
-- [ ] 修改 `kernel/trap.c` - 时间片用完处理
-- [ ] 编写 `user/test_mlfq.c`
+- [x] 修改 `kernel/proc.h` - 添加队列字段
+- [x] 修改 `kernel/proc.c` - 实现 MLFQ 队列管理
+- [x] 修改 `kernel/trap.c` - 时间片用完处理
+- [x] 编写 `user/mlfqtest.c`
 
 #### Phase 3: MLFQ 优化
-- [ ] 实现优先级提升机制
-- [ ] 完善测试框架
+- [x] 实现优先级提升机制
+- [x] 完善测试框架
+- [x] 运行时调度器切换（syscall #34）
+- [x] 动态时间片调节（syscall #35-36）
+- [x] 五级队列扩展（MLFQ_LEVELS=5）
+- [x] 独立运行队列（mlfq_enqueue/remove）
+- [x] 调度统计收集（wait_time/run_time/sched_count）
 
 #### Phase 4: 完整测试
-- [ ] 性能测试套件
-- [ ] 边界条件测试
+- [x] 性能测试套件（schedtest, throughput）
+- [x] 调度统计接口（schedstat syscall #38）
+- [x] 调度延迟测试（schedlatency.c）
+- [x] 高精度计时器（cgettimeofday syscall #37）
 
 ### 7. 风险与注意事项
 
@@ -259,7 +274,7 @@ if (which_dev == 2) {
 - [x] 数据结构设计
 - [x] 调度器架构设计
 - [x] 测试方案设计
-- [ ] 实现 Phase 1
-- [ ] 实现 Phase 2
-- [ ] 实现 Phase 3
-- [ ] 实现 Phase 4
+- [x] 实现 Phase 1：FCFS 调度器
+- [x] 实现 Phase 2：MLFQ 调度器基础
+- [x] 实现 Phase 3：MLFQ 优化（运行时切换、5级队列、独立运行队列）
+- [x] 实现 Phase 4：完整测试（schedtest、schedstat、throughput、schedlatency）

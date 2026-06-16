@@ -117,6 +117,8 @@ extern uint64 sys_waitpid(void);
 extern uint64 sys_sched_algorithm(void);
 extern uint64 sys_settimeslice(void);
 extern uint64 sys_gettimeslice(void);
+extern uint64 sys_cgettimeofday(void);
+extern uint64 sys_schedstat(void);
 
 // An array mapping syscall numbers from syscall.h
 // to the function that handles the system call.
@@ -158,6 +160,8 @@ static uint64 (*syscalls[])(void) = {
   [SYS_sched_algorithm] sys_sched_algorithm,
   [SYS_settimeslice]   sys_settimeslice,
   [SYS_gettimeslice]   sys_gettimeslice,
+  [SYS_cgettimeofday]  sys_cgettimeofday,
+  [SYS_schedstat]      sys_schedstat,
   // clang-format on
 };
 

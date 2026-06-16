@@ -187,7 +187,11 @@ UPROGS=\
 	$(BU)/_semtest3\
 	$(BU)/_waitpidtest\
 	$(BU)/_schedtest\
-	$(BU)/_timeslicetest
+	$(BU)/_shmtest\
+	$(BU)/_timeslicetest\
+	$(BU)/_cgettime\
+	$(BU)/_schedstat\
+	$(BU)/_schedlatency
 
 $(FSIMG): $(BM)/mkfs README $(UPROGS) | $(B)
 	$(BM)/mkfs $@ README $(UPROGS)

@@ -57,3 +57,5 @@ entry("shmdt");
 entry("sched_algorithm");
 entry("settimeslice");
 entry("gettimeslice");
+entry("cgettimeofday");
+entry("schedstat");

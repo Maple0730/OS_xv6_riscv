@@ -1,4 +1,6 @@
 // Saved registers for kernel context switches.
+#include "shm.h"
+
 struct context {
   uint64 ra;
   uint64 sp;
@@ -128,6 +130,14 @@ struct proc {
   int timeslice_used;           // 本时间片已用 tick 数
   uint64 last_sched;           // 上次被调度的时间（ticks）
   int priority;                 // 进程优先级 (0-10, 0最高)
+
+  // 共享内存相关字段
+  int shm_shmidx;              // 该进程当前映射的共享内存段索引（shm_table 中的下标），-1 表示未映射
+
+  // 调度统计字段（仅 MLFQ 模式有意义）
+  uint64 wait_time;          // 累计等待时间（从 RUNNABLE 到被调度的 tick 数）
+  uint64 run_time;           // 累计运行时间（当前时间片已运行的 tick 数）
+  int sched_count;           // 被调度次数
 };
 
 // Runtime scheduler switching - global variables declared in proc.c
@@ -139,3 +149,9 @@ extern const char *sched_algo_name(int algo);
 extern uint64 timeslice_table[MLFQ_LEVELS];
 extern uint64 rr_fcfs_timeslice;
 extern struct spinlock timeslice_lock;
+
+// Shared memory - declared in shm.c, used by proc.c
+struct shm;
+extern struct shm shm_table[NSHM];
+extern struct spinlock shm_lock;
+extern struct proc proc[NPROC];

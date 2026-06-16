@@ -26,12 +26,14 @@
 #define SCHED_ALGORITHM SCHED_MLFQ
 #endif
 
-// MLFQ 调度参数
-#define MLFQ_LEVELS      3       // 队列层数 (0=最高, 1=中, 2=最低)
-#define MLFQ_Q0_TIME     500000  // Queue 0 时间片（5ms, 500000 ticks）
-#define MLFQ_Q1_TIME     1000000 // Queue 1 时间片（10ms）
-#define MLFQ_Q2_TIME     2000000 // Queue 2 时间片（20ms）
-#define MLFQ_BOOST_TICKS 200     // 每 200 ticks 提升一次优先级（防止饥饿）
+// MLFQ 调度参数（单位：tick ≈ 10ms）
+#define MLFQ_LEVELS      5       // 队列层数 (0=最高, 1=2, 2=3, 3=4, 4=最低)
+#define MLFQ_Q0_TIME     1       // Queue 0 时间片（1 tick ≈ 10ms, 最高优先级）
+#define MLFQ_Q1_TIME     2       // Queue 1 时间片（2 ticks ≈ 20ms）
+#define MLFQ_Q2_TIME     4       // Queue 2 时间片（4 ticks ≈ 40ms）
+#define MLFQ_Q3_TIME     8       // Queue 3 时间片（8 ticks ≈ 80ms）
+#define MLFQ_Q4_TIME     15      // Queue 4 时间片（15 ticks ≈ 150ms, 最低优先级）
+#define MLFQ_BOOST_TICKS 100     // 每 100 ticks 提升一次优先级（防止饥饿）
 
 // MLFQ 调试开关：设置为 1 启用 [MLFQ] 日志输出，设置为 0 关闭
 #ifndef MLFQ_DEBUG

@@ -7,6 +7,8 @@
 #include "proc.h"
 #include "vm.h"
 
+extern struct proc proc[];
+
 uint64
 sys_exit(void)
 {
@@ -201,22 +203,39 @@ sys_sem_close(void)
 uint64
 sys_shmdt(void)
 {
-  // Shared memory disabled
-  return -1;
+  uint64 addr;
+  argaddr(0, &addr);
+  return shmdt(addr);
 }
 
 uint64
 sys_shmget(void)
 {
-  // Shared memory disabled
-  return -1;
+  int key, size, shmflg;
+  argint(0, &key);
+  argint(1, &size);
+  argint(2, &shmflg);
+  return shmget(key, size, shmflg);
 }
 
 uint64
 sys_shmat(void)
 {
-  // Shared memory disabled
-  return -1;
+  int key;
+  uint64 addr;
+  argint(0, &key);
+  argaddr(1, &addr);
+
+  uint64 shm_addr;
+  int ret = shmat(key, &shm_addr);
+  if (ret < 0)
+    return -1;
+
+  struct proc *p = myproc();
+  if (copyout(p->pagetable, addr, (char *)&shm_addr, sizeof(shm_addr)) < 0)
+    return -1;
+
+  return 0;
 }
 
 // Change scheduling algorithm at runtime
@@ -253,7 +272,7 @@ get_sched_algorithm(void)
 }
 
 // settimeslice - set timeslice for a specific queue or RR/FCFS
-// queue: -1=RR/FCFS, 0=MLFQ_Q0, 1=MLFQ_Q1, 2=MLFQ_Q2
+// queue: -1=RR/FCFS, 0=MLFQ_Q0, 1=MLFQ_Q1, 2=MLFQ_Q2, 3=MLFQ_Q3, 4=MLFQ_Q4
 // ticks: new timeslice in ticks
 // returns 0 on success, -1 on error
 uint64
@@ -279,7 +298,7 @@ sys_settimeslice(void)
 }
 
 // gettimeslice - get current timeslice for a specific queue or RR/FCFS
-// queue: -1=RR/FCFS, 0=MLFQ_Q0, 1=MLFQ_Q1, 2=MLFQ_Q2
+// queue: -1=RR/FCFS, 0=MLFQ_Q0, 1=MLFQ_Q1, 2=MLFQ_Q2, 3=MLFQ_Q3, 4=MLFQ_Q4
 // returns timeslice in ticks, -1 on error
 uint64
 sys_gettimeslice(void)
@@ -291,4 +310,60 @@ sys_gettimeslice(void)
   if (queue >= 0 && queue < MLFQ_LEVELS)
     return timeslice_table[queue];
   return -1;
+}
+
+uint64
+sys_cgettimeofday(void)
+{
+  return r_time();
+}
+
+// schedstat - return scheduling statistics for a process
+// arg0: pid of process to query (0 = current process)
+// arg1: user address to write stats struct
+// returns 0 on success, -1 on failure
+uint64
+sys_schedstat(void)
+{
+  int pid;
+  uint64 addr;
+  argint(0, &pid);
+  argaddr(1, &addr);
+
+  struct proc *target;
+  if (pid == 0) {
+    target = myproc();
+  } else {
+    target = 0;
+    for (int i = 0; i < NPROC; i++) {
+      if (proc[i].pid == pid) {
+        target = &proc[i];
+        break;
+      }
+    }
+  }
+
+  if (target == 0)
+    return -1;
+
+  struct {
+    int pid;
+    int queue_level;
+    int sched_count;
+    uint64 wait_time;
+    uint64 run_time;
+  } stats;
+
+  acquire(&target->lock);
+  stats.pid = target->pid;
+  stats.queue_level = target->queue_level;
+  stats.sched_count = target->sched_count;
+  stats.wait_time = target->wait_time;
+  stats.run_time = target->run_time;
+  release(&target->lock);
+
+  if (copyout(myproc()->pagetable, addr, (char *)&stats, sizeof(stats)) < 0)
+    return -1;
+
+  return 0;
 }

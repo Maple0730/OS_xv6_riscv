@@ -35,3 +35,5 @@
 #define SYS_sched_algorithm 34
 #define SYS_settimeslice   35
 #define SYS_gettimeslice   36
+#define SYS_cgettimeofday  37
+#define SYS_schedstat      38

@@ -180,3 +180,13 @@ gettimeslice:
  li a7, SYS_gettimeslice
  ecall
  ret
+.global cgettimeofday
+cgettimeofday:
+ li a7, SYS_cgettimeofday
+ ecall
+ ret
+.global schedstat
+schedstat:
+ li a7, SYS_schedstat
+ ecall
+ ret
