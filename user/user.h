@@ -62,11 +62,42 @@ int shmdt(uint64 addr);
 #define SYS_gettimeslice  36
 #define SYS_cgettimeofday 37
 #define SYS_schedstat     38
+#define SYS_sched_setburst 39
 int sched_algorithm(int algo);
 const char* sched_algorithm_name(int algo);
 int settimeslice(int queue, int ticks);
 int gettimeslice(int queue);
 unsigned long cgettimeofday(void);
+int sched_setburst(int pid, int est);
+
+// Banker's algorithm system calls (Phase B3)
+#define NRES_B   8
+#define NPROC_B  16
+int banker_init(int nres, int *avail);
+int banker_setmax(int pid, int *max);
+int banker_setmax_alloc(int pid, int *max, int *alloc);
+int banker_request(int pid, int *req);
+int banker_release(int pid, int *rel);
+int banker_safe_sequence(int *out_seq);
+int banker_get_state(void *out_state);
+
+// Monitor system calls (Phase C1)
+int mon_create(void);
+int mon_lock(int mid);
+int mon_unlock(int mid);
+int mon_wait(int mid, int cvid);
+int mon_signal(int mid, int cvid);
+int mon_broadcast(int mid, int cvid);
+int deadlock_set(int on);  // Phase B4: enable/disable detector
+int setpriority(int pid, int prio);  // Phase A2: set static priority
+int getpriority(int pid);            // Phase A2: get static priority
+int rt_register(int period, int cost);  // Phase F1: register RT task
+int rt_wait_period(void);              // Phase F1: wait for next period
+int getcpuid(void);                    // Phase E1: current CPU id
+int setcpuaffinity(int pid, int cpuid); // Phase E1: pin process to a CPU
+int msgget(int key, int size);          // Phase D2: get/create message queue
+int msgsnd(int qid, char *buf, int len); // Phase D2: send message
+int msgrcv(int qid, char *buf, int len); // Phase D2: receive message
 
 struct sched_stat {
   int pid;

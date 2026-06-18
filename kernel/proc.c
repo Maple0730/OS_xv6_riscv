@@ -93,6 +93,8 @@ procinit(void)
     p->timeslice_used = 0;
     p->last_sched = 0;
     p->priority = DEFAULT_PRIORITY;
+    p->orig_priority = DEFAULT_PRIORITY;  // D1
+    p->boost_count = 0;                   // D1
     p->shm_shmidx = -1;
     p->wait_time = 0;
     p->run_time = 0;
@@ -205,6 +207,10 @@ found:
   p->timeslice_used = 0;
   p->last_sched = 0;
   p->priority = DEFAULT_PRIORITY;
+  p->orig_priority = DEFAULT_PRIORITY;  // D1
+  p->boost_count = 0;                   // D1
+  p->cpu_affinity = -1;                 // E1: no CPU preference
+  p->est_burst = SJF_DEFAULT_BURST;  // SJF: 默认 burst
   p->cnext = 0;
   p->cprev = 0;
   p->child_count = 0;
@@ -264,6 +270,22 @@ freeproc(struct proc *p, int wait_lock_held)
   // We do NOT decrement refcount or call kfree here.
   // shmdt() is the ONLY place that manages refcount and frees pages.
   // This prevents double-free: freeproc never tries to kfree a shm page.
+  //
+  // However we DO need to unmap the shm page from the page table
+  // before proc_freepagetable -> freewalk, otherwise freewalk will
+  // see a valid leaf PTE that points at a shared page and panic
+  // with "freewalk: leaf".  We unmap here (without freeing the
+  // underlying physical page — the refcount will be decremented
+  // by the last shmdt() call when the surviving process exits).
+  if (p->pagetable) {
+    pte_t *shm_pte = walk(p->pagetable, SHM_BASE, 0);
+    if (shm_pte != 0 && (*shm_pte & PTE_V)) {
+      // Unmap the page without freeing it (do_free=0) and
+      // without walking past it.  This zeroes the PTE so
+      // freewalk won't see a leaf.
+      *shm_pte = 0;
+    }
+  }
   p->shm_shmidx = -1;
 
   if (p->pagetable)
@@ -288,6 +310,7 @@ freeproc(struct proc *p, int wait_lock_held)
   p->timeslice_used = 0;
   p->last_sched = 0;
   p->priority = DEFAULT_PRIORITY;
+  p->est_burst = SJF_DEFAULT_BURST;
   p->shm_shmidx = -1;
   p->wait_time = 0;
   p->run_time = 0;
@@ -465,32 +488,35 @@ kfork(void)
 void
 reparent(struct proc *p)
 {
-  struct proc *child = p->cnext;
-  while (child) {
-    struct proc *next = child->cnext;
-    child->parent = initproc;
-    // Detach from p's list
-    if (child->cprev == p) {
-      // child is the head of p's child list
-      if (p->cnext == child)
-        p->cnext = next;
-    } else {
-      // shouldn't happen in normal flow, but be safe
-      if (child->cprev)
-        child->cprev->cnext = next;
+  // We must find p's actual children, not p's siblings.
+  // The cnext field on p is overloaded in this kernel to
+  // mean "p's next sibling among parent's children" (used
+  // by fork and freeproc) — NOT p's own children.  Walking
+  // p->cnext would erroneously re-parent p's siblings.
+  // Instead, scan the full proc table for processes whose
+  // parent is p.  This is O(N) but only happens at exit
+  // time and there are at most NPROC=64 entries.
+  for (struct proc *q = proc; q < &proc[NPROC]; q++) {
+    if (q->parent == p && q->state != UNUSED) {
+      // Detach from p's sibling/child list
+      if (q->cprev)
+        q->cprev->cnext = q->cnext;
+      else if (q == p->cnext)
+        p->cnext = q->cnext;
+      if (q->cnext)
+        q->cnext->cprev = q->cprev;
+      q->cprev = 0;
+      q->cnext = 0;
+
+      // Attach to initproc's list
+      q->parent = initproc;
+      q->cnext = initproc->cnext;
+      if (initproc->cnext)
+        initproc->cnext->cprev = q;
+      initproc->cnext = q;
+      initproc->child_count++;
+      wakeup(initproc);
     }
-    if (next)
-      next->cprev = 0;
-    child->cprev = 0;
-    child->cnext = 0;
-    // Attach to initproc's child list
-    child->cnext = initproc->cnext;
-    if (initproc->cnext)
-      initproc->cnext->cprev = child;
-    initproc->cnext = child;
-    initproc->child_count++;
-    wakeup(initproc);
-    child = next;
   }
   p->child_count = 0;
 }
@@ -656,14 +682,23 @@ kwaitpid(int pid, uint64 addr)
 void
 scheduler(void)
 {
-  // Runtime scheduler switching - supports RR/FCFS/MLFQ without recompilation
-  int algo = current_scheduler;
-  if (algo == SCHED_FCFS) {
-    fcfs_scheduler();
-  } else if (algo == SCHED_MLFQ) {
-    mlfq_scheduler();
-  } else {
-    rr_scheduler();
+  for(;;) {
+    // Runtime scheduler switching - supports RR/FCFS/MLFQ/SJF/PRIO without recompilation
+    // Re-read current_scheduler each iteration so runtime switching works.
+    int algo = current_scheduler;
+    if (algo == SCHED_FCFS) {
+      fcfs_scheduler();
+    } else if (algo == SCHED_MLFQ) {
+      mlfq_scheduler();
+    } else if (algo == SCHED_SJF) {
+      sjf_scheduler();
+    } else if (algo == SCHED_PRIO) {
+      prio_scheduler();
+    } else if (algo == SCHED_EDF) {
+      edf_scheduler();
+    } else {
+      rr_scheduler();
+    }
   }
 }
 
@@ -676,6 +711,12 @@ sched_algo_name(int algo)
     return "FCFS";
   case SCHED_MLFQ:
     return "MLFQ";
+  case SCHED_SJF:
+    return "SJF";
+  case SCHED_PRIO:
+    return "PRIO";
+  case SCHED_EDF:
+    return "EDF";
   default:
     return "RR";
   }
@@ -849,7 +890,320 @@ mlfq_scheduler(void)
   }
 }
 
-// Switch to scheduler.  Must hold only p->lock
+// SJF (Shortest Job First) scheduler - non-preemptive.
+// Selects the RUNNABLE process with the smallest estimated CPU burst time.
+// Tie-breaker: smaller ctime (earlier creation) wins.
+void
+sjf_scheduler(void)
+{
+  struct proc *p;
+  struct proc *best;
+  struct cpu *c = mycpu();
+  uint64 min_burst;
+  uint64 best_ctime;
+
+  c->proc = 0;
+  for (;;) {
+    intr_on();
+    intr_off();
+
+    best = 0;
+    min_burst = (uint64)-1;
+    best_ctime = (uint64)-1;
+
+    // Scan proc table for the RUNNABLE process with the smallest est_burst.
+    for (p = proc; p < &proc[NPROC]; p++) {
+      acquire(&p->lock);
+      if (p->state == RUNNABLE) {
+        if (p->est_burst < min_burst ||
+            (p->est_burst == min_burst && p->ctime < best_ctime)) {
+          min_burst = p->est_burst;
+          best_ctime = p->ctime;
+          best = p;
+        }
+      }
+      release(&p->lock);
+    }
+
+    if (best) {
+      acquire(&best->lock);
+      if (best->state == RUNNABLE) {
+        uint64 now = ticks;
+        if (best->last_sched != 0)
+          best->wait_time += now - best->last_sched;
+        best->sched_count++;
+        best->state = RUNNING;
+        best->last_sched = now;
+        c->proc = best;
+        swtch(&c->context, &best->context);
+        c->proc = 0;
+      }
+      release(&best->lock);
+    } else {
+      asm volatile("wfi");
+    }
+  }
+}
+
+// ============================================================
+// Priority scheduler with aging (Phase A2)
+//
+// Picks the RUNNABLE process with the smallest `priority` value
+// (lower number = higher priority), breaking ties by `last_sched`
+// (older first — promotes fairness) then by `ctime`.
+//
+// Aging: every PRIO_AGING_TICKS scheduler ticks, all RUNNABLE
+// processes have their priority decremented by PRIO_AGING_DEC
+// (clamped to 0).  This guarantees a low-priority process
+// eventually runs even under sustained high-priority load.
+// ============================================================
+
+static uint64 prio_last_aging = 0;
+
+void
+prio_aging_tick(void)
+{
+  struct proc *p;
+  if (ticks - prio_last_aging < PRIO_AGING_TICKS)
+    return;
+  prio_last_aging = ticks;
+
+  for (p = proc; p < &proc[NPROC]; p++) {
+    acquire(&p->lock);
+    if (p->state == RUNNABLE && p->priority > 0) {
+      if (p->priority > PRIO_AGING_DEC)
+        p->priority -= PRIO_AGING_DEC;
+      else
+        p->priority = 0;
+    }
+    release(&p->lock);
+  }
+}
+
+void
+prio_scheduler(void)
+{
+  struct proc *p;
+  struct proc *best;
+  struct cpu *c = mycpu();
+  int best_prio;
+  uint64 best_last_sched;
+  uint64 best_ctime;
+
+  c->proc = 0;
+  for (;;) {
+    intr_on();
+    intr_off();
+
+    // Periodically boost priority of long-waiting RUNNABLE procs
+    prio_aging_tick();
+
+    int myid = cpuid();
+
+    // Primary pass: only consider processes whose affinity
+    // matches our CPU (or no affinity).
+    best = 0;
+    best_prio = MAX_PRIORITY + 1;
+    best_last_sched = (uint64)-1;
+    best_ctime = (uint64)-1;
+
+    for (p = proc; p < &proc[NPROC]; p++) {
+      acquire(&p->lock);
+      if (p->state == RUNNABLE) {
+        if (p->cpu_affinity >= 0 && p->cpu_affinity != myid) {
+          release(&p->lock);
+          continue;  // pinned to another CPU
+        }
+        if (p->priority < best_prio ||
+            (p->priority == best_prio
+             && (p->last_sched < best_last_sched
+                 || (p->last_sched == best_last_sched
+                     && p->ctime < best_ctime)))) {
+          best_prio = p->priority;
+          best_last_sched = p->last_sched;
+          best_ctime = p->ctime;
+          best = p;
+        }
+      }
+      release(&p->lock);
+    }
+
+    // Fallback pass: if we found nothing, pick any RUNNABLE
+    // process (it will run on the wrong CPU but at least we
+    // don't idle).
+    if (best == 0) {
+      for (p = proc; p < &proc[NPROC]; p++) {
+        acquire(&p->lock);
+        if (p->state == RUNNABLE) {
+          if (p->priority < best_prio ||
+              (p->priority == best_prio
+               && (p->last_sched < best_last_sched
+                   || (p->last_sched == best_last_sched
+                       && p->ctime < best_ctime)))) {
+            best_prio = p->priority;
+            best_last_sched = p->last_sched;
+            best_ctime = p->ctime;
+            if (best)
+              release(&best->lock);
+            best = p;
+          } else {
+            release(&p->lock);
+          }
+        } else {
+          release(&p->lock);
+        }
+      }
+    }
+
+    if (best) {
+      acquire(&best->lock);
+      if (best->state == RUNNABLE) {
+        uint64 now = ticks;
+        if (best->last_sched != 0)
+          best->wait_time += now - best->last_sched;
+        best->sched_count++;
+        best->state = RUNNING;
+        best->last_sched = now;
+        c->proc = best;
+        swtch(&c->context, &best->context);
+        c->proc = 0;
+      }
+      release(&best->lock);
+    } else {
+      asm volatile("wfi");
+    }
+  }
+}
+
+// Phase F2: Earliest Deadline First (EDF) scheduler.
+// Picks the RUNNABLE process with the earliest absolute deadline.
+// For processes that are not real-time tasks, the deadline is
+// treated as (uint64)-1 (always after RT tasks) so non-RT
+// processes share time only when no RT task is RUNNABLE.
+void
+edf_scheduler(void)
+{
+  struct proc *p;
+  struct proc *best;
+  struct cpu *c = mycpu();
+  uint64 best_deadline;
+
+  c->proc = 0;
+  for (;;) {
+    intr_on();
+    intr_off();
+
+    int myid = cpuid();
+
+    // Primary pass: respect affinity.
+    best = 0;
+    best_deadline = (uint64)-1;
+
+    for (p = proc; p < &proc[NPROC]; p++) {
+      acquire(&p->lock);
+      if (p->state == RUNNABLE) {
+        if (p->cpu_affinity >= 0 && p->cpu_affinity != myid) {
+          release(&p->lock);
+          continue;
+        }
+        // Use rt_deadline for RT tasks, (uint64)-1 for non-RT.
+        uint64 dl = p->rt_period > 0 ? p->rt_deadline : (uint64)-1;
+        if (dl < best_deadline) {
+          if (best)
+            release(&best->lock);
+          best = p;
+          best_deadline = dl;
+        } else {
+          release(&p->lock);
+        }
+      } else {
+        release(&p->lock);
+      }
+    }
+
+    // Fallback pass: any RUNNABLE process.
+    if (best == 0) {
+      for (p = proc; p < &proc[NPROC]; p++) {
+        acquire(&p->lock);
+        if (p->state == RUNNABLE) {
+          uint64 dl = p->rt_period > 0 ? p->rt_deadline : (uint64)-1;
+          if (dl < best_deadline) {
+            if (best)
+              release(&best->lock);
+            best = p;
+            best_deadline = dl;
+          } else {
+            release(&p->lock);
+          }
+        } else {
+          release(&p->lock);
+        }
+      }
+    }
+
+    if (best) {
+      best->state = RUNNING;
+      best->last_sched = ticks;
+      c->proc = best;
+      swtch(&c->context, &best->context);
+      c->proc = 0;
+      release(&best->lock);
+    } else {
+      asm volatile("wfi");
+    }
+  }
+}
+
+// Set a process's priority (Phase A2).  Used by the
+// `setpriority(pid, prio)` syscall.
+int
+ksched_setprio(int pid, int prio)
+{
+  struct proc *p;
+  int found = 0;
+
+  if (prio < 0 || prio > MAX_PRIORITY)
+    return -1;
+
+  acquire(&wait_lock);
+  for (p = proc; p < &proc[NPROC]; p++) {
+    acquire(&p->lock);
+    if (p->pid == pid && p->state != UNUSED) {
+      p->priority = prio;
+      p->orig_priority = prio;
+      found = 1;
+    }
+    release(&p->lock);
+  }
+  release(&wait_lock);
+  return found ? 0 : -1;
+}
+
+// Set a process's estimated CPU burst (used by SJF scheduler).
+// Returns 0 on success, -1 on error.
+int
+ksched_setburst(int pid, uint64 est)
+{
+  struct proc *p;
+  int found = 0;
+
+  if (est == 0 || est > SJF_MAX_BURST)
+    return -1;
+
+  acquire(&wait_lock);
+  for (p = proc; p < &proc[NPROC]; p++) {
+    acquire(&p->lock);
+    if (p->pid == pid && p->state != UNUSED) {
+      p->est_burst = est;
+      found = 1;
+    }
+    release(&p->lock);
+    if (found)
+      break;
+  }
+  release(&wait_lock);
+  return found ? 0 : -1;
+}
 // and have changed proc->state. Saves and restores
 // intena because intena is a property of this
 // kernel thread, not this CPU. It should

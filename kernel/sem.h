@@ -18,6 +18,11 @@ struct semaphore {
   int allocated;              // Whether this semaphore is allocated
   char name[16];              // Name for debugging
   struct sem_waiter *waiters; // List of waiting processes
+  // Phase D1: priority inheritance.  `holder_pid` is the pid
+  // of the process that currently holds this sem (value<1 AND
+  // no waiters in queue are sleeping yet); -1 means nobody
+  // holds it.
+  int holder_pid;
 };
 
 // Global semaphore table

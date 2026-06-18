@@ -119,6 +119,30 @@ extern uint64 sys_settimeslice(void);
 extern uint64 sys_gettimeslice(void);
 extern uint64 sys_cgettimeofday(void);
 extern uint64 sys_schedstat(void);
+extern uint64 sys_sched_setburst(void);
+extern uint64 sys_banker_init(void);
+extern uint64 sys_banker_setmax(void);
+extern uint64 sys_banker_request(void);
+extern uint64 sys_banker_release(void);
+extern uint64 sys_banker_safe_sequence(void);
+extern uint64 sys_banker_get_state(void);
+extern uint64 sys_banker_setmax_alloc(void);
+extern uint64 sys_mon_create(void);
+extern uint64 sys_mon_lock(void);
+extern uint64 sys_mon_unlock(void);
+extern uint64 sys_mon_wait(void);
+extern uint64 sys_mon_signal(void);
+extern uint64 sys_mon_broadcast(void);
+extern uint64 sys_deadlock_set(void);
+extern uint64 sys_setpriority(void);
+extern uint64 sys_getpriority(void);
+extern uint64 sys_rt_register(void);
+extern uint64 sys_rt_wait_period(void);
+extern uint64 sys_getcpuid(void);
+extern uint64 sys_setcpuaffinity(void);
+extern uint64 sys_msgget(void);
+extern uint64 sys_msgsnd(void);
+extern uint64 sys_msgrcv(void);
 
 // An array mapping syscall numbers from syscall.h
 // to the function that handles the system call.
@@ -162,6 +186,30 @@ static uint64 (*syscalls[])(void) = {
   [SYS_gettimeslice]   sys_gettimeslice,
   [SYS_cgettimeofday]  sys_cgettimeofday,
   [SYS_schedstat]      sys_schedstat,
+  [SYS_sched_setburst] sys_sched_setburst,
+  [SYS_banker_init]          sys_banker_init,
+  [SYS_banker_setmax]        sys_banker_setmax,
+  [SYS_banker_request]       sys_banker_request,
+  [SYS_banker_release]       sys_banker_release,
+  [SYS_banker_safe_sequence] sys_banker_safe_sequence,
+  [SYS_banker_get_state]     sys_banker_get_state,
+  [SYS_banker_setmax_alloc]  sys_banker_setmax_alloc,
+  [SYS_mon_create]           sys_mon_create,
+  [SYS_mon_lock]             sys_mon_lock,
+  [SYS_mon_unlock]           sys_mon_unlock,
+  [SYS_mon_wait]             sys_mon_wait,
+  [SYS_mon_signal]           sys_mon_signal,
+  [SYS_mon_broadcast]        sys_mon_broadcast,
+  [SYS_deadlock_set]         sys_deadlock_set,
+  [SYS_setpriority]          sys_setpriority,
+  [SYS_getpriority]          sys_getpriority,
+  [SYS_rt_register]          sys_rt_register,
+  [SYS_rt_wait_period]       sys_rt_wait_period,
+  [SYS_getcpuid]             sys_getcpuid,
+  [SYS_setcpuaffinity]       sys_setcpuaffinity,
+  [SYS_msgget]               sys_msgget,
+  [SYS_msgsnd]               sys_msgsnd,
+  [SYS_msgrcv]               sys_msgrcv,
   // clang-format on
 };
 

@@ -278,3 +278,41 @@ if (which_dev == 2) {
 - [x] 实现 Phase 2：MLFQ 调度器基础
 - [x] 实现 Phase 3：MLFQ 优化（运行时切换、5级队列、独立运行队列）
 - [x] 实现 Phase 4：完整测试（schedtest、schedstat、throughput、schedlatency）
+
+---
+
+## 下一阶段规划（2026-06-16 起）
+
+详细的下一阶段扩展规划已沉淀到独立设计文档：
+**`docx/tfc/ProcessMgmt_Scheduling_NextPhase.md`**
+
+### 规划主线（5 层递进）
+
+| 层次 | 内容 | 状态 |
+|------|------|------|
+| L1 进程基础 | PCB / 状态 / fork-exec-wait | ✅ |
+| L2 同步互斥 | 信号量 / 管程 | ✅+🔜 管程待扩展 |
+| L3 死锁处理 | 4 条件 / 预防 / 银行家 / 检测 | 🔜 核心扩展 |
+| L4 经典调度 | FCFS / SJF / RR / MLFQ | ✅+🔜 SJF/优先级待补 |
+| L5 多核 / 实时 | Per-CPU 队列 / RM / EDF | 🔜 高级扩展 |
+
+### 推荐启动顺序
+
+1. **Phase A1** — SJF（最小工作量，1-2d，连接 FCFS 与 MLFQ）
+2. **Phase A2** — 优先级调度 + 优先级继承（中等工作量，3-4d）
+3. **Phase B1-B4** — 死锁专题（教学核心，7-10d 累计）
+4. **Phase C** — 管程（与信号量并列，3-4d）
+5. **Phase D-E-F** — 高级主题（按需）
+
+详见 `docx/tfc/ProcessMgmt_Scheduling_NextPhase.md` 的 §2 §3 §4。
+
+---
+
+## 高级扩展全部完成（2026-06-18）
+
+`ProcessMgmt_Scheduling_NextPhase.md` 提出的所有 Phase（A1/B1-B4/C1-C2/D1-D2/E1-E3/F1-F3）已全部实现并通过测试。
+
+详细完成情况见：
+- `Done.md` 末尾的"高级扩展实现（2026-06-18 完成）"段
+- `Todo.md` 末尾的"下一阶段任务总览"（所有 checkbox 已勾选）
+- `docx/tfc/log/` 下每个 Phase 的详细实现日志

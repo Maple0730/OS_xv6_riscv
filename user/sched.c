@@ -13,6 +13,12 @@ const char* sched_algorithm_name(int algo) {
     return "FCFS";
   case 2:
     return "MLFQ";
+  case 3:
+    return "SJF";
+  case 4:
+    return "PRIO";
+  case 5:
+    return "EDF";
   default:
     return "UNKNOWN";
   }

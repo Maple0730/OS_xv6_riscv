@@ -112,7 +112,12 @@ void            yield(void);
 void            rr_scheduler(void) __attribute__((noreturn));
 void            fcfs_scheduler(void) __attribute__((noreturn));
 void            mlfq_scheduler(void) __attribute__((noreturn));
+void            sjf_scheduler(void) __attribute__((noreturn));
+void            prio_scheduler(void) __attribute__((noreturn));
+void            edf_scheduler(void) __attribute__((noreturn));
 int             get_timeslice(int queue_level);
+int             ksched_setburst(int pid, uint64 est);
+int             ksched_setprio(int pid, int prio);
 int             get_rr_fcfs_timeslice(void);
 int             get_sched_algorithm(void);
 void            mlfq_enqueue(struct proc *p);
@@ -145,6 +150,37 @@ int             sem_wait(int);
 int             sem_post(int);
 int             sem_get(int, int*);
 int             sem_close(int);
+void            sem_broadcast(int);
+
+// banker.c (Phase B3)
+void            banker_init_lock(void);
+int             banker_init(int, int*);
+int             banker_setmax(int, int*);
+int             banker_setmax_alloc(int, int*, int*);
+int             banker_request(int, int*);
+int             banker_release(int, int*);
+int             banker_safe_sequence(int*);
+int             banker_get_state(uint64);
+
+// deadlock_detect.c (Phase B4)
+void            deadlock_init(void);
+void            deadlock_scan(void);
+int             deadlock_set_enabled(int);
+
+// msgq.c (Phase D2)
+void            msgq_init(void);
+int             msgget(int, int);
+int             msgsnd(int, char*, int);
+int             msgrcv(int, char*, int);
+
+// monitor.c (Phase C1)
+int             monitor_init(void);
+int             monitor_create(void);
+int             monitor_lock(int);
+int             monitor_unlock(int);
+int             monitor_wait(int, int);
+int             monitor_signal(int, int);
+int             monitor_broadcast(int, int);
 
 // shm.c
 void            shminit(void);

@@ -6,6 +6,7 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "vm.h"
+#include "banker.h"
 
 extern struct proc proc[];
 
@@ -239,7 +240,7 @@ sys_shmat(void)
 }
 
 // Change scheduling algorithm at runtime
-// arg0: algo (0=RR, 1=FCFS, 2=MLFQ, -1=query only)
+// arg0: algo (0=RR, 1=FCFS, 2=MLFQ, 3=SJF, -1=query only)
 // returns: current algorithm (or previous if changed), -1 on failure
 uint64
 sys_sched_algorithm(void)
@@ -252,8 +253,8 @@ sys_sched_algorithm(void)
     return current_scheduler;
   }
 
-  // Validate algorithm number
-  if (algo < 0 || algo > 2)
+  // Validate algorithm number (0=RR, 1=FCFS, 2=MLFQ, 3=SJF, 4=PRIO)
+  if (algo < 0 || algo > 5)
     return -1;
 
   acquire(&sched_lock);
@@ -261,7 +262,199 @@ sys_sched_algorithm(void)
   current_scheduler = algo;
   release(&sched_lock);
 
+  // Force the current process to yield so the scheduler dispatcher can
+  // re-read current_scheduler and switch to the new algorithm.
+  // Skip if old == algo (no change) or if we're the boot process (no proc).
+  if (algo != old && myproc() != 0)
+    yield();
+
   return old;
+}
+
+// Set the estimated CPU burst for a process (used by SJF scheduler).
+// arg0: pid
+// arg1: estimated burst in ticks (1..SJF_MAX_BURST)
+// returns: 0 on success, -1 on error
+uint64
+sys_sched_setburst(void)
+{
+  int pid;
+  int est;
+  argint(0, &pid);
+  argint(1, &est);
+  return ksched_setburst(pid, (uint64)est);
+}
+
+// Phase A2: setpriority(pid, prio)
+// Set the static priority of a process (lower = higher priority).
+// prio must be in [0, MAX_PRIORITY].  Returns 0 on success, -1 on error.
+uint64
+sys_setpriority(void)
+{
+  int pid;
+  int prio;
+  argint(0, &pid);
+  argint(1, &prio);
+  return ksched_setprio(pid, prio);
+}
+
+// Phase A2: getpriority(pid)
+// Get the static priority of a process.  Returns the priority on
+// success, -1 if the process does not exist.
+uint64
+sys_getpriority(void)
+{
+  int pid;
+  struct proc *p;
+  int found = -1;
+
+  argint(0, &pid);
+  for (p = proc; p < &proc[NPROC]; p++) {
+    acquire(&p->lock);
+    if (p->pid == pid && p->state != UNUSED) {
+      found = p->priority;
+    }
+    release(&p->lock);
+  }
+  return found;
+}
+
+// Phase F1: rt_register(period, cost)
+// Register the calling process as a real-time task with the given
+// period (in ticks) and worst-case CPU cost per period.  Returns
+// 0 on success, -1 on error.
+uint64
+sys_rt_register(void)
+{
+  int period, cost;
+  struct proc *p = myproc();
+
+  argint(0, &period);
+  argint(1, &cost);
+  if (period <= 0 || cost < 0 || cost > period)
+    return -1;
+
+  acquire(&p->lock);
+  p->rt_period = period;
+  p->rt_cost = cost;
+  p->rt_release = ticks;
+  p->rt_deadline = ticks + period;
+  // RM: shorter period -> higher priority (lower number)
+  // Map period 1 tick -> priority 0, period 100 ticks -> priority 7.
+  // Use a simple logarithmic-ish mapping for visibility.
+  int prio = 0;
+  int ptmp = period;
+  while (ptmp > 1 && prio < MAX_PRIORITY) {
+    ptmp >>= 1;
+    prio++;
+  }
+  if (p->boost_count == 0)
+    p->priority = prio;
+  p->orig_priority = prio;
+  release(&p->lock);
+  return 0;
+}
+
+// Phase F1: rt_wait_period()
+// Block the calling process until the start of its next period.
+// The caller is responsible for doing its work and then calling
+// rt_wait_period() to yield to the next period.
+uint64
+sys_rt_wait_period(void)
+{
+  struct proc *p = myproc();
+  uint64 next_release;
+
+  acquire(&p->lock);
+  if (p->rt_period == 0) {
+    release(&p->lock);
+    return -1;  // not a real-time task
+  }
+  next_release = p->rt_release + p->rt_period;
+  p->rt_release = next_release;
+  p->rt_deadline = next_release + p->rt_period;
+  release(&p->lock);
+
+  // Sleep until the next release.  We sleep on the process's
+  // own rt_release field; the clock interrupt will wake it
+  // when the deadline arrives.
+  acquire(&tickslock);
+  while (ticks < next_release) {
+    if (killed(p)) {
+      release(&tickslock);
+      return -1;
+    }
+    sleep(&ticks, &tickslock);
+  }
+  release(&tickslock);
+  return 0;
+}
+
+// Phase E1: getcpuid() — return the CPU id on which the
+// calling process is currently running.
+uint64
+sys_getcpuid(void)
+{
+  return cpuid();
+}
+
+// Phase E1: setcpuaffinity(pid, cpuid) — pin a process to a
+// specific CPU.  cpuid -1 means "no preference" (any CPU).
+// The scheduler will respect the affinity when picking a
+// RUNNABLE process.
+uint64
+sys_setcpuaffinity(void)
+{
+  int pid, cpuid;
+  struct proc *p;
+  int found = -1;
+
+  argint(0, &pid);
+  argint(1, &cpuid);
+  if (cpuid < -1 || cpuid >= NCPU)
+    return -1;
+
+  for (p = proc; p < &proc[NPROC]; p++) {
+    acquire(&p->lock);
+    if (p->pid == pid && p->state != UNUSED) {
+      p->cpu_affinity = cpuid;
+      found = 0;
+    }
+    release(&p->lock);
+  }
+  return found;
+}
+
+// Phase D2: msgget/msgsnd/msgrcv wrappers
+uint64
+sys_msgget(void)
+{
+  int key, size;
+  argint(0, &key);
+  argint(1, &size);
+  return msgget(key, size);
+}
+
+uint64
+sys_msgsnd(void)
+{
+  int qid, len;
+  uint64 buf;
+  argint(0, &qid);
+  argaddr(1, &buf);
+  argint(2, &len);
+  return msgsnd(qid, (char *)buf, len);
+}
+
+uint64
+sys_msgrcv(void)
+{
+  int qid, len;
+  uint64 buf;
+  argint(0, &qid);
+  argaddr(1, &buf);
+  argint(2, &len);
+  return msgrcv(qid, (char *)buf, len);
 }
 
 // Get current scheduler algorithm (internal use)
@@ -367,3 +560,182 @@ sys_schedstat(void)
 
   return 0;
 }
+
+// ===== Banker's algorithm system calls (Phase B3) =====
+
+// banker_init(nres, avail_ptr)
+uint64
+sys_banker_init(void)
+{
+  int nres;
+  uint64 addr;
+  argint(0, &nres);
+  argaddr(1, &addr);
+  if (nres <= 0 || nres > NRES) return -1;
+  int avail[NRES];
+  if (copyin(myproc()->pagetable, (char *)avail, addr, sizeof(int) * nres) < 0)
+    return -1;
+  return banker_init(nres, avail);
+}
+
+// banker_setmax(pid, max_ptr)
+uint64
+sys_banker_setmax(void)
+{
+  int pid;
+  uint64 addr;
+  argint(0, &pid);
+  argaddr(1, &addr);
+  if (pid < 0 || pid >= NPROC_B) return -1;
+  int max[NRES];
+  // We don't yet know nres at this point, so copy NRES ints.
+  if (copyin(myproc()->pagetable, (char *)max, addr, sizeof(int) * NRES) < 0)
+    return -1;
+  return banker_setmax(pid, max);
+}
+
+// banker_request(pid, req_ptr)
+uint64
+sys_banker_request(void)
+{
+  int pid;
+  uint64 addr;
+  argint(0, &pid);
+  argaddr(1, &addr);
+  if (pid < 0 || pid >= NPROC_B) return -1;
+  int req[NRES];
+  if (copyin(myproc()->pagetable, (char *)req, addr, sizeof(int) * NRES) < 0)
+    return -1;
+  return banker_request(pid, req);
+}
+
+// banker_release(pid, rel_ptr)
+uint64
+sys_banker_release(void)
+{
+  int pid;
+  uint64 addr;
+  argint(0, &pid);
+  argaddr(1, &addr);
+  if (pid < 0 || pid >= NPROC_B) return -1;
+  int rel[NRES];
+  if (copyin(myproc()->pagetable, (char *)rel, addr, sizeof(int) * NRES) < 0)
+    return -1;
+  return banker_release(pid, rel);
+}
+
+// banker_safe_sequence(out_seq_ptr) -- writes NPROC_B ints
+uint64
+sys_banker_safe_sequence(void)
+{
+  uint64 addr;
+  argaddr(0, &addr);
+  int seq[NPROC_B];
+  int r = banker_safe_sequence(seq);
+  if (r < 0) return -1;
+  if (copyout(myproc()->pagetable, addr, (char *)seq, sizeof(seq)) < 0)
+    return -1;
+  return 0;
+}
+
+// banker_get_state(out_state_ptr) -- writes struct banker_state
+uint64
+sys_banker_get_state(void)
+{
+  uint64 addr;
+  argaddr(0, &addr);
+  return banker_get_state(addr);
+}
+
+// banker_setmax_alloc(pid, max_ptr, alloc_ptr)
+uint64
+sys_banker_setmax_alloc(void)
+{
+  int pid;
+  uint64 maddr, aaddr;
+  argint(0, &pid);
+  argaddr(1, &maddr);
+  argaddr(2, &aaddr);
+  if (pid < 0 || pid >= NPROC_B) return -1;
+  int max[NRES], alloc[NRES];
+  if (copyin(myproc()->pagetable, (char *)max,   maddr, sizeof(int) * NRES) < 0) return -1;
+  if (copyin(myproc()->pagetable, (char *)alloc, aaddr, sizeof(int) * NRES) < 0) return -1;
+  return banker_setmax_alloc(pid, max, alloc);
+}
+
+// ===== Monitor (Phase C1) =====
+int mon_verbose = 0;
+uint64
+sys_mon_create(void)
+{
+  int r = monitor_create();
+  if (mon_verbose) printf("[mon] create -> %d\n", r);
+  return r;
+}
+
+uint64
+sys_mon_lock(void)
+{
+  int mid;
+  argint(0, &mid);
+  int r = monitor_lock(mid);
+  if (mon_verbose) printf("[mon] lock mid=%d -> %d\n", mid, r);
+  return r;
+}
+
+uint64
+sys_mon_unlock(void)
+{
+  int mid;
+  argint(0, &mid);
+  int r = monitor_unlock(mid);
+  if (mon_verbose) printf("[mon] unlock mid=%d -> %d\n", mid, r);
+  return r;
+}
+
+uint64
+sys_mon_wait(void)
+{
+  int mid, cvid;
+  argint(0, &mid);
+  argint(1, &cvid);
+  int r = monitor_wait(mid, cvid);
+  if (mon_verbose) printf("[mon] wait mid=%d cvid=%d -> %d\n", mid, cvid, r);
+  return r;
+}
+
+uint64
+sys_mon_signal(void)
+{
+  int mid, cvid;
+  argint(0, &mid);
+  argint(1, &cvid);
+  int r = monitor_signal(mid, cvid);
+  if (mon_verbose) printf("[mon] signal mid=%d cvid=%d -> %d\n", mid, cvid, r);
+  return r;
+}
+
+uint64
+sys_mon_broadcast(void)
+{
+  int mid, cvid;
+  argint(0, &mid);
+  argint(1, &cvid);
+  int r = monitor_broadcast(mid, cvid);
+  if (mon_verbose) printf("[mon] broadcast mid=%d cvid=%d -> %d\n", mid, cvid, r);
+  return r;
+}
+
+// Enable/disable the deadlock detector (Phase B4).
+// 1 = enabled, 0 = disabled.  Returns previous value.
+extern int detector_enabled;
+uint64
+sys_deadlock_set(void)
+{
+  int on;
+  argint(0, &on);
+  int prev = detector_enabled;
+  detector_enabled = (on != 0);
+  return prev;
+}
+

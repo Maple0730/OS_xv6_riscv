@@ -100,6 +100,9 @@ usertrap(void)
         p->timeslice_used = 0;
         yield();
       }
+    } else if (current_scheduler == SCHED_SJF) {
+      // SJF mode: non-preemptive. Track run_time for stats, but do not yield.
+      p->run_time++;
     } else {
       // RR or FCFS mode: yield on every timer interrupt
       yield();
@@ -175,7 +178,8 @@ kerneltrap()
   }
 
   // give up the CPU if this is a timer interrupt.
-  if (which_dev == 2 && myproc() != 0)
+  // Skip for SJF (non-preemptive) - it should run to completion.
+  if (which_dev == 2 && myproc() != 0 && current_scheduler != SCHED_SJF)
     yield();
 
   // the yield() may have caused some traps to occur,
@@ -192,6 +196,11 @@ clockintr()
     ticks++;
     wakeup(&ticks);
     release(&tickslock);
+
+    // Periodically scan for deadlocked processes (Phase B4).
+    // Called on CPU 0 only; deadlock_scan() itself is a no-op
+    // outside the configured interval.
+    deadlock_scan();
   }
 
   // ask for the next timer interrupt. this also clears

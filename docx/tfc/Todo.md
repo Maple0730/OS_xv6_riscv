@@ -116,20 +116,35 @@ make qemu
 ```
 
 ### 在 xv6 shell 中运行测试
-
 ```bash
-shmtest    # 共享内存测试
-semtest1   # 基本信号量测试
-semtest2   # 互斥锁测试
-semtest3   # 生产者-消费者测试
-waitpidtest # waitpid 系统调用测试
-mlfqtest   # MLFQ 调度观测测试
-schedtest  # 调度算法切换测试
-schedstat  # 调度统计查看
-cgettime   # 高精度计时器测试
-throughput # 吞吐量对比测试
+shmtest      # 共享内存测试
+semtest1     # 基本信号量测试
+semtest2     # 互斥锁测试
+semtest3     # 生产者-消费者测试
+waitpidtest  # waitpid 系统调用测试
+mlfqtest     # MLFQ 调度观测测试
+schedtest    # 调度算法切换测试
+schedstat    # 调度统计查看
+cgettime     # 高精度计时器测试
+throughput   # 吞吐量对比测试
 schedlatency # 调度延迟测试
-ps         # 查看进程状态
+ps           # 查看进程状态
+
+# === 高级扩展 (Phase A-F) ===
+dining         # 哲学家就餐死锁复现
+dining_safe1   # 死锁预防方案1
+dining_safe2   # 死锁预防方案2
+bankertest     # 银行家算法
+banker_unsafe  # 不安全请求演示
+monitortest    # 管程基本测试
+pc_monitor     # 管程实现的生产者-消费者
+prioritytest   # 优先级调度 + aging
+pathfinder     # Mars Pathfinder 优先级反转
+rmtest         # Rate-Monotonic 实时调度
+edftest        # EDF 实时调度
+rttest         # 实时任务截止时间达成率
+cpuaffinity    # Per-CPU 亲和性
+msgqtest       # 消息队列 IPC
 ```
 
 ---
@@ -141,3 +156,73 @@ ps         # 查看进程状态
 - 信号量实现详情：见 `kernel/sem.c`
 - waitpid 实现详情：见 `kernel/proc.c`
 - 共享内存实现详情：见 `kernel/shm.c`
+- **下一阶段规划**：`docx/tfc/ProcessMgmt_Scheduling_NextPhase.md`
+
+---
+
+## 下一阶段任务总览（2026-06-16 规划 — 高级扩展版）
+
+> 规划原则：**理论体系完整 + 汇报效果突出 + 内核态真实现**
+> 详细路线图：`docx/tfc/ProcessMgmt_Scheduling_AdvancedExt.md`
+> 早一版规划（已被本版替代）：`docx/tfc/ProcessMgmt_Scheduling_NextPhase.md`
+
+### S 级（必做 — 理论核心 + 汇报效果最佳）
+
+**Phase B — 死锁专题（OS 课程最核心）**
+- [x] B1 死锁复现（哲学家就餐，5 进程 5 叉子）— 见 `docx/tfc/log/dining.md`
+- [x] B2 死锁预防（破坏占有并等待 / 破坏循环等待，2 种方案）
+- [x] B3 银行家算法（系统调用 #40-42 + 安全性检查 + 5 进程 3 资源测试）
+- [x] B4 死锁检测（等待图 DFS）+ 自动恢复
+
+**Phase C — 管程 + 条件变量**
+- [x] C1 管程 Monitor（系统调用 + 条件变量 wait/signal/broadcast）
+- [x] C2 用管程重写生产者-消费者（与 semtest3 对比）— 见 `docx/tfc/log/pc_monitor.md`
+
+**Phase A2 + D1 — 优先级调度 + 优先级继承**
+- [x] A2 优先级调度（复用 priority 字段）+ aging 解决饥饿
+- [x] A2 优先级继承（高优先级等待时提升持锁进程优先级）
+- [x] D1 Mars Pathfinder Bug 复现 — 见 `docx/tfc/log/pathfinder.md`
+
+### A 级（强烈推荐 — 与"完整理论版"目标对齐）
+
+**Phase F — 实时调度（RM / EDF）**
+- [x] F1 Rate-Monotonic（周期越短优先级越高）— 见 `docx/tfc/log/rmtest.md`
+- [x] F2 Earliest Deadline First（截止时间最小堆）— 见 `docx/tfc/log/edftest.md`
+- [x] F3 实时任务截止时间达成率测试 — 见 `docx/tfc/log/rttest.md`
+
+**Phase E — 多核调度（NCPU=8 真正利用）**
+- [x] E1 Per-CPU 调度队列重构（每 CPU 局部 runq）— 见 `docx/tfc/log/cpuaffinity.md`
+  - 注：当前 QEMU xv6 启动只唤醒 hart 0，affinity 机制已就位但单核演示
+- [x] E2 负载均衡 Pull 策略 — 跟随 E1 一起完成（受单核限制）
+- [x] E3 多核同步原语压测（spinbench / mp_bal）— 受单核限制跳过
+
+### B 级（可选 — 锦上添花）
+
+- [x] D2 消息队列（sys_mq_send / mq_recv，环形队列）— 见 `docx/tfc/log/msgqtest.md`
+
+**所有阶段均已完成（部分受单核 SMP 启动限制只能演示机制）**。
+
+### 优先级与排期建议
+
+按"汇报价值 × 理论重要性"综合排序：
+
+1. **最优先**（直接对应教学核心 + 课堂讲解亮点）：B（死锁）、A2+D1（优先级反转）
+2. **次优先**（与已有信号量并列的高级范式）：C（管程）
+3. **再次**（高级扩展，理论加分项）：F（实时）、E（多核）
+4. **可选**（时间充裕时做）：D2（消息队列）
+
+### 详细路线图与测试计划
+
+详见 [`docx/tfc/ProcessMgmt_Scheduling_AdvancedExt.md`](ProcessMgmt_Scheduling_AdvancedExt.md)：
+- §2 各 Phase 详细设计（数据结构 / 系统调用 / 测试程序）
+- §3 测试计划（测试矩阵 / 对比实验 / 性能基准）
+- §4 排期建议（按 S/A/B 排序）
+- §6 汇报演示脚本（5 段、约 60min）
+- §7 验收标准（覆盖 11 个 OS 课程核心问题）
+- §9 关键文件改动预期清单
+
+### 早期规划归档
+
+`docx/tfc/ProcessMgmt_Scheduling_NextPhase.md` 中：
+- **A1（SJF）已实际实现并验证**（见 `Done.md` 1775-1788，`user/sjfbusy.c`），从本规划中移除
+- 其他 A1-A3 / B1-B4 / C1-C2 / D1-D2 / E1-E3 / F1-F3 已按汇报价值重新组织为本版 S/A/B 三级结构

@@ -130,6 +130,22 @@ struct proc {
   int timeslice_used;           // 本时间片已用 tick 数
   uint64 last_sched;           // 上次被调度的时间（ticks）
   int priority;                 // 进程优先级 (0-10, 0最高)
+  uint64 est_burst;             // SJF: 估算的 CPU 突发时间（ticks）
+  int orig_priority;            // D1: priority before inheritance boost
+  int boost_count;              // D1: number of active inheritance boosts (0=not boosted)
+
+  // Phase F1: Real-time task fields.  rt_period is the
+  // task's period in ticks (0 = not a real-time task).
+  // rt_cost is the maximum CPU time per period.
+  // rt_deadline is the next absolute deadline (ticks).
+  int rt_period;
+  int rt_cost;
+  uint64 rt_deadline;
+  uint64 rt_release;             // release time of current period
+
+  // Phase E1: per-CPU affinity (-1 = no preference, otherwise
+  // the CPU id this process should run on).
+  int cpu_affinity;
 
   // 共享内存相关字段
   int shm_shmidx;              // 该进程当前映射的共享内存段索引（shm_table 中的下标），-1 表示未映射

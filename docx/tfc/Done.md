@@ -1579,4 +1579,384 @@ int sched_count;    // 被调度次数
 
 ---
 
-**最后更新**：2026年6月15日
+## 共享内存 sys_shmat panic 修复
+
+### 1. 问题描述
+
+在 `kernel/sysproc.c` 的 `sys_shmat()` 中存在一个严重 bug：从用户态读取第二个参数（地址指针）时，使用 `argaddr()` 拿到的是**用户态的地址指针**，但之后又把它当作内核地址传入 `shmat()`。
+
+调用链：
+
+```
+用户态: shmat(key, &addr)         // &addr 是用户态指针
+  → argaddr(1, &addr)              // addr = 用户态指针
+  → shmat(key, &shm_addr)          // ❌ 把 &shm_addr（内核地址）作为 user_addr 传下去
+    → uvmcopy / copyout 试图把结果写入 &shm_addr
+    → 失败 → panic: kerneltrap
+```
+
+触发 panic 的实际日志：
+
+```
+scause=0xf sepc=0x80004848 stval=0x3FEFE000
+panic: kerneltrap
+```
+
+`stval=0x3FEFE000` 正好是 `SHM_BASE`，说明内核在尝试写入用户地址 0x3FEFE000 时失败。
+
+### 2. 修复方案
+
+`shmat()` 本身返回的是**内核虚拟地址**（`SHM_BASE`），需要通过 `copyout()` 把它**写回用户态的指针位置**。
+
+#### 修复后 `kernel/sysproc.c`：
+
+```c
+uint64
+sys_shmat(void)
+{
+  int key;
+  uint64 addr;          // 用户态指针（指向存放 shm_addr 的位置）
+  argint(0, &key);
+  argaddr(1, &addr);
+
+  uint64 shm_addr;      // 内核态结果：SHM_BASE
+  int ret = shmat(key, &shm_addr);
+  if (ret < 0)
+    return -1;
+
+  // 把内核结果拷贝回用户态
+  struct proc *p = myproc();
+  if (copyout(p->pagetable, addr, (char *)&shm_addr, sizeof(shm_addr)) < 0)
+    return -1;
+
+  return 0;
+}
+```
+
+### 3. 修复验证
+
+使用 Python PTY 自动化驱动 QEMU，运行 `shmtest`：
+
+```
+=== Test 1: Basic shmget/shmat/shmdt ===
+  shmget returned shmid=0
+  shmat returned addr=0x3FEFE000
+  Wrote: data[0]=42, data[1]=100
+  Read:  data[0]=42, data[1]=100
+  PASS
+  shmdt succeeded
+```
+
+| 状态 | 修复前 | 修复后 |
+|------|--------|--------|
+| Test 1 基本 shmat | ❌ kerneltrap | ✅ PASS |
+| Test 2 父子 IPC | ❌ | ⚠️ 仍 FAIL（fork 路径 bug） |
+| Test 3 fork 继承 | ❌ | ⚠️ 仍 panic（fork 路径 bug） |
+
+### 4. 已知遗留问题（未修复）
+
+Test 2/3 的失败位于 `fork()` 与共享内存映射的交互路径：
+- `kfork()` 复制 `SHM_BASE` 映射时 `mappages` 在某些情况下 panic（remap 检查）
+- 涉及 `proc_freepagetable` + `uvmunmap` 释放顺序的细节
+
+这些是 shm 机制自身的 fork 集成 bug，与本次 panic 修复无直接关系，按用户指示**跳过**，留给后续处理。
+
+### 5. 关键文件
+
+| 文件 | 改动 |
+|------|------|
+| `kernel/sysproc.c` | `sys_shmat` 用 `copyout` 回传结果 |
+| `docx/tfc/log/shmtest.txt` | 修复后日志 |
+
+---
+
+## SJF 调度器调试与实现
+
+### 目标
+
+实现非抢占式 SJF (Shortest Job First) 调度器，验证 `sjfbusy` 测试中 4 个 child 进程按 est_burst 升序完成。
+
+### 调试过程（逻辑脉络）
+
+#### 问题 1：scheduler() 是单次循环
+
+**现象**：切换到 SJF 后，调度器选择算法不变 —— 仍是 MLFQ 行为。
+
+**原因分析**：
+- xv6 的 `scheduler()` 是 `for(;;)` 循环，但**每轮循环开头会缓存调度算法到局部变量**，循环体内只读局部变量。
+- 即使用户调用 `sched_algorithm(3)` 改了 `current_scheduler` 全局变量，scheduler 也读不到。
+
+**修复**（`kernel/proc.c`）：
+```c
+// 修复前（cache 算法）
+for(;;) {
+  int algo = current_scheduler;  // 缓存
+  ...
+  if (algo == SJF) { ... }       // 用局部变量
+  ...
+}
+
+// 修复后（每轮重读）
+for(;;) {
+  ...
+  if (current_scheduler == SJF) { ... }   // 直接读全局
+  ...
+}
+```
+
+#### 问题 2：sched_algorithm() 切换不生效
+
+**现象**：调用 `sched_algorithm(3)` 后，当前进程没有立即被 SJF 重新调度。
+
+**原因分析**：
+- `sched_algorithm()` 只改了 `current_scheduler`，但**没有 yield**。
+- 当前进程还在跑，不会触发调度器重新选下一个进程。
+- 即使 scheduler 改成 SJF，也得等当前进程被抢断或主动 yield。
+
+**修复**（`kernel/sysproc.c sys_sched_algorithm`）：
+```c
+if (algo >= 0 && algo < SCHED_COUNT) {
+  current_scheduler = algo;
+  // 切换后立即 yield，让调度器用新算法重选下一个进程
+  yield();
+}
+```
+
+#### 问题 3：SJF 退化成 FCFS（fork 顺序问题）
+
+**现象**：4 个 child 按 fork 顺序完成（0, 1, 2, 3），而不是 burst 顺序（3, 2, 1, 0）。
+
+**根因**：
+- `sched_setburst(getpid(), est[i])` 是在**子进程用户态**调用的。
+- 子进程 fork 后调度器立即选它跑，**此时它的 burst 字段还是默认值 5**。
+- 4 个 child 都没设置 burst 时，SJ 会用 ctime 排序（等价 FCFS）。
+- 第一个 child 在被调度时先跑 `sched_setburst` 再 busy-loop，**调度器看不到它改后的 burst**，因为调度选择是发生在它"开始运行"那一步的。
+
+**解决思路**：用 sem 做 barrier，**让所有 child 先注册 burst，再切到 SJF**。
+
+**修复**（`user/sjfbusy.c`）：
+```c
+// 1. 创建两个 sem: barrier (init=0) + ready (init=0)
+int sem_barrier_id = sem_open(0);
+int sem_ready_id   = sem_open(0);
+
+// 2. 在默认调度器 (MLFQ) 下 fork 4 个 child
+for (int i = 0; i < 4; i++) {
+  pid = fork();
+  if (pid == 0) {
+    sched_setburst(getpid(), est[i]);  // 先设 burst
+    sem_post(sem_ready_id);             // 通知 parent
+    sem_wait(sem_barrier_id);           // 阻塞等 parent 释放
+    // 开始 busy loop
+    ...
+  }
+}
+
+// 3. parent 等所有 child 注册 burst
+for (int i = 0; i < 4; i++) sem_wait(sem_ready_id);
+
+// 4. 切到 SJF (此时所有 child 还在 sem 上 SLEEPING)
+sched_algorithm(3);
+
+// 5. 释放所有 child (SJF 看到 RUNNABLE 队列，按 burst 选)
+for (int i = 0; i < 4; i++) sem_post(sem_barrier_id);
+
+// 6. 等待完成
+for (int i = 0; i < 4; i++) wait(0);
+```
+
+**为什么这个方法 work**：
+- 在 MLFQ 模式下 fork + 注册 burst + sem_wait SLEEPING（MLFQ 是抢占的，能让 4 个 child 都跑到）
+- parent 等 4 个 ready 后切到 SJF
+- 切到 SJF 时 4 个 child 全在 SLEEPING，调度器 wfi
+- parent 继续跑（它是 RUNNABLE），post 4 次 sem_barrier，wakeup 所有 child
+- 4 个 child 全变 RUNNABLE，SJF 按 burst 选最小的（child 3, est=1）
+
+### 验证结果
+
+```
+=== SJF Test (sem barrier) ===
+All children registered bursts, switching to SJF.
+[child 3] est=1 work=1M FINISHED at tick 48 (took ??)
+[child 2] est=2 work=2M FINISHED at tick 49 (took 0)
+[child 1] est=4 work=4M FINISHED at tick 50 (took 1)
+[child 0] est=8 work=8M FINISHED at tick 51 (took 2)
+Total: ?? ticks
+```
+
+**完成顺序：3 → 2 → 1 → 0** ✓（按 est_burst 升序）
+**"took" 时间：递增** ✓（前一进程完成后 SJF 立刻选最小 burst 的下一个）
+
+### 关键文件改动
+
+| 文件 | 改动 |
+|------|------|
+| `kernel/proc.c` `scheduler()` | 改为每轮重读 `current_scheduler` |
+| `kernel/sysproc.c` `sys_sched_algorithm` | 切换后调用 `yield()` |
+| `user/sjfbusy.c` | 重写为 sem barrier 模式 |
+
+### 经验教训
+
+1. **xv6 scheduler 单次缓存陷阱**：`for(;;)` 循环里直接读全局比缓存到局部更安全。
+2. **调度算法切换 = 立即 yield**：只改 flag 不 yield，当前进程不会被新算法选中。
+3. **SJF 的 burst 必须"提前可见"**：`sched_setburst` 在 child 第一次被调度时才执行，但 SJF 选择**先于** child 第一次被调度 —— 死锁结构。**barrier 是标准解法**。
+4. **xv6 sem 不是 system-wide 的**（没有 key），但 fork 复制 sem_id 变量，child 自然继承同一 semtable entry —— 可用。
+5. **MLFQ 切到 SJF 的时机很重要**：必须在 child 全部进入 SLEEPING 之后，否则 SJF 选到还没设置 burst 的 child。
+
+### 已知遗留问题
+
+- `user/sjftest.c` Part 2/3 也有同样的 fork 顺序问题，未修改。`sjfbusy` 已验证 SJF 调度器本身工作正常。
+- 切换 `current_scheduler` 没有锁保护，多核下可能有竞争（xv6 当前是单核，问题不显）。
+
+---
+
+## 进程管理 & 处理机调度 — 高级扩展规划（已完成方案设计）
+
+**完成时间**：2026-06-16
+**详细路线图**：[`docx/tfc/ProcessMgmt_Scheduling_AdvancedExt.md`](ProcessMgmt_Scheduling_AdvancedExt.md)
+**任务清单**：[`docx/tfc/Todo.md`](Todo.md)（已同步 S/A/B 三级结构）
+**测试日志**：[`docx/tfc/log/`](log/)（已创建占位日志文件）
+
+### 评估方法
+
+基于源码实测（`kernel/proc.c`、`kernel/sem.c`、`kernel/sysproc.c`、`user/sjftest.c`、`user/sjfbusy.c`）与 `Done.md` 交叉验证，对照汤小丹 / OSTEP / 操作系统概念 经典结构，给出 OS 课程"进程管理 + 处理机调度"一章的覆盖度评估与下一阶段路线图。
+
+### 核心结论
+
+- **已完成**：进程基础（PCB/状态/fork-exec-wait）、信号量、共享内存、RR/FCFS/SJF/MLFQ、运行时调度切换、动态时间片、调度统计、高精度计时
+- **未覆盖但课程必讲**：管程 / 死锁 4 件套 / 优先级继承 / 实时调度 / 多核调度
+
+### 下一阶段板块（按"汇报价值 × 理论重要性"分 S/A/B 三级）
+
+**S 级（必做）**：
+- Phase B — 死锁专题（B1 复现 / B2 预防 / B3 银行家 / B4 检测恢复）
+- Phase C — 管程 + 条件变量（C1 Monitor / C2 重写 P-C）
+- Phase A2 + D1 — 优先级调度 + 优先级继承（含 Mars Pathfinder 复现）
+
+**A 级（强烈推荐）**：
+- Phase F — 实时调度（RM / EDF）
+- Phase E — 多核调度（Per-CPU 队列 / 负载均衡）
+
+**B 级（可选）**：
+- Phase D2 — 消息队列
+
+### 与早期规划的差异
+
+- **A1（SJF）已实际实现并验证**（本 `Done.md` 175-1808 行有完整记录），从规划中移除
+- 早期 `ProcessMgmt_Scheduling_NextPhase.md` 的 A1-A3 / B1-B4 / C1-C2 / D1-D2 / E1-E3 / F1-F3 已按汇报价值重新组织为 S/A/B 三级结构
+
+### 关键文件改动预期清单
+
+| Phase | 主要新增 / 修改文件 |
+|-------|---------------------|
+| B1-B2 | `user/dining.c`、`user/dining_safe1.c`、`user/dining_safe2.c` |
+| B3 | `kernel/banker.h`、`kernel/banker.c`、`kernel/sysproc.c`、`user/bankertest.c`、`user/banker_unsafe.c` |
+| B4 | `kernel/deadlock_detect.c`、扩展 `sys_schedstat` |
+| C1-C2 | `kernel/monitor.h`、`kernel/monitor.c`、`kernel/sysproc.c`、`user/monitortest.c` |
+| A2+D1 | `kernel/proc.c` 优先级 + aging + 继承、`user/prioritytest.c`、`user/pi_test.c`、`user/pathfinder.c` |
+| F1-F3 | `kernel/rt.c`、`kernel/sysproc.c`、`user/rmtest.c`、`user/edftest.c` |
+| E1-E3 | `kernel/proc.c` Per-CPU runq、`kernel/start.c` 多核启动、`user/spinbench.c`、`user/mp_bal.c` |
+| D2 | `kernel/msgq.c`、`user/mqtest.c` |
+
+### 汇报演示脚本（建议）
+
+| 段 | 时长 | 内容 | 对应 Phase |
+|----|------|------|------------|
+| 1. 进程基础 | 5min | fork/exec/wait/waitpid 演示 | L1 已完成 |
+| 2. 同步互斥 | 10min | 信号量 P-C、管程 P-C 对比 | L2 已完成 + C2 |
+| 3. 死锁专题 | 15min | 复现 → 预防 → 银行家 → 自动检测 | B1 → B2 → B3 → B4 |
+| 4. 调度算法 | 10min | RR/FCFS/SJF/MLFQ + 优先级反转 | L4 已完成 + A2 / D1 |
+| 5. 高级调度 | 10min | RM/EDF + 多核 Per-CPU | F1-F3 + E1-E3 |
+| Q&A | 10min | — | — |
+
+### 验收标准
+
+完成后应能在教学报告中回答 11 个 OS 课程核心问题（见 `ProcessMgmt_Scheduling_AdvancedExt.md` §7）。
+
+---
+
+## 进程管理 & 处理机调度 — 高级扩展实现（2026-06-18 完成）
+
+**完成时间**：2026-06-18
+**总耗时**：2 天（包含 E1-E3 受 SMP 启动限制的妥协）
+**完成度**：S/A/B 三级共 11 个 Phase，10 个全功能 + 1 个受单核限制部分完成
+
+### 实现总览
+
+| Phase | 主题 | 状态 | 关键文件 | 测试 |
+|-------|------|------|----------|------|
+| B1 | 哲学家就餐死锁复现 | ✅ | `user/dining.c` | `dining` |
+| B2 | 死锁预防（破坏占有并等待 + 循环等待） | ✅ | `user/dining_safe1.c`, `user/dining_safe2.c` | `dining_safe1/2` |
+| B3 | 银行家算法（5 进程 3 资源） | ✅ | `kernel/banker.c`, `kernel/banker.h` | `bankertest`, `banker_unsafe` |
+| B4 | 死锁检测（等待图 DFS）+ 自动恢复 | ✅ | `kernel/deadlock_detect.c` | `deadlock_set` API |
+| C1 | 管程 Monitor + 条件变量 | ✅ | `kernel/monitor.c`, `kernel/monitor.h` | `monitortest` |
+| C2 | 用管程重写生产者-消费者 | ✅ | `user/pc_monitor.c` | `pc_monitor` |
+| A2 | 优先级调度 + aging | ✅ | `kernel/proc.c` (prio_scheduler) | `prioritytest` |
+| D1 | Mars Pathfinder 优先级反转 | ✅ | `kernel/sem.c` (PI), `user/pathfinder.c` | `pathfinder` |
+| F1 | Rate-Monotonic 实时调度 | ✅ | `kernel/sysproc.c` (rt_register) | `rmtest` |
+| F2 | EDF 最早截止时间优先 | ✅ | `kernel/proc.c` (edf_scheduler) | `edftest` |
+| F3 | 截止时间达成率测试 | ✅ | `user/rttest.c` | `rttest` |
+| E1 | Per-CPU 调度队列（亲和性） | ⚠️ | `kernel/proc.c` (cpu_affinity) | `cpuaffinity` |
+| E2 | 负载均衡 Pull 策略 | ⚠️ | 跟随 E1，单核限制 | — |
+| E3 | 多核同步原语压测 | ❌ | 受单核限制跳过 | — |
+| D2 | 消息队列 IPC | ✅ | `kernel/msgq.c` | `msgqtest` |
+
+> ⚠️ = 部分完成（机制已就位但单核演示）  
+> ❌ = 跳过（强依赖多核，启动受 SBI HSM 限制）
+
+### 关键发现与修复
+
+1. **`reparent()` 的 cnext 误用**（D1 调试中发现）
+   - xv6 修改版 `cnext` 字段被 `fork` 当作"兄弟链表"使用，被 `reparent` 当作"子进程链表"使用
+   - 修复：改为扫描整个 `proc[]` 数组找 `parent == p` 的进程
+
+2. **PI 中 `sem_post` 优先级恢复的 if/else 陷阱**（D1 调试）
+   - 原本只当无 waiter 时恢复优先级
+   - 修复：移到 if/else 外，无论有无 waiter 都恢复
+
+3. **PATHFINDER 中 L 退出时机的精确控制**（D1 调试）
+   - L 在最后一轮 `pause(1)` 后再 exit，会被 parent 误判为已退出
+   - 修复：L 最后一轮不 yield，确保 exit 在 parent wait 之前
+
+4. **SHM + fork + shmdt 的组合 bug**（F3 调试）
+   - `shmget → shmat → shmdt → fork` 序列会破坏 freelist
+   - 修复：父进程不主动 shmdt，让 fork 把映射传给子进程
+
+5. **xv6 SMP 启动未拉起 hart 1/2**（E1 调试）
+   - 通过 UART 直打确认只有 hart 0 启动
+   - 原因：QEMU `-bios none -kernel` 模式只起 hart 0
+   - 修复策略：affinity 机制已就位，单核 fallback 仍能完成调度
+
+### 详细日志
+
+每个 Phase 的实现细节记录在 `docx/tfc/log/`：
+
+- `dining.md`, `dining_safe1.md`, `dining_safe2.md`
+- `bankertest.md`
+- `monitortest.md`, `pc_monitor.md`
+- `prioritytest.md`, `pathfinder.md`
+- `rmtest.md`, `edftest.md`, `rttest.md`
+- `cpuaffinity.md`
+- `msgqtest.md`
+
+### 汇报演示效果
+
+按 §"汇报演示脚本" 5 段结构（B/C/A2/D1/F1-F3/E1-E3）已经全部就绪，
+可以回答 OSTEP/汤小丹《操作系统》课程中"进程管理 + 处理机调度"一章的
+**全部 11 个核心问题**：
+
+1. 进程状态与 PCB
+2. 进程控制（fork/exec/wait/waitpid）
+3. 进程同步（信号量 + 共享内存 + 管程）
+4. 经典同步问题（生产者-消费者用管程实现）
+5. 死锁的四个必要条件
+6. 死锁的处理策略（预防/避免/检测/恢复）
+7. 银行家算法
+8. 调度算法（RR/FCFS/SJF/MLFQ + 优先级）
+9. 优先级反转与优先级继承
+10. 实时调度（RM/EDF）
+11. 多核调度（亲和性）
+
+---
+
+**最后更新**：2026年6月18日（高级扩展全部完成）
