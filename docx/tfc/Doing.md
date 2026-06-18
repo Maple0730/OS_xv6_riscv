@@ -150,17 +150,25 @@ flowchart TD
 
 #### 4.1 调度算法切换机制
 
-通过 `kernel/param.h` 中的宏选择：
+实际实现使用运行时切换（无需重新编译）：
 
 ```c
-#define SCHED_RR      0  // 时间片轮转（默认）
-#define SCHED_FCFS    1  // 先来先服务
-#define SCHED_MLFQ    2  // 多级反馈队列
+// kernel/proc.c
+volatile int current_scheduler = SCHED_MLFQ;  // 默认 MLFQ
 
-#ifndef SCHED_ALGORITHM
-#define SCHED_ALGORITHM SCHED_RR  // 默认使用 RR
-#endif
+void scheduler(void) {
+  int algo = current_scheduler;
+  if (algo == SCHED_FCFS) {
+    fcfs_scheduler();
+  } else if (algo == SCHED_MLFQ) {
+    mlfq_scheduler();
+  } else {
+    rr_scheduler();
+  }
+}
 ```
+
+可通过 `sys_sched_algorithm(int algo)` 系统调用（#34）动态切换。
 
 #### 4.2 MLFQ 优先级提升机制
 
@@ -223,24 +231,31 @@ if (which_dev == 2) {
 ### 6. 实现计划
 
 #### Phase 1: FCFS 调度器
-- [ ] 修改 `kernel/proc.h` - 添加 `ctime` 字段
-- [ ] 修改 `kernel/proc.c` - 实现 `fcfs_scheduler()`
-- [ ] 修改 `kernel/param.h` - 添加调度算法宏
-- [ ] 编写 `user/test_fcfs.c`
+- [x] 修改 `kernel/proc.h` - 添加 `ctime` 字段
+- [x] 修改 `kernel/proc.c` - 实现 `fcfs_scheduler()`
+- [x] 修改 `kernel/param.h` - 添加调度算法宏
+- [x] 编写 `user/fcfstest.c`
 
 #### Phase 2: MLFQ 调度器基础
-- [ ] 修改 `kernel/proc.h` - 添加队列字段
-- [ ] 修改 `kernel/proc.c` - 实现 MLFQ 队列管理
-- [ ] 修改 `kernel/trap.c` - 时间片用完处理
-- [ ] 编写 `user/test_mlfq.c`
+- [x] 修改 `kernel/proc.h` - 添加队列字段
+- [x] 修改 `kernel/proc.c` - 实现 MLFQ 队列管理
+- [x] 修改 `kernel/trap.c` - 时间片用完处理
+- [x] 编写 `user/mlfqtest.c`
 
 #### Phase 3: MLFQ 优化
-- [ ] 实现优先级提升机制
-- [ ] 完善测试框架
+- [x] 实现优先级提升机制
+- [x] 完善测试框架
+- [x] 运行时调度器切换（syscall #34）
+- [x] 动态时间片调节（syscall #35-36）
+- [x] 五级队列扩展（MLFQ_LEVELS=5）
+- [x] 独立运行队列（mlfq_enqueue/remove）
+- [x] 调度统计收集（wait_time/run_time/sched_count）
 
 #### Phase 4: 完整测试
-- [ ] 性能测试套件
-- [ ] 边界条件测试
+- [x] 性能测试套件（schedtest, throughput）
+- [x] 调度统计接口（schedstat syscall #38）
+- [x] 调度延迟测试（schedlatency.c）
+- [x] 高精度计时器（cgettimeofday syscall #37）
 
 ### 7. 风险与注意事项
 
@@ -259,7 +274,45 @@ if (which_dev == 2) {
 - [x] 数据结构设计
 - [x] 调度器架构设计
 - [x] 测试方案设计
-- [ ] 实现 Phase 1
-- [ ] 实现 Phase 2
-- [ ] 实现 Phase 3
-- [ ] 实现 Phase 4
+- [x] 实现 Phase 1：FCFS 调度器
+- [x] 实现 Phase 2：MLFQ 调度器基础
+- [x] 实现 Phase 3：MLFQ 优化（运行时切换、5级队列、独立运行队列）
+- [x] 实现 Phase 4：完整测试（schedtest、schedstat、throughput、schedlatency）
+
+---
+
+## 下一阶段规划（2026-06-16 起）
+
+详细的下一阶段扩展规划已沉淀到独立设计文档：
+**`docx/tfc/ProcessMgmt_Scheduling_NextPhase.md`**
+
+### 规划主线（5 层递进）
+
+| 层次 | 内容 | 状态 |
+|------|------|------|
+| L1 进程基础 | PCB / 状态 / fork-exec-wait | ✅ |
+| L2 同步互斥 | 信号量 / 管程 | ✅+🔜 管程待扩展 |
+| L3 死锁处理 | 4 条件 / 预防 / 银行家 / 检测 | 🔜 核心扩展 |
+| L4 经典调度 | FCFS / SJF / RR / MLFQ | ✅+🔜 SJF/优先级待补 |
+| L5 多核 / 实时 | Per-CPU 队列 / RM / EDF | 🔜 高级扩展 |
+
+### 推荐启动顺序
+
+1. **Phase A1** — SJF（最小工作量，1-2d，连接 FCFS 与 MLFQ）
+2. **Phase A2** — 优先级调度 + 优先级继承（中等工作量，3-4d）
+3. **Phase B1-B4** — 死锁专题（教学核心，7-10d 累计）
+4. **Phase C** — 管程（与信号量并列，3-4d）
+5. **Phase D-E-F** — 高级主题（按需）
+
+详见 `docx/tfc/ProcessMgmt_Scheduling_NextPhase.md` 的 §2 §3 §4。
+
+---
+
+## 高级扩展全部完成（2026-06-18）
+
+`ProcessMgmt_Scheduling_NextPhase.md` 提出的所有 Phase（A1/B1-B4/C1-C2/D1-D2/E1-E3/F1-F3）已全部实现并通过测试。
+
+详细完成情况见：
+- `Done.md` 末尾的"高级扩展实现（2026-06-18 完成）"段
+- `Todo.md` 末尾的"下一阶段任务总览"（所有 checkbox 已勾选）
+- `docx/tfc/log/` 下每个 Phase 的详细实现日志

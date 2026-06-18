@@ -15,6 +15,11 @@ wait:
  li a7, SYS_wait
  ecall
  ret
+.global waitpid
+waitpid:
+ li a7, SYS_waitpid
+ ecall
+ ret
 .global pipe
 pipe:
  li a7, SYS_pipe
@@ -158,5 +163,150 @@ shmat:
 .global shmdt
 shmdt:
  li a7, SYS_shmdt
+ ecall
+ ret
+.global sched_algorithm
+sched_algorithm:
+ li a7, SYS_sched_algorithm
+ ecall
+ ret
+.global settimeslice
+settimeslice:
+ li a7, SYS_settimeslice
+ ecall
+ ret
+.global gettimeslice
+gettimeslice:
+ li a7, SYS_gettimeslice
+ ecall
+ ret
+.global cgettimeofday
+cgettimeofday:
+ li a7, SYS_cgettimeofday
+ ecall
+ ret
+.global schedstat
+schedstat:
+ li a7, SYS_schedstat
+ ecall
+ ret
+.global sched_setburst
+sched_setburst:
+ li a7, SYS_sched_setburst
+ ecall
+ ret
+.global banker_init
+banker_init:
+ li a7, SYS_banker_init
+ ecall
+ ret
+.global banker_setmax
+banker_setmax:
+ li a7, SYS_banker_setmax
+ ecall
+ ret
+.global banker_request
+banker_request:
+ li a7, SYS_banker_request
+ ecall
+ ret
+.global banker_release
+banker_release:
+ li a7, SYS_banker_release
+ ecall
+ ret
+.global banker_safe_sequence
+banker_safe_sequence:
+ li a7, SYS_banker_safe_sequence
+ ecall
+ ret
+.global banker_get_state
+banker_get_state:
+ li a7, SYS_banker_get_state
+ ecall
+ ret
+.global banker_setmax_alloc
+banker_setmax_alloc:
+ li a7, SYS_banker_setmax_alloc
+ ecall
+ ret
+.global mon_create
+mon_create:
+ li a7, SYS_mon_create
+ ecall
+ ret
+.global mon_lock
+mon_lock:
+ li a7, SYS_mon_lock
+ ecall
+ ret
+.global mon_unlock
+mon_unlock:
+ li a7, SYS_mon_unlock
+ ecall
+ ret
+.global mon_wait
+mon_wait:
+ li a7, SYS_mon_wait
+ ecall
+ ret
+.global mon_signal
+mon_signal:
+ li a7, SYS_mon_signal
+ ecall
+ ret
+.global mon_broadcast
+mon_broadcast:
+ li a7, SYS_mon_broadcast
+ ecall
+ ret
+.global deadlock_set
+deadlock_set:
+ li a7, SYS_deadlock_set
+ ecall
+ ret
+.global setpriority
+setpriority:
+ li a7, SYS_setpriority
+ ecall
+ ret
+.global getpriority
+getpriority:
+ li a7, SYS_getpriority
+ ecall
+ ret
+.global rt_register
+rt_register:
+ li a7, SYS_rt_register
+ ecall
+ ret
+.global rt_wait_period
+rt_wait_period:
+ li a7, SYS_rt_wait_period
+ ecall
+ ret
+.global getcpuid
+getcpuid:
+ li a7, SYS_getcpuid
+ ecall
+ ret
+.global setcpuaffinity
+setcpuaffinity:
+ li a7, SYS_setcpuaffinity
+ ecall
+ ret
+.global msgget
+msgget:
+ li a7, SYS_msgget
+ ecall
+ ret
+.global msgsnd
+msgsnd:
+ li a7, SYS_msgsnd
+ ecall
+ ret
+.global msgrcv
+msgrcv:
+ li a7, SYS_msgrcv
  ecall
  ret

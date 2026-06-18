@@ -1,0 +1,44 @@
+=== Dynamic Timeslice Configuration Test ===
+
+=== Current Timeslice Configuration ===
+RR/FCFS:  1000000 ticks (~10 ms)
+MLFQ Q0:  500000 ticks (~5 ms)
+MLFQ Q1:  1000000 ticks (~10 ms)
+MLFQ Q2:  2000000 ticks (~20 ms)
+
+--- Testing invalid input ---
+settimeslice(-2, 500000) = -1 (expected -1)
+settimeslice(3, 500000) = -1 (expected -1)
+settimeslice(0, 0) = -1 (expected -1)
+settimeslice(0, -100) = -1 (expected -1)
+gettimeslice(-2) = -1 (expected -1)
+gettimeslice(3) = -1 (expected -1)
+
+--- Testing MLFQ dynamic adjustment ---
+Original: Q0=500000 Q1=1000000 Q2=2000000
+Adjusted Q0 from 500000 to 100000 ticks (~1 ms)
+Restored Q0 to 500000
+Adjusted Q2 from 2000000 to 5000000 ticks (~50 ms)
+Restored Q2 to 2000000
+
+--- Testing RR/FCFS dynamic adjustment ---
+Original RR/FCFS: 1000000 ticks (~10 ms)
+Adjusted RR/FCFS from 1000000 to 200000 ticks (~2 ms)
+Restored RR/FCFS to 1000000
+
+--- Testing scheduler integration ---
+Current scheduler: MLFQ
+Switched to RR
+RR timeslice adjusted to 200000 ticks
+RR timeslice restored to 1000000
+Switched to MLFQ
+MLFQ Q0 adjusted to 200000 ticks
+MLFQ Q0 restored to 500000
+Scheduler restored to MLFQ
+
+=== Test Complete ===
+Summary:
+  - settimeslice() and gettimeslice() work correctly
+  - Invalid parameters are properly rejected
+  - Timeslice changes persist across scheduler switches
+  - Values can be dynamically adjusted without recompilation

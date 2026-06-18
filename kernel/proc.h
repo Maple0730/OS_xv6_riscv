@@ -1,4 +1,6 @@
 // Saved registers for kernel context switches.
+#include "shm.h"
+
 struct context {
   uint64 ra;
   uint64 sp;
@@ -105,8 +107,11 @@ struct proc {
   struct proc *wprev;            // 等待队列中的前驱进程
   struct waitbucket *wbucket;    // 当前挂接的等待桶
 
-  // wait_lock must be held when using this:
+  // wait_lock must be held when using these:
   struct proc *parent;           // 父进程指针（需持有 wait_lock 访问）
+  struct proc *cnext;            // 子进程链表后继（需持有 wait_lock 访问）
+  struct proc *cprev;            // 子进程链表前驱（需持有 wait_lock 访问）
+  int child_count;               // 直接子进程数量（需持有 wait_lock 访问）
 
   // these are private to the process, so p->lock need not be held.
   uint64 kstack;                 // 内核栈的虚拟地址
@@ -125,4 +130,44 @@ struct proc {
   int timeslice_used;           // 本时间片已用 tick 数
   uint64 last_sched;           // 上次被调度的时间（ticks）
   int priority;                 // 进程优先级 (0-10, 0最高)
+  uint64 est_burst;             // SJF: 估算的 CPU 突发时间（ticks）
+  int orig_priority;            // D1: priority before inheritance boost
+  int boost_count;              // D1: number of active inheritance boosts (0=not boosted)
+
+  // Phase F1: Real-time task fields.  rt_period is the
+  // task's period in ticks (0 = not a real-time task).
+  // rt_cost is the maximum CPU time per period.
+  // rt_deadline is the next absolute deadline (ticks).
+  int rt_period;
+  int rt_cost;
+  uint64 rt_deadline;
+  uint64 rt_release;             // release time of current period
+
+  // Phase E1: per-CPU affinity (-1 = no preference, otherwise
+  // the CPU id this process should run on).
+  int cpu_affinity;
+
+  // 共享内存相关字段
+  int shm_shmidx;              // 该进程当前映射的共享内存段索引（shm_table 中的下标），-1 表示未映射
+
+  // 调度统计字段（仅 MLFQ 模式有意义）
+  uint64 wait_time;          // 累计等待时间（从 RUNNABLE 到被调度的 tick 数）
+  uint64 run_time;           // 累计运行时间（当前时间片已运行的 tick 数）
+  int sched_count;           // 被调度次数
 };
+
+// Runtime scheduler switching - global variables declared in proc.c
+extern volatile int current_scheduler;
+extern struct spinlock sched_lock;
+extern const char *sched_algo_name(int algo);
+
+// Runtime configurable timeslice values
+extern uint64 timeslice_table[MLFQ_LEVELS];
+extern uint64 rr_fcfs_timeslice;
+extern struct spinlock timeslice_lock;
+
+// Shared memory - declared in shm.c, used by proc.c
+struct shm;
+extern struct shm shm_table[NSHM];
+extern struct spinlock shm_lock;
+extern struct proc proc[NPROC];
