@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>PPT 图片汇总 - 进程管理与处理机调度</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px; background: #f5f5f5; }
+        h1 { color: #1E88E5; text-align: center; }
+        .image-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; }
+        .image-card { background: white; border-radius: 10px; padding: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .image-card img { width: 100%; height: auto; border-radius: 5px; }
+        .stats { display: flex; justify-content: space-around; margin: 20px 0; }
+        .stat-item { text-align: center; padding: 15px; background: #E3F2FD; border-radius: 10px; }
+        .stat-number { font-size: 32px; font-weight: bold; color: #1E88E5; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background: #1E88E5; color: white; }
+    </style>
+</head>
+<body>
+    <h1>进程管理与处理机调度 - PPT 图片汇总</h1>
+    
+    <div class="stats">
+        <div class="stat-item"><div class="stat-number">10</div><div>Matplotlib 图表</div></div>
+        <div class="stat-item"><div class="stat-number">8</div><div>Mermaid 图表</div></div>
+        <div class="stat-item"><div class="stat-number">18</div><div>PPT 页数覆盖</div></div>
+    </div>
+
+    <h2>一、Matplotlib 图表</h2>
+    <div class="image-grid">
+        <div class="image-card">
+            <img src="charts/mlfq_results.png" alt="MLFQ Results">
+            <h3>1. MLFQ 实测结果柱状图</h3>
+            <p>SHORT/LONG/MIXED 作业完成时间对比</p>
+        </div>
+        <div class="image-card">
+            <img src="charts/sched_comparison_radar.png" alt="Scheduler Comparison">
+            <h3>2. 调度算法对比雷达图</h3>
+            <p>RR/FCFS/MLFQ 多维度对比</p>
+        </div>
+        <div class="image-card">
+            <img src="charts/mlfq_queue_transitions.png" alt="MLFQ Queue">
+            <h3>3. MLFQ 队列转换图</h3>
+            <p>进程在 Q0/Q1/Q2 间的迁移</p>
+        </div>
+        <div class="image-card">
+            <img src="charts/deadlock_conditions.png" alt="Deadlock">
+            <h3>4. 死锁四条件维恩图</h3>
+            <p>互斥、占有并等待、不可剥夺、循环等待</p>
+        </div>
+        <div class="image-card">
+            <img src="charts/banker_flowchart.png" alt="Banker">
+            <h3>5. 银行家算法流程图</h3>
+            <p>安全性检查流程</p>
+        </div>
+        <div class="image-card">
+            <img src="charts/priority_inversion.png" alt="Priority Inversion">
+            <h3>6. 优先级反转问题</h3>
+            <p>高优先级被低优先级阻塞</p>
+        </div>
+        <div class="image-card">
+            <img src="charts/priority_inheritance.png" alt="Priority Inheritance">
+            <h3>7. 优先级继承解决</h3>
+            <p>L 继承 H 优先级，M 无法抢占</p>
+        </div>
+        <div class="image-card">
+            <img src="charts/rm_vs_edf.png" alt="RM vs EDF">
+            <h3>8. RM vs EDF 对比</h3>
+            <p>静态与动态优先级调度对比</p>
+        </div>
+        <div class="image-card">
+            <img src="charts/syscall_extension.png" alt="Syscall">
+            <h3>9. 系统调用扩展</h3>
+            <p>从 #23 扩展到 #66</p>
+        </div>
+        <div class="image-card">
+            <img src="charts/test_coverage.png" alt="Test Coverage">
+            <h3>10. 测试覆盖度</h3>
+            <p>17 个测试程序</p>
+        </div>
+    </div>
+
+    <h2>二、Mermaid 图表代码</h2>
+    <p>请访问 <a href="https://mermaid.live" target="_blank">https://mermaid.live</a> 在线渲染以下代码：</p>
+    
+    <h3>课程知识体系</h3>
+    <pre><code>flowchart TB
+    subgraph PM["进程管理"]
+        PCB["PCB / 进程控制块"]
+        FORK["fork / exec / wait"]
+    end
+    subgraph SYNC["同步互斥"]
+        SEM["信号量 P/V"]
+        MON["管程 Monitor"]
+    end
+    subgraph DEADLOCK["死锁处理"]
+        COND["死锁四条件"]
+        BANK["银行家算法"]
+    end
+    subgraph SCHED["处理机调度"]
+        RR["RR 时间片轮转"]
+        FCFS["FCFS 先来先服务"]
+        MLFQ["MLFQ 多级反馈"]
+    end
+    PCB --> FORK
+    FORK --> SEM
+    SEM --> COND
+    COND --> BANK
+    FORK --> RR
+    RR --> FCFS
+    FCFS --> MLFQ
+    SEM --> MON</code></pre>
+
+    <h3>工程闭环流程</h3>
+    <pre><code>flowchart LR
+    Theory["背景理论"] --> Kernel["内核实现"]
+    Kernel --> Test["用户测试"]
+    Test --> Verify["实测验证"]
+    Verify --> Theory</code></pre>
+
+    <h3>进程状态转换</h3>
+    <pre><code>stateDiagram-v2
+    [*] --> UNUSED
+    UNUSED --> USED
+    USED --> RUNNABLE
+    RUNNABLE --> RUNNING
+    RUNNING --> SLEEPING
+    RUNNING --> ZOMBIE
+    SLEEPING --> RUNNABLE
+    ZOMBIE --> [*]</code></pre>
+
+    <h2>三、PPT 使用对应表</h2>
+    <table>
+        <tr><th>图片</th><th>文件</th><th>PPT 页码</th><th>内容</th></tr>
+        <tr><td>1</td><td>mlfq_results.png</td><td>第9页</td><td>MLFQ实测对比</td></tr>
+        <tr><td>2</td><td>sched_comparison_radar.png</td><td>第9页</td><td>调度算法雷达图</td></tr>
+        <tr><td>3</td><td>mlfq_queue_transitions.png</td><td>第8页</td><td>MLFQ队列转换</td></tr>
+        <tr><td>4</td><td>deadlock_conditions.png</td><td>第10页</td><td>死锁四条件</td></tr>
+        <tr><td>5</td><td>banker_flowchart.png</td><td>第12页</td><td>银行家算法</td></tr>
+        <tr><td>6</td><td>priority_inversion.png</td><td>第14页</td><td>优先级反转</td></tr>
+        <tr><td>7</td><td>priority_inheritance.png</td><td>第14页</td><td>优先级继承</td></tr>
+        <tr><td>8</td><td>rm_vs_edf.png</td><td>第15页</td><td>RM vs EDF</td></tr>
+        <tr><td>9</td><td>syscall_extension.png</td><td>第3页</td><td>系统调用扩展</td></tr>
+        <tr><td>10</td><td>test_coverage.png</td><td>第16页</td><td>测试覆盖</td></tr>
+    </table>
+
+    <footer style="text-align:center; margin-top:40px; color:#666;">
+        <p>进程管理与处理机调度 - 课程设计汇报 | 基于 xv6-riscv | 2026年6月</p>
+    </footer>
+</body>
+</html>
