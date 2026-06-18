@@ -1,0 +1,27 @@
+#block-container > .boot-block {
+    background-color: #6a5acd;
+}
+
+#block-container > .super-block {
+    background-color: darkorange;
+}
+
+#block-container > .log-block {
+    background-color: #ff9800;
+}
+
+#block-container > .unused-block {
+    background-color: gray;
+}
+
+#block-container > .inode-block {
+    background-color: #4caf50;
+}
+
+#block-container > .bitmap-block {
+    background-color: #f061ff;
+}
+
+#block-container > .data-block {
+    background-color: cornflowerblue;
+}
