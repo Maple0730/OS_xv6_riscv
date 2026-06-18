@@ -30,7 +30,7 @@
 //   ...
 // Log appends are synchronous.
 
-// Contents of the header block, used for both the on-disk header block
+// ntents oCof the header block, used for both the on-disk header block
 // and to keep track in memory of logged block# before commit.
 struct logheader {
   int n;
@@ -40,8 +40,8 @@ struct logheader {
 struct log {
   struct spinlock lock;
   int start;
-  int outstanding; // how many FS sys calls are executing.
-  int committing;  // in commit(), please wait.
+  int outstanding; // 当前有多少文件系统系统调用正在执行
+  int committing;  // 现在i是否在提交日志
   int dev;
   struct logheader lh;
 };
@@ -50,7 +50,7 @@ struct log log;
 static void recover_from_log(void);
 static void commit();
 
-void
+void//初始化
 initlog(int dev, struct superblock *sb)
 {
   if (sizeof(struct logheader) >= BSIZE)
@@ -84,11 +84,11 @@ install_trans(int recovering)
 }
 
 // Read the log header from disk into the in-memory log header
-static void
+static void//把磁盘中的日志头读到内存中
 read_head(void)
 {
   struct buf *buf = bread(log.dev, log.start);
-  struct logheader *lh = (struct logheader *)(buf->data);
+  struct logheader *lh = (struct logheader *)(buf->data);//流式数据转结构数据
   int i;
   log.lh.n = lh->n;
   for (i = 0; i < log.lh.n; i++) {
@@ -100,7 +100,7 @@ read_head(void)
 // Write in-memory log header to disk.
 // This is the true point at which the
 // current transaction commits.
-static void
+static void//把内存中的日志头写到磁盘中
 write_head(void)
 {
   struct buf *buf = bread(log.dev, log.start);
@@ -124,7 +124,7 @@ recover_from_log(void)
 }
 
 // called at the start of each FS system call.
-void
+void//开始操作
 begin_op(void)
 {
   acquire(&log.lock);
@@ -136,7 +136,7 @@ begin_op(void)
       sleep(&log, &log.lock);
     } else {
       log.outstanding += 1;
-      release(&log.lock);
+      release(&log.lock); 
       break;
     }
   }
@@ -144,7 +144,7 @@ begin_op(void)
 
 // called at the end of each FS system call.
 // commits if this was the last outstanding operation.
-void
+void//结束操作
 end_op(void)
 {
   int do_commit = 0;

@@ -11,15 +11,16 @@
 #include "sleeplock.h"
 #include "file.h"
 #include "stat.h"
+#include "fcntl.h"
 #include "proc.h"
-
+ 
 struct devsw devsw[NDEV];
 struct {
   struct spinlock lock;
   int nfile;
-} ftable;
+} ftable;// 全局打开文件表 记录当前系统中所有打开的文件对象
 
-void
+void//fileu初始化
 fileinit(void)
 {
   initlock(&ftable.lock, "ftable");
@@ -27,7 +28,7 @@ fileinit(void)
 }
 
 // Allocate a file structure.
-struct file *
+struct file *//分配一个新的 file 结构体，初始化并返回指针
 filealloc(void)
 {
   struct file *f;
@@ -41,7 +42,7 @@ filealloc(void)
   release(&ftable.lock);
 
   f = (struct file *)kmalloc(sizeof(*f));
-  if (f == 0) {
+  if (f == 0) {//分配不成功，回退全局打开文件表计数
     acquire(&ftable.lock);
     if (ftable.nfile < 1)
       panic("filealloc");
@@ -56,7 +57,7 @@ filealloc(void)
 }
 
 // Increment ref count for file f.
-struct file *
+struct file *//共享同一个打开文件对象，增加引用计数并返回指针
 filedup(struct file *f)
 {
   acquire(&ftable.lock);
@@ -68,7 +69,7 @@ filedup(struct file *f)
 }
 
 // Close file f.  (Decrement ref count, close when reaches 0.)
-void
+void//关闭打开文件对象
 fileclose(struct file *f)
 {
   struct file ff;
@@ -99,6 +100,7 @@ fileclose(struct file *f)
 
 // Get metadata about file f.
 // addr is a user virtual address, pointing to a struct stat.
+//拿文件元数据
 int
 filestat(struct file *f, uint64 addr)
 {
@@ -116,9 +118,54 @@ filestat(struct file *f, uint64 addr)
   return -1;
 }
 
+// Adjust the current offset of an open inode-backed file.
+// Returns the new offset on success, -1 on failure.
+int
+fileseek(struct file *f, int offset, int whence)
+{
+  long long base;
+  long long newoff;
+
+  if (f->type != FD_INODE)
+    return -1;
+
+  ilock(f->ip);
+  if (f->ip->type != T_FILE) {
+    iunlock(f->ip);
+    return -1;
+  }
+
+  switch (whence) {
+  case SEEK_SET:
+    base = 0;
+    break;
+  case SEEK_CUR:
+    base = f->off;
+    break;
+  case SEEK_END:
+    base = f->ip->size;
+    break;
+  default:
+    iunlock(f->ip);
+    return -1;
+  }
+
+  newoff = base + offset;
+  if (newoff < 0 ||
+      newoff > (long long)MAXFILE * BSIZE ||
+      newoff > f->ip->size) {
+    iunlock(f->ip);
+    return -1;
+  }
+
+  f->off = (uint)newoff;
+  iunlock(f->ip);
+  return (int)newoff;
+}
+
 // Read from file f.
 // addr is a user virtual address.
-int
+int//读file
 fileread(struct file *f, uint64 addr, int n)
 {
   int r = 0;
@@ -126,18 +173,25 @@ fileread(struct file *f, uint64 addr, int n)
   if (f->readable == 0)
     return -1;
 
-  if (f->type == FD_PIPE) {
+  if (f->type == FD_PIPE) 
+  {
     r = piperead(f->pipe, addr, n);
-  } else if (f->type == FD_DEVICE) {
+  } 
+  else if (f->type == FD_DEVICE) 
+  {
     if (f->major < 0 || f->major >= NDEV || !devsw[f->major].read)
       return -1;
     r = devsw[f->major].read(1, addr, n);
-  } else if (f->type == FD_INODE) {
+  } 
+  else if (f->type == FD_INODE) 
+  {
     ilock(f->ip);
     if ((r = readi(f->ip, 1, addr, f->off, n)) > 0)
       f->off += r;
     iunlock(f->ip);
-  } else {
+  } 
+  else 
+  {
     panic("fileread");
   }
 
@@ -146,6 +200,7 @@ fileread(struct file *f, uint64 addr, int n)
 
 // Write to file f.
 // addr is a user virtual address.
+//写file
 int
 filewrite(struct file *f, uint64 addr, int n)
 {

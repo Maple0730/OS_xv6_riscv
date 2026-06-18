@@ -121,13 +121,13 @@ allocpid()
   return pid;
 }
 
-static struct waitbucket *
+static struct waitbucket *//获取等待队列
 waitbucket_for(void *chan)
 {
   return &waittable[((uint64)chan) % NWCHAN];
 }
 
-static void
+static void//插入到 wb 的等待队列
 waitlist_insert(struct waitbucket *wb, struct proc *p)
 {
   p->wnext = wb->head;

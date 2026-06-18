@@ -18,10 +18,10 @@ initlock(struct spinlock *lk, char *name)
 
 // Acquire the lock.
 // Loops (spins) until the lock is acquired.
-void
+void//获取一个自旋锁
 acquire(struct spinlock *lk)
 {
-  push_off(); // disable interrupts to avoid deadlock.
+  push_off(); // disable interrupts to avoid deadlock.关中断
   if (holding(lk))
     panic("acquire");
 
@@ -34,7 +34,7 @@ acquire(struct spinlock *lk)
   // the C compiler and the processor to not move loads or stores
   // past this point, to ensure that the critical section's memory
   // references happen strictly after the lock is acquired.
-  while (__atomic_exchange_n(&lk->locked, 1, __ATOMIC_ACQUIRE) != 0)
+  while (__atomic_exchange_n(&lk->locked, 1, __ATOMIC_ACQUIRE) != 0)//自旋的实现
     ;
 
   // Record info about lock acquisition for holding() and debugging.
@@ -42,7 +42,7 @@ acquire(struct spinlock *lk)
 }
 
 // Release the lock.
-void
+void//释放自旋锁
 release(struct spinlock *lk)
 {
   if (!holding(lk))
@@ -76,7 +76,7 @@ release(struct spinlock *lk)
 
 // Check whether this cpu is holding the lock.
 // Interrupts must be off.
-int
+int // 判断当前CPU是否持有锁。必须在关中断的情况下调用。
 holding(struct spinlock *lk)
 {
   int r;
@@ -88,7 +88,7 @@ holding(struct spinlock *lk)
 // it takes two pop_off()s to undo two push_off()s.  Also, if interrupts
 // are initially off, then push_off, pop_off leaves them off.
 
-void
+void//关中断
 push_off(void)
 {
   int old = intr_get();
@@ -102,7 +102,7 @@ push_off(void)
   mycpu()->noff += 1;
 }
 
-void
+void//开中断
 pop_off(void)
 {
   struct cpu *c = mycpu();

@@ -1,6 +1,6 @@
 #include "types.h"
 
-void *
+void *//内存设置函数
 memset(void *dst, int c, uint n)
 {
   char *cdst = (char *)dst;
