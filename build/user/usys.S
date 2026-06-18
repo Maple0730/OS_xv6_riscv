@@ -165,6 +165,26 @@ shmdt:
  li a7, SYS_shmdt
  ecall
  ret
+.global socket
+socket:
+ li a7, SYS_socket
+ ecall
+ ret
+.global bind
+bind:
+ li a7, SYS_bind
+ ecall
+ ret
+.global sendto
+sendto:
+ li a7, SYS_sendto
+ ecall
+ ret
+.global recvfrom
+recvfrom:
+ li a7, SYS_recvfrom
+ ecall
+ ret
 .global sched_algorithm
 sched_algorithm:
  li a7, SYS_sched_algorithm
