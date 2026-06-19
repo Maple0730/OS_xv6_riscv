@@ -38,7 +38,6 @@ int             fileread(struct file*, uint64, int n);
 int             filestat(struct file*, uint64 addr);
 int             filewrite(struct file*, uint64, int n);
 int             fileseek(struct file*, int, int);
-
 // fs.c
 void            fsinit(int);
 int             dirlink(struct inode*, char*, uint);

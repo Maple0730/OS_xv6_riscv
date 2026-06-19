@@ -8,6 +8,7 @@
 #include "param.h"
 #include "fs.h"
 #include "spinlock.h"
+#include "fcntl.h"
 #include "sleeplock.h"
 #include "file.h"
 #include "stat.h"
@@ -116,6 +117,50 @@ filestat(struct file *f, uint64 addr)
     return 0;
   }
   return -1;
+}
+
+// Seek on file f.
+int
+fileseek(struct file *f, int offset, int whence)
+{
+  long long base;
+  long long newoff;
+
+  if (f->type != FD_INODE)
+    return -1;
+
+  ilock(f->ip);
+  if (f->ip->type != T_FILE) {
+    iunlock(f->ip);
+    return -1;
+  }
+
+  switch (whence) {
+  case SEEK_SET:
+    base = 0;
+    break;
+  case SEEK_CUR:
+    base = f->off;
+    break;
+  case SEEK_END:
+    base = f->ip->size;
+    break;
+  default:
+    iunlock(f->ip);
+    return -1;
+  }
+
+  newoff = base + offset;
+  if (newoff < 0 ||
+      newoff > (long long)MAXFILE * BSIZE ||
+      newoff > f->ip->size) {
+    iunlock(f->ip);
+    return -1;
+  }
+
+  f->off = (uint)newoff;
+  iunlock(f->ip);
+  return (int)newoff;
 }
 
 // Read from file f.

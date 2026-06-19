@@ -119,19 +119,6 @@ sys_fstat(void)
   return filestat(f, st);
 }
 
-uint64
-sys_lseek(void)
-{
-  struct file *f;
-  int offset, whence;
-
-  if (argfd(0, 0, &f) < 0)
-    return -1;
-  argint(1, &offset);
-  argint(2, &whence);
-  return fileseek(f, offset, whence);
-}
-
 // Create the path new as a link to the same inode as old.
 uint64
 sys_link(void)
@@ -497,38 +484,7 @@ sys_lseek(void)
     return -1;
   argint(1, &offset);
   argint(2, &whence);
-
-  if (f->type != FD_INODE)
-    return -1;
-
-  ilock(f->ip);
-
-  switch (whence) {
-  case SEEK_SET:
-    if (offset < 0)
-      goto bad;
-    f->off = offset;
-    break;
-  case SEEK_CUR:
-    if (offset < 0 && f->off < (uint)(-offset))
-      goto bad;
-    f->off += offset;
-    break;
-  case SEEK_END:
-    if (offset < 0 && f->ip->size < (uint)(-offset))
-      goto bad;
-    f->off = f->ip->size + offset;
-    break;
-  default:
-    goto bad;
-  }
-
-  iunlock(f->ip);
-  return f->off;
-
-bad:
-  iunlock(f->ip);
-  return -1;
+  return fileseek(f, offset, whence);
 }
 
 uint64

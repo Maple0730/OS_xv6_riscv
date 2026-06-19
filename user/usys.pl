@@ -46,7 +46,6 @@ entry("pause");
 entry("uptime");
 entry("ps");
 entry("halt");
-entry("lseek");
 entry("sem_open");
 entry("sem_wait");
 entry("sem_post");
