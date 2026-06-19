@@ -1,0 +1,183 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage{pgfplots}
+\usepackage{pgfplotstable}
+\usepackage{booktabs}
+\usepackage{ctex}
+\usepackage{amsmath}
+\usepackage{geometry}
+\geometry{left=2cm, right=2cm, top=2.5cm, bottom=2.5cm}
+\usepgfplotslibrary{patterns}   % 填充模式库
+
+% ===== 全局样式 =====
+\pgfplotsset{
+  compat=1.18,
+  width=13cm,
+  height=7.5cm,
+  every axis/.style={
+    ymin=0, ymax=105,
+    ytick={0,20,40,60,80,100},
+    ylabel={响应时间 / tick},
+    ylabel style={font=\bfseries\songti\zihao{10}},
+    tick label style={font=\songti\zihao{9}},
+    axis lines=left,
+    axis line style={thick, -},
+    tick align=outside,
+    major tick style={thick, black},
+    grid=major,
+    grid style={dashed, gray!40, line width=0.5pt},
+    bar width=9pt,
+    bar shift=0pt,
+    no markers,
+    cycle multi list={
+      mark list*%
+      ,fill,draw,line width=2.5pt%
+      ,fill=gray!15,draw=black,pattern=horizontal lines,pattern color=black!55,line width=1pt%
+      ,fill=gray!15,draw=black,pattern=vertical lines,pattern color=black!55,line width=1pt%
+    },
+  },
+}
+
+\begin{document}
+
+% ===== 图 S4-1：MLFQ vs RR vs FCFS 分组柱状图 =====
+\section*{图 S4-1：调度算法响应时间对比}
+
+\noindent\textbf{图表用途}：展示 MLFQ、RR、FCFS 三种算法对短作业（$<1$ tick）、中等作业（$\approx5$ tick）、长作业（$\approx20$ tick）的响应时间。测试环境：QEMU 单核，8 个作业，MLFQ 五级队列（Q0$=1$ tick、Q1$=2$ tick、Q2$=4$ tick、Q3$=8$ tick、Q4$=15$ tick）。
+
+\vspace{0.5em}
+
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}
+    \begin{axis}[
+      symbolic x coords={短作业, 中等作业, 长作业},
+      xticklabel style={font=\bfseries\songti\zihao{10}},
+      x tick label style={rotate=0, anchor=north},
+      ymajorgrids=true,
+      major grid style={dashed, gray!40, line width=0.5pt},
+      % --- 图例 ---
+      legend entries={
+        {\songti MLFQ（黑色实心，强调）},
+        {\songti RR（横线，轮转调度）},
+        {\songti FCFS（竖线，先来先服务）},
+      },
+      legend style={
+        draw=none,
+        fill=none,
+        font=\songti\zihao{9},
+        cells={anchor=west},
+        at={(0.5,-0.12)},
+        anchor=north,
+        /tikz/column sep=8pt,
+        row sep=3pt,
+      },
+      legend image post style={xscale=0.8},
+      % --- X 轴标签 ---
+      xlabel={作业类型（CPU 占用时间）},
+      xlabel style={font=\bfseries\songti\zihao{10}},
+      x label style={yshift=-5pt},
+      % --- MLFQ 短作业参考虚线（1.3 tick）---
+      extra y ticks={1.3},
+      extra y tick style={
+        grid=major,
+        grid style={solid, black!50, line width=1.5pt},
+        tick style={draw=none},
+        tick label style={draw=none},
+        ymajorgrids=false,
+      },
+    ]
+
+    % ===== 第一组：短作业 =====
+    % MLFQ — 黑色实心（bar shift = -1.5*bar）
+    \addplot[ybar,fill=black,draw=black,line width=2.5pt,bar shift=-13.5pt]
+      coordinates { (短作业, 1.3) };
+    % RR — 横线填充（bar shift = -0.5*bar）
+    \addplot[ybar,fill=gray!15,draw=black,pattern=horizontal lines,pattern color=black!55,line width=1pt,bar shift=-4.5pt]
+      coordinates { (短作业, 2.0) };
+    % FCFS — 竖线填充（bar shift = +0.5*bar）
+    \addplot[ybar,fill=gray!15,draw=black,pattern=vertical lines,pattern color=black!55,line width=1pt,bar shift=4.5pt]
+      coordinates { (短作业, 15.0) };
+
+    % ===== 第二组：中等作业 =====
+    \addplot[ybar,fill=black,draw=black,line width=2.5pt,bar shift=-13.5pt]
+      coordinates { (中等作业, 4.0) };
+    \addplot[ybar,fill=gray!15,draw=black,pattern=horizontal lines,pattern color=black!55,line width=1pt,bar shift=-4.5pt]
+      coordinates { (中等作业, 5.0) };
+    \addplot[ybar,fill=gray!15,draw=black,pattern=vertical lines,pattern color=black!55,line width=1pt,bar shift=4.5pt]
+      coordinates { (中等作业, 57.0) };
+
+    % ===== 第三组：长作业 =====
+    \addplot[ybar,fill=black,draw=black,line width=2.5pt,bar shift=-13.5pt]
+      coordinates { (长作业, 13.5) };
+    \addplot[ybar,fill=gray!15,draw=black,pattern=horizontal lines,pattern color=black!55,line width=1pt,bar shift=-4.5pt]
+      coordinates { (长作业, 7.5) };
+    \addplot[ybar,fill=gray!15,draw=black,pattern=vertical lines,pattern color=black!55,line width=1pt,bar shift=4.5pt]
+      coordinates { (长作业, 92.5) };
+
+    % ===== 数值标注（上方显示） =====
+    % 短作业
+    \node[above, font=\bfseries\songti\zihao{9}] at (axis cs:短作业, 1.3) {1.3};
+    \node[above, font=\songti\zihao{9}] at (axis cs:短作业, 2.0) {2.0};
+    \node[above, font=\songti\zihao{9}] at (axis cs:短作业, 15.0) {15.0};
+
+    % 中等作业
+    \node[above, font=\bfseries\songti\zihao{9}] at (axis cs:中等作业, 4.0) {4.0};
+    \node[above, font=\songti\zihao{9}] at (axis cs:中等作业, 5.0) {5.0};
+    \node[above, font=\songti\zihao{9}] at (axis cs:中等作业, 57.0) {57.0};
+
+    % 长作业
+    \node[above, font=\bfseries\songti\zihao{9}] at (axis cs:长作业, 13.5) {13.5};
+    \node[above, font=\songti\zihao{9}] at (axis cs:长作业, 7.5) {7.5};
+    \node[above, font=\songti\zihao{9}] at (axis cs:长作业, 92.5) {92.5};
+
+    % ===== MLFQ 短作业参考虚线（贯穿三组） =====
+    \draw[thick, dashed, black!60]
+      (axis cs:短作业,-0.4) -- (axis cs:长作业,0.4) -- (axis cs:长作业, 1.3)
+      node[midway, above, font=\songti\zihao{8}\itshape, black!60] {MLFQ 短作业基准 1.3 tick};
+
+    % ===== 组分隔线（可选，增强可读性） =====
+    % 在每组之间画垂直分隔线
+    \draw[gray!30, very thin]
+      (axis cs:短作业, 0) -- (axis cs:短作业, 105);
+    \draw[gray!30, very thin]
+      (axis cs:中等作业, 0) -- (axis cs:中等作业, 105);
+
+    \end{axis}
+  \end{tikzpicture}
+
+  \caption{图 S4-1 \quad MLFQ / RR / FCFS 调度算法响应时间对比（单位：tick）}
+  \label{fig:s4-1-response-time}
+\end{figure}
+
+\noindent\textbf{图注说明}：
+\vspace{-0.5em}
+\begin{itemize}\setlength\itemsep{0.2em}
+  \item \textbf{实验环境}：QEMU 单核（hart 0），xv6-riscv，8 个并发作业（3 短 + 3 中 + 2 长）
+  \item \textbf{MLFQ}：五级反馈队列（Q0$=1$ tick、Q1$=2$ tick、Q2$=4$ tick、Q3$=8$ tick、Q4$=15$ tick），Boost 间隔 $100$ tick
+  \item \textbf{RR}：固定时间片轮转，时间片 $=1$ tick $\approx 10$ ms，公平性最高（$0.98$），但上下文切换开销最大
+  \item \textbf{FCFS}：先来先服务无抢占，吞吐量最优（$115$ tick），但短作业响应极差（$15.0$ tick）
+  \item \textbf{核心结论}：MLFQ 短作业响应最优（$1.3$ tick），平均响应时间 $6.3$ tick，综合性能最佳
+\end{itemize}
+
+\vfill
+
+% ===== 原始数据表 =====
+\section*{图 S4-1 原始数据}
+
+\vspace{0.5em}
+
+\noindent\textbf{表 S4-1 \quad MLFQ / RR / FCFS 响应时间详细数据（单位：tick）}
+
+\vspace{0.8em}
+
+\noindent\begin{tabular}{lcccc}
+  \toprule
+  \textbf{算法} & \textbf{短作业} & \textbf{中等作业} & \textbf{长作业} & \textbf{平均响应时间} \\
+  \midrule
+  MLFQ（强调） & \cellcolor{gray!20}\textbf{1.3} & \cellcolor{gray!20}\textbf{4.0} & \cellcolor{gray!20}\textbf{13.5} & \cellcolor{gray!20}\textbf{6.3} \\
+  RR（横线）   & $2.0$ & $5.0$ & $7.5$  & $4.8$ \\
+  FCFS（竖线） & $15.0$ & $57.0$ & $92.5$ & $54.8$ \\
+  \bottomrule
+\end{tabular}
+
+\end{document}
