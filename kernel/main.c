@@ -23,6 +23,10 @@ void main()
     kvminithart();           // 切换到内核页表（开启分页）
     procinit();              // 初始化进程表，为每个进程分配内核栈
     seminit();               // 初始化信号量表
+    monitor_init();          // 初始化管程表
+    banker_init_lock();      // 初始化银行家算法自旋锁
+    deadlock_init();         // 初始化死锁检测器
+    msgq_init();             // 初始化消息队列 (D2)
     trapinit();              // 初始化 trap 数据结构（如中断向量表）
     trapinithart();          // 在当前 hart 上安装 trap 处理函数（设置 stvec）
     virtio_net_init();       // 初始化 virtio-net 网卡（需在 plicinit 之前获取 IRQ）

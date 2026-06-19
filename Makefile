@@ -27,7 +27,11 @@ OBJS = \
   $(BK)/syscall.o \
   $(BK)/sysproc.o \
   $(BK)/sem.o \
+  $(BK)/banker.o \
+  $(BK)/deadlock_detect.o \
+  $(BK)/monitor.o \
   $(BK)/shm.o \
+  $(BK)/msgq.o \
   $(BK)/bio.o \
   $(BK)/fs.o \
   $(BK)/log.o \
@@ -120,7 +124,7 @@ $(BK)/%.o: $(K)/%.S | $(BK)
 tags: $(OBJS)
 	etags kernel/*.S kernel/*.c
 
-ULIB = $(BU)/ulib.o $(BU)/usys.o $(BU)/printf.o $(BU)/umalloc.o
+ULIB = $(BU)/ulib.o $(BU)/usys.o $(BU)/printf.o $(BU)/umalloc.o $(BU)/sched.o
 
 $(BU)/_%: $(BU)/%.o $(ULIB) $(U)/user.ld | $(BU)
 	$(LD) $(LDFLAGS) -T $(U)/user.ld -o $@ $< $(ULIB)
@@ -189,6 +193,31 @@ UPROGS=\
 	$(BU)/_semtest2\
 	$(BU)/_semtest3\
 	$(BU)/_udptest\
+	$(BU)/_waitpidtest\
+	$(BU)/_schedtest\
+	$(BU)/_shmtest\
+	$(BU)/_timeslicetest\
+	$(BU)/_cgettime\
+	$(BU)/_schedstat\
+	$(BU)/_schedlatency\
+	$(BU)/_sjftest\
+	$(BU)/_sjfmin\
+	$(BU)/_sjfbusy\
+	$(BU)/_dining\
+	$(BU)/_dining_safe1\
+	$(BU)/_dining_safe2\
+	$(BU)/_bankertest\
+	$(BU)/_banker_unsafe\
+	$(BU)/_dining_auto\
+	$(BU)/_monitortest\
+	$(BU)/_pc_monitor\
+	$(BU)/_prioritytest\
+	$(BU)/_pathfinder\
+	$(BU)/_rmtest\
+	$(BU)/_edftest\
+	$(BU)/_rttest\
+	$(BU)/_cpuaffinity\
+	$(BU)/_msgqtest
 
 $(FSIMG): $(BM)/mkfs README $(UPROGS) | $(B)
 	$(BM)/mkfs $@ README $(UPROGS)

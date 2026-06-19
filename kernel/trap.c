@@ -83,21 +83,30 @@ usertrap(void)
 
   // give up the CPU if this is a timer interrupt.
   if (which_dev == 2) {
-#if SCHED_ALGORITHM == SCHED_MLFQ
-    // MLFQ 模式：统计时间片使用
-    p->timeslice_used++;
-    int ts = get_timeslice(p->queue_level);
-    if (p->timeslice_used >= ts) {
-      // 时间片用完，降级到低优先级队列
-      if (p->queue_level < MLFQ_LEVELS - 1) {
-        p->queue_level++;
+    // Runtime scheduler check for time slice management
+    if (current_scheduler == SCHED_MLFQ) {
+      // MLFQ mode: track time slice usage
+      p->timeslice_used++;
+      int ts = get_timeslice(p->queue_level);
+      if (p->timeslice_used >= ts) {
+        // Time slice exhausted, demote to lower priority queue
+        if (p->queue_level < MLFQ_LEVELS - 1) {
+#if MLFQ_DEBUG
+          printf("[MLFQ] demote: pid=%d from queue=%d to queue=%d\n",
+                 p->pid, p->queue_level, p->queue_level + 1);
+#endif
+          p->queue_level++;
+        }
+        p->timeslice_used = 0;
+        yield();
       }
-      p->timeslice_used = 0;
+    } else if (current_scheduler == SCHED_SJF) {
+      // SJF mode: non-preemptive. Track run_time for stats, but do not yield.
+      p->run_time++;
+    } else {
+      // RR or FCFS mode: yield on every timer interrupt
       yield();
     }
-#else
-    yield();
-#endif
   }
 
   prepare_return();
@@ -169,7 +178,8 @@ kerneltrap()
   }
 
   // give up the CPU if this is a timer interrupt.
-  if (which_dev == 2 && myproc() != 0)
+  // Skip for SJF (non-preemptive) - it should run to completion.
+  if (which_dev == 2 && myproc() != 0 && current_scheduler != SCHED_SJF)
     yield();
 
   // the yield() may have caused some traps to occur,
@@ -186,11 +196,16 @@ clockintr()
     ticks++;
     wakeup(&ticks);
     release(&tickslock);
+
+    // Periodically scan for deadlocked processes (Phase B4).
+    // Called on CPU 0 only; deadlock_scan() itself is a no-op
+    // outside the configured interval.
+    deadlock_scan();
   }
 
   // ask for the next timer interrupt. this also clears
-  // the interrupt request. TICKSLICE is configured in param.h
-  w_stimecmp(r_time() + TICKSLICE);
+  // the interrupt request. Timeslice is runtime configurable
+  w_stimecmp(r_time() + get_rr_fcfs_timeslice());
 }
 
 // check if it's an external interrupt or software interrupt,

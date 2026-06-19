@@ -150,9 +150,11 @@ int main(int argc, char *argv[]) {
   printf("  2. LONG jobs: May take longer (demoted to lower queue)\n");
   printf("  3. MIXED jobs: Moderate time (alternating CPU/I/O)\n");
   printf("\nPriority queue timeslices:\n");
-  printf("  Queue 0 (highest): 5ms\n");
-  printf("  Queue 1 (medium): 10ms\n");
-  printf("  Queue 2 (lowest): 20ms\n");
+  printf("  Queue 0 (highest): ~10ms (1 tick)\n");
+  printf("  Queue 1: ~20ms (2 ticks)\n");
+  printf("  Queue 2: ~40ms (4 ticks)\n");
+  printf("  Queue 3: ~80ms (8 ticks)\n");
+  printf("  Queue 4 (lowest): ~150ms (15 ticks)\n");
 
   return 0;
 }

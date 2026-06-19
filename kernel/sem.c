@@ -19,6 +19,7 @@ seminit(void)
     semtable[i].allocated = 0;
     semtable[i].waiters = 0;
     semtable[i].name[0] = 0;
+    semtable[i].holder_pid = -1;
   }
 }
 
@@ -82,14 +83,42 @@ sem_wait(int sem_id)
     return -1;
   }
 
+  // Phase D1: priority inheritance.  If this sem is held
+  // (value<1) by another process, and our priority is higher
+  // (lower number), boost the holder's priority to ours.
+  // This prevents the classic "priority inversion" scenario
+  // where a medium-priority CPU-bound process pre-empts a
+  // low-priority process that is holding a resource needed
+  // by a high-priority process.
+  int my_pid = myproc()->pid;
+  if (sem->value < 1 && sem->holder_pid >= 0 && sem->holder_pid != my_pid) {
+    struct proc *holder = 0;
+    for (struct proc *q = proc; q < &proc[NPROC]; q++) {
+      if (q->pid == sem->holder_pid) { holder = q; break; }
+    }
+    if (holder) {
+      acquire(&holder->lock);
+      int my_prio = myproc()->priority;
+      if (my_prio < holder->priority) {
+        if (holder->boost_count == 0)
+          holder->orig_priority = holder->priority;
+        holder->priority = my_prio;
+        holder->boost_count++;
+      }
+      release(&holder->lock);
+    }
+  }
+
   sem->value--;
   if (sem->value < 0) {
     // Must sleep to wait for V operation
-    printf("[sem_wait] pid=%d sem=%d value=%d -> sleeping\n",
-           myproc()->pid, sem_id, sem->value + 1);
     sleep(sem, &sem->lock);
-    printf("[sem_wait] pid=%d sem=%d -> woke up\n",
-           myproc()->pid, sem_id);
+  } else {
+    // We just acquired the sem (value went from 1 to 0, or
+    // it was 0 and a single post was issued, etc.).  Record
+    // ourselves as the holder so the next waiter can apply
+    // priority inheritance.
+    sem->holder_pid = my_pid;
   }
 
   release(&sem->lock);
@@ -113,15 +142,27 @@ sem_post(int sem_id)
     return -1;
   }
 
-  printf("[sem_post] pid=%d sem=%d value=%d\n",
-         myproc()->pid, sem_id, sem->value);
   sem->value++;
   if (sem->value <= 0) {
-    // There are waiters, wake one up
-    printf("[sem_post] pid=%d sem=%d -> waking up waiter\n",
-           myproc()->pid, sem_id);
+    // There are waiters — clear our holder record before
+    // waking one.  The woken waiter will set its own
+    // holder_pid in sem_wait()'s else branch.
+    sem->holder_pid = -1;
     wakeup(sem);
   }
+  // Phase D1: restore our priority if it was boosted — do
+  // this regardless of whether there were waiters.  If we
+  // owned the sem (value was 0 or below before our post),
+  // we are no longer the holder, so the boost (if any)
+  // should be released.
+  struct proc *p = myproc();
+  acquire(&p->lock);
+  if (p->boost_count > 0) {
+    p->boost_count--;
+    if (p->boost_count == 0)
+      p->priority = p->orig_priority;
+  }
+  release(&p->lock);
 
   release(&sem->lock);
 
@@ -176,4 +217,30 @@ sem_close(int sem_id)
   release(&sem->lock);
 
   return 0;
+}
+
+// Wake ALL waiters on this sem (Phase C1: monitor broadcast).
+// Bumps value by N where N = -value (i.e. unblocks every waiter).
+void
+sem_broadcast(int sem_id)
+{
+  if (sem_id < 0 || sem_id >= NSEM) return;
+  struct semaphore *sem = &semtable[sem_id];
+  acquire(&sem->lock);
+  if (!sem->allocated) {
+    release(&sem->lock);
+    return;
+  }
+  // Compute how many waiters there are (the difference between
+  // -value and the number of wakeups we will issue).
+  // The xv6 semaphore only tracks `value` and `waiters` list, not
+  // a precise count of sleeping procs.  We loop calling wakeup
+  // until there are no more waiters (or a safety cap is hit).
+  int safety = NSEM + 4;
+  while (safety-- > 0) {
+    if (sem->waiters == 0 && sem->value >= 0) break;
+    sem->value++;
+    wakeup(sem);
+  }
+  release(&sem->lock);
 }

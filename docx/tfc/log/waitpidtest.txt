@@ -1,0 +1,20 @@
+$ waitpidtest
+=== waitpid Test Suite ===
+
+Test 1: waitpid(-1, &status) - wait for any child
+PASSED: waitpid(-1, &status) returned pid=6, status=42
+
+Test 2: waitpid(specific_pid, &status) - wait for specific child
+PASSED: waitpid(7, &status) returned pid=7, status=100
+PASSED: waitpid(8, &status) returned pid=8, status=200
+
+Test 3: waitpid(-1, &status) - wait for multiple children
+Collected child: pid=9, status=10
+Collected child: pid=10, status=11
+Collected child: pid=11, status=12
+PASSED: All 3 children collected with waitpid(-1, &status)
+
+Test 4: waitpid(invalid_pid, &status) - wait for non-existent child
+PASSED: waitpid(9999, &status) correctly returned -1 (no such child)
+
+=== All tests completed ===
