@@ -3,6 +3,7 @@ struct file {
   int ref; // reference count
   char readable;
   char writable;
+  char append;       // O_APPEND mode: always write at end of file
   struct pipe *pipe; // FD_PIPE
   struct inode *ip;  // FD_INODE and FD_DEVICE
   uint off;          // FD_INODE
