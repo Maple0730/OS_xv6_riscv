@@ -1,0 +1,133 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 750">
+  <rect width="960" height="750" fill="#FFFFFF"/>
+
+  <text x="480" y="28" text-anchor="middle" font-family="SimHei,sans-serif" font-size="20" font-weight="bold" fill="#1A3A5C">UDP 网络协议栈分层架构</text>
+  <line x1="315" y1="35" x2="645" y2="35" stroke="#E8A817" stroke-width="2"/>
+
+  <!-- ===== User Space ===== -->
+  <rect x="30" y="46" width="900" height="66" fill="#ECFDF5" stroke="#10B981" stroke-width="2"/>
+  <rect x="30" y="46" width="900" height="24" fill="#10B981"/>
+  <text x="480" y="63" text-anchor="middle" font-family="SimHei,sans-serif" font-size="14" font-weight="bold" fill="#FFFFFF">用户空间 (User Space)</text>
+
+  <rect x="45" y="78" width="260" height="26" fill="#FFFFFF" stroke="#A7F3D0" stroke-width="1"/>
+  <text x="175" y="95" text-anchor="middle" font-family="Consolas,monospace" font-size="12" fill="#1D1D1F">udptest.c — 网络收发测试</text>
+
+  <rect x="320" y="78" width="340" height="26" fill="#FFFFFF" stroke="#A7F3D0" stroke-width="1"/>
+  <text x="490" y="95" text-anchor="middle" font-family="Consolas,monospace" font-size="12" fill="#1D1D1F">socket() / bind() / sendto() / recvfrom()</text>
+
+  <rect x="675" y="78" width="240" height="26" fill="#FFFFFF" stroke="#A7F3D0" stroke-width="1"/>
+  <text x="795" y="95" text-anchor="middle" font-family="Microsoft YaHei,sans-serif" font-size="12" fill="#6B7280">user.h + usys.pl → ecall</text>
+
+  <!-- Arrow -->
+  <polygon points="476,116 480,124 484,116" fill="#6B7280"/>
+  <text x="560" y="123" font-family="Microsoft YaHei,sans-serif" font-size="10" fill="#6B7280">ecall (RISC-V)</text>
+
+  <!-- ===== Socket Layer ===== -->
+  <rect x="30" y="134" width="900" height="82" fill="#FFFBEB" stroke="#E8A817" stroke-width="2"/>
+  <rect x="30" y="134" width="900" height="24" fill="#E8A817"/>
+  <text x="480" y="151" text-anchor="middle" font-family="SimHei,sans-serif" font-size="14" font-weight="bold" fill="#FFFFFF">Socket 层 (kernel/sysnet.c · 286行)</text>
+
+  <!-- Socket boxes: height 42, main text y=180, sub text y=198 -->
+  <rect x="45" y="166" width="200" height="42" rx="3" fill="#FFFFFF" stroke="#FCD34D" stroke-width="1"/>
+  <text x="145" y="185" text-anchor="middle" font-family="Consolas,monospace" font-size="13" font-weight="bold" fill="#92400E">sys_socket()</text>
+  <text x="145" y="200" text-anchor="middle" font-family="Microsoft YaHei,sans-serif" font-size="10" fill="#9CA3AF">分配socket, 返回fd</text>
+
+  <rect x="260" y="166" width="200" height="42" rx="3" fill="#FFFFFF" stroke="#FCD34D" stroke-width="1"/>
+  <text x="360" y="185" text-anchor="middle" font-family="Consolas,monospace" font-size="13" font-weight="bold" fill="#92400E">sys_bind()</text>
+  <text x="360" y="200" text-anchor="middle" font-family="Microsoft YaHei,sans-serif" font-size="10" fill="#9CA3AF">绑定本地 IP:port</text>
+
+  <rect x="475" y="166" width="200" height="42" rx="3" fill="#FFFFFF" stroke="#FCD34D" stroke-width="1"/>
+  <text x="575" y="185" text-anchor="middle" font-family="Consolas,monospace" font-size="13" font-weight="bold" fill="#92400E">sys_sendto()</text>
+  <text x="575" y="200" text-anchor="middle" font-family="Microsoft YaHei,sans-serif" font-size="10" fill="#9CA3AF">copyin → udp_send()</text>
+
+  <rect x="690" y="166" width="225" height="42" rx="3" fill="#FFFFFF" stroke="#FCD34D" stroke-width="1"/>
+  <text x="802" y="185" text-anchor="middle" font-family="Consolas,monospace" font-size="13" font-weight="bold" fill="#92400E">sys_recvfrom()</text>
+  <text x="802" y="200" text-anchor="middle" font-family="Microsoft YaHei,sans-serif" font-size="10" fill="#9CA3AF">udp_recv() → copyout</text>
+
+  <!-- Arrow -->
+  <polygon points="476,218 480,226 484,218" fill="#6B7280"/>
+
+  <!-- ===== Protocol Layer ===== -->
+  <rect x="30" y="236" width="900" height="150" fill="#EFF6FF" stroke="#3A7BD5" stroke-width="2"/>
+  <rect x="30" y="236" width="900" height="24" fill="#3A7BD5"/>
+  <text x="480" y="253" text-anchor="middle" font-family="SimHei,sans-serif" font-size="14" font-weight="bold" fill="#FFFFFF">协议层 (kernel/net.c · 336行 + kernel/net.h)</text>
+
+  <rect x="45" y="270" width="195" height="60" rx="3" fill="#FFFFFF" stroke="#93C5FD" stroke-width="1.5"/>
+  <text x="142" y="291" text-anchor="middle" font-family="Consolas,monospace" font-size="14" font-weight="bold" fill="#1D4ED8">Ethernet</text>
+  <text x="142" y="309" text-anchor="middle" font-family="Consolas,monospace" font-size="10" fill="#6B7280">14B帧头 · MAC寻址</text>
+  <text x="142" y="324" text-anchor="middle" font-family="Microsoft YaHei,sans-serif" font-size="9" fill="#9CA3AF">EtherType 区分上层协议</text>
+
+  <rect x="255" y="270" width="195" height="60" rx="3" fill="#FFFFFF" stroke="#93C5FD" stroke-width="1.5"/>
+  <text x="352" y="291" text-anchor="middle" font-family="Consolas,monospace" font-size="14" font-weight="bold" fill="#1D4ED8">ARP Engine</text>
+  <text x="352" y="309" text-anchor="middle" font-family="Consolas,monospace" font-size="10" fill="#6B7280">arp_table[16]</text>
+  <text x="352" y="324" text-anchor="middle" font-family="Microsoft YaHei,sans-serif" font-size="9" fill="#9CA3AF">广播请求→轮询→记录</text>
+
+  <rect x="465" y="270" width="195" height="60" rx="3" fill="#FFFFFF" stroke="#93C5FD" stroke-width="1.5"/>
+  <text x="562" y="291" text-anchor="middle" font-family="Consolas,monospace" font-size="14" font-weight="bold" fill="#1D4ED8">IP</text>
+  <text x="562" y="309" text-anchor="middle" font-family="Consolas,monospace" font-size="10" fill="#6B7280">20B头 · 校验和</text>
+  <text x="562" y="324" text-anchor="middle" font-family="Microsoft YaHei,sans-serif" font-size="9" fill="#9CA3AF">RFC 791 反码求和</text>
+
+  <rect x="675" y="270" width="195" height="60" rx="3" fill="#FFFFFF" stroke="#93C5FD" stroke-width="1.5"/>
+  <text x="772" y="291" text-anchor="middle" font-family="Consolas,monospace" font-size="14" font-weight="bold" fill="#1D4ED8">UDP</text>
+  <text x="772" y="309" text-anchor="middle" font-family="Consolas,monospace" font-size="10" fill="#6B7280">8B头 · 端口复用</text>
+  <text x="772" y="324" text-anchor="middle" font-family="Microsoft YaHei,sans-serif" font-size="9" fill="#9CA3AF">校验和(当前禁用)</text>
+
+  <!-- Arrows between protocol columns -->
+  <polygon points="243,301 249,305 243,309" fill="#3A7BD5"/>
+  <polygon points="453,301 459,305 453,309" fill="#3A7BD5"/>
+  <polygon points="663,301 669,305 663,309" fill="#3A7BD5"/>
+
+  <!-- Packet format -->
+  <rect x="45" y="342" width="870" height="32" rx="3" fill="#FFFFFF" stroke="#DBEAFE" stroke-width="1"/>
+  <text x="480" y="362" text-anchor="middle" font-family="Consolas,monospace" font-size="12" fill="#3B82F6">报文封装: [Eth 14B | IP 20B | UDP 8B | Payload 0~1472B]  ≤ 2048B (NET_BUF_SZ)</text>
+
+  <!-- Arrow -->
+  <polygon points="476,394 480,402 484,394" fill="#6B7280"/>
+
+  <!-- ===== Driver Layer ===== -->
+  <rect x="30" y="410" width="900" height="70" fill="#F0F4F8" stroke="#1A3A5C" stroke-width="2"/>
+  <rect x="30" y="410" width="900" height="24" fill="#1A3A5C"/>
+  <text x="480" y="427" text-anchor="middle" font-family="SimHei,sans-serif" font-size="14" font-weight="bold" fill="#FFFFFF">驱动层 (kernel/virtio_net.c · 348行 + kernel/virtio.h)</text>
+
+  <rect x="45" y="444" width="420" height="28" rx="3" fill="#FFFFFF" stroke="#93C5FD" stroke-width="1"/>
+  <text x="255" y="462" text-anchor="middle" font-family="Consolas,monospace" font-size="12" fill="#1A3A5C">RX Virtqueue (q0): 8 desc · WRITE · 设备→内存</text>
+
+  <rect x="480" y="444" width="435" height="28" rx="3" fill="#FFFFFF" stroke="#93C5FD" stroke-width="1"/>
+  <text x="697" y="462" text-anchor="middle" font-family="Consolas,monospace" font-size="12" fill="#1A3A5C">TX Virtqueue (q1): 8 desc · READ · 内存→设备</text>
+
+  <!-- Arrow -->
+  <polygon points="476,482 480,490 484,482" fill="#6B7280"/>
+
+  <!-- ===== Hardware ===== -->
+  <rect x="30" y="500" width="900" height="64" fill="#F9FAFB" stroke="#6B7280" stroke-width="2"/>
+  <rect x="30" y="500" width="900" height="24" fill="#6B7280"/>
+  <text x="480" y="517" text-anchor="middle" font-family="SimHei,sans-serif" font-size="14" font-weight="bold" fill="#FFFFFF">硬件 / QEMU 模拟层</text>
+
+  <rect x="45" y="532" width="280" height="24" rx="3" fill="#FFFFFF" stroke="#D1D5DB" stroke-width="1"/>
+  <text x="185" y="548" text-anchor="middle" font-family="Consolas,monospace" font-size="11" fill="#1D1D1F">QEMU virtio-net-device (MMIO)</text>
+
+  <rect x="340" y="532" width="250" height="24" rx="3" fill="#FFFFFF" stroke="#D1D5DB" stroke-width="1"/>
+  <text x="465" y="548" text-anchor="middle" font-family="Consolas,monospace" font-size="11" fill="#1D1D1F">QEMU SLIRP (User-mode NAT)</text>
+
+  <rect x="605" y="532" width="310" height="24" rx="3" fill="#FFFFFF" stroke="#D1D5DB" stroke-width="1"/>
+  <text x="760" y="548" text-anchor="middle" font-family="Consolas,monospace" font-size="11" fill="#1D1D1F">Host OS (nc -u -l 2000 / Wireshark)</text>
+
+  <!-- ===== Summary ===== -->
+  <rect x="30" y="578" width="900" height="72" fill="#F5F5F5" stroke="#D1D5DB" stroke-width="1.5"/>
+  <text x="480" y="598" text-anchor="middle" font-family="Microsoft YaHei,sans-serif" font-size="12" font-weight="bold" fill="#1A3A5C">新增文件(6): virtio_net.c · net.c · sysnet.c · virtio.h · net.h · udptest.c</text>
+  <text x="480" y="618" text-anchor="middle" font-family="Microsoft YaHei,sans-serif" font-size="12" fill="#1A3A5C">修改文件(8): file.h · defs.h · memlayout.h · vm.c · main.c · trap.c · plic.c · Makefile</text>
+  <text x="480" y="638" text-anchor="middle" font-family="Microsoft YaHei,sans-serif" font-size="11" fill="#6B7280">Guest IP: 10.0.2.15 ↔ Gateway: 10.0.2.2  |  QEMU: -device virtio-net-device,bus=virtio-mmio-bus.1</text>
+
+  <!-- Legend -->
+  <rect x="120" y="665" width="14" height="14" fill="#10B981"/>
+  <text x="140" y="676" font-family="Microsoft YaHei,sans-serif" font-size="11" fill="#1D1D1F">用户态</text>
+  <rect x="210" y="665" width="14" height="14" fill="#E8A817"/>
+  <text x="230" y="676" font-family="Microsoft YaHei,sans-serif" font-size="11" fill="#1D1D1F">Socket层</text>
+  <rect x="310" y="665" width="14" height="14" fill="#3A7BD5"/>
+  <text x="330" y="676" font-family="Microsoft YaHei,sans-serif" font-size="11" fill="#1D1D1F">协议层</text>
+  <rect x="400" y="665" width="14" height="14" fill="#1A3A5C"/>
+  <text x="420" y="676" font-family="Microsoft YaHei,sans-serif" font-size="11" fill="#1D1D1F">驱动层</text>
+  <rect x="490" y="665" width="14" height="14" fill="#6B7280"/>
+  <text x="510" y="676" font-family="Microsoft YaHei,sans-serif" font-size="11" fill="#1D1D1F">硬件</text>
+  <text x="700" y="676" font-family="Microsoft YaHei,sans-serif" font-size="10" fill="#9CA3AF">共修改/新建 14 个文件 | 总计约 1200+ 行新代码</text>
+</svg>

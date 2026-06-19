@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 650">
+  <rect width="960" height="650" fill="#FFFFFF"/>
+
+  <text x="480" y="30" text-anchor="middle" font-family="SimHei,sans-serif" font-size="20" font-weight="bold" fill="#1A3A5C">xv6-riscv 系统整体架构图</text>
+  <line x1="340" y1="38" x2="620" y2="38" stroke="#E8A817" stroke-width="2"/>
+
+  <!-- ===== User Space ===== -->
+  <rect x="30" y="50" width="900" height="100" fill="#ECFDF5" stroke="#10B981" stroke-width="2"/>
+  <rect x="30" y="50" width="900" height="28" fill="#10B981"/>
+  <text x="480" y="69" text-anchor="middle" font-family="SimHei,sans-serif" font-size="15" font-weight="bold" fill="#FFFFFF">用户空间 (User Space)</text>
+
+  <rect x="45" y="88" width="150" height="32" rx="3" fill="#FFFFFF" stroke="#6EE7B7" stroke-width="1"/>
+  <text x="120" y="108" text-anchor="middle" font-family="Consolas,monospace" font-size="12" fill="#1D1D1F">Shell (sh.c)</text>
+
+  <rect x="210" y="88" width="120" height="32" rx="3" fill="#FFFFFF" stroke="#6EE7B7" stroke-width="1"/>
+  <text x="270" y="108" text-anchor="middle" font-family="Consolas,monospace" font-size="12" fill="#1D1D1F">ps / halt</text>
+
+  <rect x="345" y="88" width="120" height="32" rx="3" fill="#FFFFFF" stroke="#6EE7B7" stroke-width="1"/>
+  <text x="405" y="108" text-anchor="middle" font-family="Consolas,monospace" font-size="12" fill="#1D1D1F">lseektest</text>
+
+  <rect x="480" y="88" width="130" height="32" rx="3" fill="#FFFFFF" stroke="#6EE7B7" stroke-width="1"/>
+  <text x="545" y="108" text-anchor="middle" font-family="Consolas,monospace" font-size="12" fill="#1D1D1F">pipetest</text>
+
+  <rect x="625" y="88" width="150" height="32" rx="3" fill="#FFFFFF" stroke="#6EE7B7" stroke-width="1"/>
+  <text x="700" y="108" text-anchor="middle" font-family="Consolas,monospace" font-size="12" fill="#1D1D1F">udptest / semtest</text>
+
+  <rect x="790" y="88" width="125" height="32" rx="3" fill="#FFFFFF" stroke="#6EE7B7" stroke-width="1"/>
+  <text x="852" y="108" text-anchor="middle" font-family="Consolas,monospace" font-size="12" fill="#1D1D1F">fcfstest</text>
+
+  <text x="480" y="142" text-anchor="middle" font-family="Microsoft YaHei,sans-serif" font-size="11" fill="#6B7280">usys.pl 生成 stub | user.h 声明 | printf.c / ulib.c 用户库</text>
+
+  <!-- Arrow -->
+  <polygon points="476,152 480,160 484,152" fill="#6B7280"/>
+
+  <!-- ===== Syscall Layer ===== -->
+  <rect x="80" y="168" width="800" height="46" fill="#FFFBEB" stroke="#E8A817" stroke-width="2"/>
+  <rect x="80" y="168" width="800" height="22" fill="#E8A817"/>
+  <text x="480" y="184" text-anchor="middle" font-family="SimHei,sans-serif" font-size="14" font-weight="bold" fill="#FFFFFF">系统调用接口 (System Call Interface)</text>
+  <text x="480" y="206" text-anchor="middle" font-family="Consolas,monospace" font-size="12" fill="#92400E">ecall → uservec → usertrap() → syscall() → syscalls[22-26] → sret</text>
+
+  <!-- Arrow -->
+  <polygon points="476,216 480,224 484,216" fill="#6B7280"/>
+
+  <!-- ===== Kernel Space ===== -->
+  <rect x="30" y="232" width="900" height="216" fill="#F0F4F8" stroke="#1A3A5C" stroke-width="2"/>
+  <rect x="30" y="232" width="900" height="28" fill="#1A3A5C"/>
+  <text x="480" y="251" text-anchor="middle" font-family="SimHei,sans-serif" font-size="15" font-weight="bold" fill="#FFFFFF">内核空间 (Kernel Space)</text>
+
+  <!-- Module Row 1: 5 kernel modules -->
+  <rect x="45" y="274" width="160" height="66" rx="4" fill="#FFFFFF" stroke="#93C5FD" stroke-width="1.5"/>
+  <text x="125" y="296" text-anchor="middle" font-family="SimHei,sans-serif" font-size="14" font-weight="bold" fill="#1A3A5C">进程管理</text>
+  <text x="125" y="316" text-anchor="middle" font-family="Consolas,monospace" font-size="10" fill="#6B7280">proc.c / swtch.S</text>
+  <text x="125" y="332" text-anchor="middle" font-family="Consolas,monospace" font-size="9" fill="#9CA3AF">FCFS / MLFQ / RR</text>
+
+  <rect x="220" y="274" width="160" height="66" rx="4" fill="#FFFFFF" stroke="#93C5FD" stroke-width="1.5"/>
+  <text x="300" y="296" text-anchor="middle" font-family="SimHei,sans-serif" font-size="14" font-weight="bold" fill="#1A3A5C">内存管理</text>
+  <text x="300" y="316" text-anchor="middle" font-family="Consolas,monospace" font-size="10" fill="#6B7280">vm.c / kalloc.c</text>
+  <text x="300" y="332" text-anchor="middle" font-family="Consolas,monospace" font-size="9" fill="#9CA3AF">kmalloc / kmfree slab</text>
+
+  <rect x="395" y="274" width="160" height="66" rx="4" fill="#FFFFFF" stroke="#93C5FD" stroke-width="1.5"/>
+  <text x="475" y="296" text-anchor="middle" font-family="SimHei,sans-serif" font-size="14" font-weight="bold" fill="#1A3A5C">文件系统</text>
+  <text x="475" y="316" text-anchor="middle" font-family="Consolas,monospace" font-size="10" fill="#6B7280">fs.c / file.c / bio.c</text>
+  <text x="475" y="332" text-anchor="middle" font-family="Consolas,monospace" font-size="9" fill="#9CA3AF">inode / log / pipe</text>
+
+  <rect x="570" y="274" width="155" height="66" rx="4" fill="#FFFFFF" stroke="#93C5FD" stroke-width="1.5"/>
+  <text x="647" y="296" text-anchor="middle" font-family="SimHei,sans-serif" font-size="14" font-weight="bold" fill="#1A3A5C">设备驱动</text>
+  <text x="647" y="316" text-anchor="middle" font-family="Consolas,monospace" font-size="10" fill="#6B7280">uart.c / virtio_disk.c</text>
+  <text x="647" y="332" text-anchor="middle" font-family="Consolas,monospace" font-size="9" fill="#9CA3AF">console.c / plic.c</text>
+
+  <rect x="740" y="274" width="175" height="66" rx="4" fill="#FFFBEB" stroke="#F59E0B" stroke-width="2"/>
+  <text x="827" y="296" text-anchor="middle" font-family="SimHei,sans-serif" font-size="14" font-weight="bold" fill="#92400E">网络协议栈  NEW</text>
+  <text x="827" y="316" text-anchor="middle" font-family="Consolas,monospace" font-size="10" fill="#6B7280">net.c / virtio_net.c</text>
+  <text x="827" y="332" text-anchor="middle" font-family="Consolas,monospace" font-size="9" fill="#9CA3AF">Eth / ARP / IP / UDP</text>
+
+  <!-- Module Row 2: Core files -->
+  <rect x="45" y="354" width="870" height="34" rx="3" fill="#FFFFFF" stroke="#D1D5DB" stroke-width="1"/>
+  <text x="120" y="375" text-anchor="middle" font-family="Consolas,monospace" font-size="11" fill="#6B7280">trap.c</text>
+  <text x="230" y="375" text-anchor="middle" font-family="Consolas,monospace" font-size="11" fill="#6B7280">syscall.c</text>
+  <text x="350" y="375" text-anchor="middle" font-family="Consolas,monospace" font-size="11" fill="#6B7280">sysproc.c</text>
+  <text x="465" y="375" text-anchor="middle" font-family="Consolas,monospace" font-size="11" fill="#6B7280">sysfile.c</text>
+  <text x="580" y="375" text-anchor="middle" font-family="Consolas,monospace" font-size="11" fill="#6B7280">sysnet.c</text>
+  <text x="695" y="375" text-anchor="middle" font-family="Consolas,monospace" font-size="11" fill="#6B7280">exec.c</text>
+  <text x="810" y="375" text-anchor="middle" font-family="Consolas,monospace" font-size="11" fill="#6B7280">trampoline.S</text>
+
+  <!-- Kernel Bottom -->
+  <rect x="45" y="400" width="870" height="34" rx="3" fill="#F8FAFC" stroke="#E5E7EB" stroke-width="1"/>
+  <text x="480" y="422" text-anchor="middle" font-family="Microsoft YaHei,sans-serif" font-size="11" fill="#6B7280">交叉编译: riscv64-unknown-elf-gcc | 信号量: sem.c | 链接脚本: kernel.ld | 系统调用号: syscall.h</text>
+
+  <!-- Arrow -->
+  <polygon points="476,450 480,458 484,450" fill="#6B7280"/>
+
+  <!-- ===== Hardware Layer ===== -->
+  <rect x="30" y="466" width="900" height="88" fill="#F9FAFB" stroke="#6B7280" stroke-width="2"/>
+  <rect x="30" y="466" width="900" height="26" fill="#6B7280"/>
+  <text x="480" y="484" text-anchor="middle" font-family="SimHei,sans-serif" font-size="14" font-weight="bold" fill="#FFFFFF">硬件抽象层 (QEMU virt / RISC-V)</text>
+
+  <rect x="45" y="504" width="155" height="32" rx="3" fill="#FFFFFF" stroke="#D1D5DB" stroke-width="1"/>
+  <text x="122" y="524" text-anchor="middle" font-family="Consolas,monospace" font-size="11" fill="#1D1D1F">UART (0x10000000)</text>
+
+  <rect x="215" y="504" width="155" height="32" rx="3" fill="#FFFFFF" stroke="#D1D5DB" stroke-width="1"/>
+  <text x="292" y="524" text-anchor="middle" font-family="Consolas,monospace" font-size="11" fill="#1D1D1F">VIRTIO Disk</text>
+
+  <rect x="385" y="504" width="155" height="32" rx="3" fill="#FFFBEB" stroke="#F59E0B" stroke-width="1.5"/>
+  <text x="462" y="524" text-anchor="middle" font-family="Consolas,monospace" font-size="11" fill="#92400E">VIRTIO Net  NEW</text>
+
+  <rect x="555" y="504" width="120" height="32" rx="3" fill="#FFFFFF" stroke="#D1D5DB" stroke-width="1"/>
+  <text x="615" y="524" text-anchor="middle" font-family="Consolas,monospace" font-size="11" fill="#1D1D1F">PLIC</text>
+
+  <rect x="690" y="504" width="120" height="32" rx="3" fill="#FFFFFF" stroke="#D1D5DB" stroke-width="1"/>
+  <text x="750" y="524" text-anchor="middle" font-family="Consolas,monospace" font-size="11" fill="#1D1D1F">CLINT</text>
+
+  <rect x="825" y="504" width="90" height="32" rx="3" fill="#FFFBEB" stroke="#F59E0B" stroke-width="1"/>
+  <text x="870" y="524" text-anchor="middle" font-family="Consolas,monospace" font-size="10" fill="#92400E">TestDev</text>
+
+  <!-- Footer -->
+  <text x="480" y="572" text-anchor="middle" font-family="Microsoft YaHei,sans-serif" font-size="11" fill="#6B7280">RISC-V (rv64gc) | QEMU 8.2.2 virt | OpenSBI | SLIRP Network</text>
+  <text x="480" y="592" text-anchor="middle" font-family="Microsoft YaHei,sans-serif" font-size="11" fill="#9CA3AF">金色边框 = 侯奕明重点贡献模块</text>
+
+  <!-- Stage labels on left side -->
+  <text x="20" y="108" text-anchor="middle" font-family="Microsoft YaHei,sans-serif" font-size="9" fill="#10B981" transform="rotate(-90,20,108)">用户态</text>
+  <text x="20" y="260" text-anchor="middle" font-family="Microsoft YaHei,sans-serif" font-size="9" fill="#1A3A5C" transform="rotate(-90,20,260)">内核态</text>
+  <text x="20" y="510" text-anchor="middle" font-family="Microsoft YaHei,sans-serif" font-size="9" fill="#6B7280" transform="rotate(-90,20,510)">硬件</text>
+</svg>

@@ -1,3 +1,4 @@
+
 \documentclass[12pt,a4paper]{ctexart}
 
 \usepackage[a4paper,margin=2.4cm]{geometry}
@@ -15,6 +16,7 @@
 \usepackage{subcaption}
 \usepackage{fancyhdr}
 \usepackage{tikz}
+\usepackage{amssymb}
 \usetikzlibrary{shapes.geometric, arrows, positioning, fit, backgrounds}
 
 \hypersetup{
@@ -177,22 +179,8 @@ wakeup哈希队列优化     & 已完成 & O(N)→O(k) & $\checkmark$ 通过 \\
 
 \begin{figure}[H]
 \centering
-% 架构图占位 - 后续插入整体架构图
-\fbox{\begin{minipage}{0.85\textwidth}
-\centering
-\vspace{3cm}
-\textbf{[图\ref{fig:arch}：系统整体架构图]}\\
-\bigskip
-用户态：Shell / 用户程序（ps, halt, lseektest, pipetest, udptest, semtest...）\\
-\bigskip
-系统调用层：ecall → usertrap → syscall → 各sys\_*实现\\
-\bigskip
-内核态：进程管理 | 内存管理 | 文件系统 | 设备驱动 | 网络协议栈\\
-\bigskip
-硬件抽象：UART | VIRTIO | PLIC | CLINT | QEMU test device\\
-\vspace{1.5cm}
-\end{minipage}}
-\caption{系统整体架构图（待插入正式图片）}
+\includegraphics[width=\textwidth]{images/fig1_system_arch.pdf}
+\caption{系统整体架构图}
 \label{fig:arch}
 \end{figure}
 
@@ -277,17 +265,8 @@ wakeup哈希队列优化     & 已完成 & O(N)→O(k) & $\checkmark$ 通过 \\
 
 \begin{figure}[H]
 \centering
-\fbox{\begin{minipage}{0.85\textwidth}
-\centering
-\vspace{2.5cm}
-\textbf{[图\ref{fig:syscall-path}：系统调用全链路时序图]}\\
-\bigskip
-用户态 write() → usys.S stub (ecall) → uservec (保存寄存器/切页表)\\
-→ usertrap() (scause=8) → syscall() (查表) → sys\_write()\\
-→ prepare\_return() → userret (恢复寄存器/sret) → 用户态继续\\
-\vspace{1.5cm}
-\end{minipage}}
-\caption{系统调用全链路时序图（待插入正式图片）}
+\includegraphics[width=\textwidth]{images/fig2_syscall_timing.png}
+\caption{系统调用全链路时序图}
 \label{fig:syscall-path}
 \end{figure}
 
@@ -758,23 +737,8 @@ if (cmd[0] == 'h' && cmd[1] == 'a' && cmd[2] == 'l' && cmd[3] == 't' &&
 
 \begin{figure}[H]
 \centering
-\fbox{\begin{minipage}{0.85\textwidth}
-\centering
-\vspace{2.5cm}
-\textbf{[图\ref{fig:net-arch}：UDP 网络协议栈分层架构图]}\\
-\bigskip
-用户态：udptest.c —— socket() / bind() / sendto() / recvfrom()\\
-\bigskip
-Socket 层 (sysnet.c)：sys\_socket / sys\_bind / sys\_sendto / sys\_recvfrom\\
-\bigskip
-协议层 (net.c)：udp\_send / udp\_recv / ARP Engine（request/reply/lookup）\\
-\bigskip
-驱动层 (virtio\_net.c)：RX virtqueue / TX virtqueue / VIRTIO1 MMIO\\
-\bigskip
-硬件：QEMU virtio-net-device → SLIRP → Host OS（nc -u -l 2000）\\
-\vspace{1.5cm}
-\end{minipage}}
-\caption{UDP网络协议栈分层架构（待插入正式图片）}
+\includegraphics[width=\textwidth]{images/fig3_udp_stack.png}
+\caption{UDP网络协议栈分层架构}
 \label{fig:net-arch}
 \end{figure}
 
