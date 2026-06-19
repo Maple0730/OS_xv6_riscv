@@ -15,6 +15,7 @@ int
 main(void)
 {
   int pid, wpid;
+  int first = 1;
 
   if (open("console", O_RDWR) < 0) {
     mknod("console", CONSOLE, 0);
@@ -25,7 +26,8 @@ main(void)
 
 
   for (;;) {
-    printf("init: starting sh\n");
+    if (!first)
+      printf("init: restarting sh\n");
     pid = fork();
     if (pid < 0) {
       printf("init: fork failed\n");
@@ -43,6 +45,7 @@ main(void)
       wpid = wait((int *)0);
       if (wpid == pid) {
         // the shell exited; restart it.
+        first = 0;
         break;
       } else if (wpid < 0) {
         printf("init: wait returned an error\n");

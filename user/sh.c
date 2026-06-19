@@ -54,6 +54,53 @@ void panic(char *);
 struct cmd *parsecmd(char *);
 void runcmd(struct cmd *) __attribute__((noreturn));
 
+static void
+boot_animation(void)
+{
+  printf(" /\\_/\\  /\\_/\\  /\\_/\\  /\\_/\\  /\\_/\\  /\\_/\\  /\\_/\\  /\\_/\\  /\\_/\\  /\\_/\\  /\\_/\\  /\\_/\\ \n");
+  printf("( o.o )( o.o )( o.o )( o.o )( o.o )( o.o )( o.o )( o.o )( o.o )( o.o )( o.o )( o.o )\n");
+  printf(" > ^ <  > ^ <  > ^ <  > ^ <  > ^ <  > ^ <  > ^ <  > ^ <  > ^ <  > ^ <  > ^ <  > ^ < \n");
+  printf(" /\\_/\\                                                                        /\\_/\\ \n");
+  printf("( o.o )                                                                      ( o.o )\n");
+  printf(" > ^ <        ___  ___  ___      ___  ___           ______    ________        > ^ < \n");
+  printf(" /\\_/\\       |\"  \\/\"  ||\"  \\    /\"  |/. \")         /    \" \\  /\"       )       /\\_/\\ \n");
+  printf("( o.o )       \\   \\  /  \\   \\  //  //:  /         // ____  \\(:   \\___/       ( o.o )\n");
+  printf(" > ^ <         \\  \\/    \\  \\/. .///  /___      /  /    ) :)\\___  \\          > ^ < \n");
+  printf(" /\\_/\\         /\\.  \\     \\.    //(   / _  \\    (: (____/ //  __/  \\         /\\_/\\ \n");
+  printf("( o.o )       /  \\   \\     \\   / |:   /_) :)    \\        /  /\" \\   :)       ( o.o )\n");
+  printf(" > ^ <       |___/\\___|     \\__/   \\_______/      \\\"_____/  (_______/         > ^ < \n");
+  printf(" /\\_/\\                                                                        /\\_/\\ \n");
+  printf("( o.o )                                                                      ( o.o )\n");
+  printf(" > ^ <                                                                        > ^ < \n");
+  printf(" /\\_/\\  /\\_/\\  /\\_/\\  /\\_/\\  /\\_/\\  /\\_/\\  /\\_/\\  /\\_/\\  /\\_/\\  /\\_/\\  /\\_/\\  /\\_/\\ \n");
+  printf("( o.o )( o.o )( o.o )( o.o )( o.o )( o.o )( o.o )( o.o )( o.o )( o.o )( o.o )( o.o )\n");
+  printf(" > ^ <  > ^ <  > ^ <  > ^ <  > ^ <  > ^ <  > ^ <  > ^ <  > ^ <  > ^ <  > ^ <  > ^ < \n");
+  printf("\n");
+}
+
+static void
+shutdown_animation(void)
+{
+  printf(" /\\_/\\  /\\_/\\  /\\_/\\  /\\_/\\  /\\_/\\  /\\_/\\  /\\_/\\  /\\_/\\  /\\_/\\  /\\_/\\ \n");
+  printf("( o.o )( o.o )( o.o )( o.o )( o.o )( o.o )( o.o )( o.o )( o.o )( o.o )\n");
+  printf(" > ^ <  > ^ <  > ^ <  > ^ <  > ^ <  > ^ <  > ^ <  > ^ <  > ^ <  > ^ < \n");
+  printf(" /\\_/\\                                                          /\\_/\\ \n");
+  printf("( o.o )                                                        ( o.o )\n");
+  printf(" > ^ <       _______  ___  ___  _______        ___    ___       > ^ < \n");
+  printf(" /\\_/\\      |   _  \"\\|\"  \\/\"  |/\"     \"|      |\"  |  |\"  |      /\\_/\\ \n");
+  printf("( o.o )     (. |_)  :)\\   \\  /(: ______)      ||  |  ||  |     ( o.o )\n");
+  printf(" > ^ <      |:     \\/  \\\\  \\/  \\/    |        |:  |  |:  |      > ^ < \n");
+  printf(" /\\_/\\      (|  _  \\\\  /   /   // ___)_      _|  /  _|  /       /\\_/\\ \n");
+  printf("( o.o )     |: |_)  :)/   /   (:      \"|    / |_/ )/ |_/ )     ( o.o )\n");
+  printf(" > ^ <      (_______/|___/     \\_______)   (_____/(_____/       > ^ < \n");
+  printf(" /\\_/\\                                                          /\\_/\\ \n");
+  printf("( o.o )                                                        ( o.o )\n");
+  printf(" > ^ <                                                          > ^ < \n");
+  printf(" /\\_/\\  /\\_/\\  /\\_/\\  /\\_/\\  /\\_/\\  /\\_/\\  /\\_/\\  /\\_/\\  /\\_/\\  /\\_/\\ \n");
+  printf("( o.o )( o.o )( o.o )( o.o )( o.o )( o.o )( o.o )( o.o )( o.o )( o.o )\n");
+  printf(" > ^ <  > ^ <  > ^ <  > ^ <  > ^ <  > ^ <  > ^ <  > ^ <  > ^ <  > ^ < \n");
+}
+
 // Execute cmd.  Never returns.
 void
 runcmd(struct cmd *cmd)
@@ -168,6 +215,8 @@ main(void)
     }
   }
 
+  boot_animation();
+
   // Read and run input commands.
   while (getcmd(buf, sizeof(buf)) >= 0) {
     char *cmd = buf;
@@ -178,7 +227,7 @@ main(void)
     if (cmd[0] == 'h' && cmd[1] == 'a' && cmd[2] == 'l' && cmd[3] == 't' &&
         (cmd[4] == '\n' || cmd[4] == ' ' || cmd[4] == '\0')) {
       // Shutdown: call halt() directly in the shell, no need to fork.
-      printf("shutting down...\n");
+      shutdown_animation();
       halt();
     } else if (cmd[0] == 'c' && cmd[1] == 'd' && cmd[2] == ' ') {
       // Chdir must be called by the parent, not the child.
