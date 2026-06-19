@@ -55,7 +55,7 @@ shm_find_free(void)
 int
 is_shm_pa(uint64 pa)
 {
-  if (pa == 0 || pa >= PHYSTOP || pa < KERNBASE)
+  if (pa == 0 || pa >= phys_ram_end || pa < KERNBASE)
     return 0; // not a valid kernel PA
   acquire(&shm_lock);
   for (int i = 0; i < NSHM; i++) {

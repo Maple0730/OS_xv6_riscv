@@ -15,7 +15,7 @@
 // the kernel uses physical memory thus:
 // 80000000 -- entry.S, then kernel text and data
 // end -- start of kernel page allocation area
-// PHYSTOP -- end RAM used by the kernel
+// DEFAULT_PHYSTOP -- fallback end of RAM used by the kernel
 
 // qemu's test device for clean shutdown (write exits qemu)
 // see hw/misc/sifive_test.c in qemu
@@ -41,9 +41,9 @@
 
 // the kernel expects there to be RAM
 // for use by the kernel and user pages
-// from physical address 0x80000000 to PHYSTOP.
+// from physical address 0x80000000 up to a runtime-detected top.
 #define KERNBASE 0x80000000L
-#define PHYSTOP  (KERNBASE + 128 * 1024 * 1024)
+#define DEFAULT_PHYSTOP (KERNBASE + 128 * 1024 * 1024)
 
 // map the trampoline page to the highest address,
 // in both user and kernel space.

@@ -16,6 +16,12 @@ void main()
     printf("\n");
     printf("xv6 kernel is booting\n");
     printf("\n");
+    memdetect();             // 识别可用物理内存范围
+    printf("memory: [0x%lx, 0x%lx) size=0x%lx (%s)\n",
+           phys_ram_start,
+           phys_ram_end,
+           phys_ram_end - phys_ram_start,
+           phys_ram_detected ? "dtb" : "default");
     kinit();                 // 初始化物理页分配器
     kheapinit();             // 初始化内核堆分配器
     kmalloctest();           // 自测内核堆分配器

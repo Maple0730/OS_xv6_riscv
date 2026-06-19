@@ -27,7 +27,7 @@ void//初始化内存分配器
 kinit()
 {
   initlock(&kmem.lock, "kmem");
-  freerange(end, (void *)PHYSTOP);
+  freerange(end, (void *)phys_ram_end);
 }
 
 void//批量把一段内存加入空闲链表
@@ -48,7 +48,8 @@ kfree(void *pa)
 {
   struct run *r;
 
-  if (((uint64)pa % PGSIZE) != 0 || (char *)pa < end || (uint64)pa >= PHYSTOP)
+  if (((uint64)pa % PGSIZE) != 0 || (char *)pa < end ||
+      (uint64)pa >= phys_ram_end)
     panic("kfree");
 
   // Fill with junk to catch dangling refs.

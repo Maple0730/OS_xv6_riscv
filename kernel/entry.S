@@ -5,6 +5,9 @@
 .section .text.entry
 .global _entry
 _entry:
+        # preserve the boot-time DTB pointer that QEMU passes in a1
+        la t0, boot_dtb
+        sd a1, 0(t0)
         # set up a stack for C.
         # stack0 is declared in start.c,
         # with a 4096-byte stack per CPU.

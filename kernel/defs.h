@@ -63,10 +63,15 @@ void            ireclaim(int);
 void*           kalloc(void);
 void            kfree(void *);
 void            kinit(void);
+void            memdetect(void);
 void            kheapinit(void);
 void*           kmalloc(uint);
 void            kmfree(void *);
 void            kmalloctest(void);
+extern uint64   boot_dtb;
+extern uint64   phys_ram_start;
+extern uint64   phys_ram_end;
+extern int      phys_ram_detected;
 
 // log.c
 void            initlog(int, struct superblock*);

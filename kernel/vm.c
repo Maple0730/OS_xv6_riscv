@@ -44,7 +44,7 @@ kvmmake(void)
   kvmmap(kpgtbl, KERNBASE, KERNBASE, (uint64)etext - KERNBASE, PTE_R | PTE_X);
 
   // 映射内核数据段以及我们将使用的物理RAM
-  kvmmap(kpgtbl, (uint64)etext, (uint64)etext, PHYSTOP - (uint64)etext,
+  kvmmap(kpgtbl, (uint64)etext, (uint64)etext, phys_ram_end - (uint64)etext,
          PTE_R | PTE_W);
 
   // 将用于 trap 入口/出口的 trampoline 映射到内核中最高虚拟地址

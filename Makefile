@@ -11,6 +11,7 @@ KERNEL=$(BK)/kernel
 OBJS = \
   $(BK)/entry.o \
   $(BK)/start.o \
+  $(BK)/memdetect.o \
   $(BK)/console.o \
   $(BK)/printf.o \
   $(BK)/uart.o \
@@ -245,7 +246,7 @@ ifndef CPUS
 CPUS := 3
 endif
 
-QEMUOPTS = -machine virt -bios none -kernel $(KERNEL) -m 128M -smp $(CPUS) -nographic
+QEMUOPTS = -machine virt -bios none -kernel $(KERNEL) -m 256M -smp $(CPUS) -nographic
 QEMUOPTS += -global virtio-mmio.force-legacy=false
 QEMUOPTS += -drive file=$(FSIMG),if=none,format=raw,id=x0
 QEMUOPTS += -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
