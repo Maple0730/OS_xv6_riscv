@@ -119,6 +119,19 @@ sys_fstat(void)
   return filestat(f, st);
 }
 
+uint64
+sys_lseek(void)
+{
+  struct file *f;
+  int offset, whence;
+
+  if (argfd(0, 0, &f) < 0)
+    return -1;
+  argint(1, &offset);
+  argint(2, &whence);
+  return fileseek(f, offset, whence);
+}
+
 // Create the path new as a link to the same inode as old.
 uint64
 sys_link(void)

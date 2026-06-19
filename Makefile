@@ -181,6 +181,7 @@ UPROGS=\
 	$(BU)/_logstress\
 	$(BU)/_forphan\
 	$(BU)/_dorphan\
+	$(BU)/_seektest\
 	$(BU)/_pipetest\
 	$(BU)/_ps\
 	$(BU)/_fcfstest\

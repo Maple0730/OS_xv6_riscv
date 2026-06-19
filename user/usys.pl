@@ -29,6 +29,7 @@ entry("pipe");
 entry("read");
 entry("write");
 entry("close");
+entry("lseek");
 entry("kill");
 entry("exec");
 entry("open");

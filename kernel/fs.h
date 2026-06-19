@@ -5,7 +5,7 @@
 #define BSIZE   1024 // block size
 
 // Disk layout:
-// [ boot block | super block | log | inode blocks |
+// [ boot block | super block | log | ienod blocks |
 //                                          free bit map | data blocks]
 //
 // mkfs computes the super block and builds an initial file system. The

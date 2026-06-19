@@ -1,0 +1,91 @@
+body {
+    font-family: sans-serif;
+}
+
+pre {
+    margin: 0;
+}
+
+#image-selector * {
+    display: inline;
+}
+
+#image-list > div {
+    margin-left: 0.2em;
+}
+
+#detail-content > div > pre {
+    white-space: pre-wrap;
+    tab-size: 6;
+}
+
+#detail-content > div > pre.text {
+    word-break: break-all;
+}
+
+
+#file-tree-content > pre.related {
+    color: black !important;
+    font-weight: bold;
+    text-decoration: underline;
+}
+
+#file-tree-content.not-selected > pre {
+    color: gray;
+}
+
+@media screen and (min-width: 640px) {
+    body {
+        margin: 8px;
+        max-height: calc(100vh - 16px);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden
+    }
+
+    #image-viewer {
+        flex: 1;
+        display: flex;
+        overflow: auto;
+    }
+
+    /* Fit in full height */
+    .column {
+        padding: 0.5em;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .column > .content {
+        max-height: 100%;
+        overflow: auto;
+    }
+
+    /* Layout for left, middle, and right */
+    #detail {
+        width: 62ch;
+    }
+
+    #file-tree {
+        min-width: 12rem;
+    }
+
+    #grid {
+        flex: 55%;
+        display: flex;
+    }
+
+    /* scroll for block grid */
+    #block-grid {
+        flex-grow: 1;
+        display: flex;
+        max-height: 100%;
+        flex-direction: column;
+        overflow: auto;
+    }
+
+    #block-grid > .content {
+        max-height: 100%;
+        overflow: auto;
+    }
+}

@@ -27,3 +27,6 @@ sys_schedtype(void)
 ```
 
 对应在 `kernel/syscall.h` 中添加 `#define SYS_schedtype 23`，在 `kernel/syscall.c` 的 `syscalls[]` 中添加 `sys_schedtype` 条目。
+
+### 2.Maple：文件系统支持标准输入输出重定向
+  详见docx/message/xv6 文件系统标准输入输出重定向技术方案.md

@@ -40,6 +40,11 @@ close:
  li a7, SYS_close
  ecall
  ret
+.global lseek
+lseek:
+ li a7, SYS_lseek
+ ecall
+ ret
 .global kill
 kill:
  li a7, SYS_kill
