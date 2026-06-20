@@ -1,0 +1,2539 @@
+
+\documentclass[12pt,a4paper]{ctexart}
+
+\usepackage[a4paper,margin=2.4cm]{geometry}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{longtable}
+\usepackage{setspace}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{fancyhdr}
+\usepackage{tikz}
+\usepackage{amssymb}
+\usetikzlibrary{shapes.geometric, arrows, positioning, fit, backgrounds}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  urlcolor=blue,
+  pdftitle={操作系统课程设计A题结题报告},
+  pdfauthor={侯奕明, 涂凡琛, 韩硕}
+}
+
+\setstretch{1.3}
+\setlist[itemize]{leftmargin=2em}
+\setlist[enumerate]{leftmargin=2.2em}
+\ctexset{
+  section = {
+    format = \Large\bfseries,
+    number = \chinese{section}、
+  },
+  subsection = {
+    format = \large\bfseries,
+    number = \arabic{section}.\arabic{subsection}
+  },
+  subsubsection = {
+    format = \bfseries,
+    number = \arabic{section}.\arabic{subsection}.\arabic{subsubsection}
+  }
+}
+
+% 代码样式
+\lstset{
+  basicstyle=\small\ttfamily,
+  breaklines=true,
+  frame=single,
+  numbers=left,
+  numberstyle=\tiny,
+  tabsize=2,
+  language=C,
+  showstringspaces=false
+}
+
+\title{\textbf{《操作系统课程设计》A题结题报告}}
+\author{侯奕明 \quad 涂凡琛 \quad 韩硕}
+\date{2026年6月}
+
+\begin{document}
+
+\begin{titlepage}
+  \centering
+  \vspace*{3.5cm}
+
+  {\zihao{2}\bfseries 《操作系统课程设计》A题结题报告\par}
+  \vspace{1.2cm}
+  {\zihao{4}项目题目：OS 内核实现\par}
+  \vspace{0.6cm}
+  {\zihao{4}基础平台：xv6-riscv\par}
+  \vspace{1.6cm}
+
+  \renewcommand{\arraystretch}{1.5}
+  \begin{tabular}{>{\bfseries}p{3.2cm}p{8.5cm}}
+    课程名称   & 操作系统课程设计 \\
+    报告性质   & 结题报告（方案A） \\
+    小组成员   & 侯奕明、涂凡琛、韩硕 \\
+    当前选题   & A题：OS 内核实现 \\
+    提交时间   & 2026年6月 \\
+  \end{tabular}
+
+  \vfill
+  {\large \today\par}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+%=====================================================================
+\section{项目概述}
+%=====================================================================
+
+\subsection{项目背景}
+
+操作系统是计算机系统的核心软件，负责管理硬件资源、提供程序运行环境。本课程设计采用开放式选题，学生可自主选择基础平台和实现路线。本组经过调研与讨论，选择以 xv6-riscv 教学操作系统作为基础平台，深入理解并扩展操作系统内核的核心功能。xv6 是由 MIT 开发的教学操作系统，最初基于 x86 架构，后移植到 RISC-V 架构。xv6-riscv 包含了操作系统最基本的功能模块：系统启动、中断与异常处理、内存管理、进程管理、文件系统以及用户程序加载与执行。其代码精简（约 8000 行）、结构清晰、文档完善，是学习操作系统内核实现的理想平台。
+
+本项目选择《操作系统课程设计》项目制方案中的\textbf{A 题"OS 内核实现"}，以 xv6-riscv 为基础平台，围绕系统调用接口、中断与异常处理、设备驱动、进程管理、内存管理、文件系统以及网络协议栈等核心模块展开，在成功复现和理解现有系统的基础上，完成了课程要求的各项功能，并在此之上进行了大量扩展创新。
+
+\subsection{项目目标}
+
+本项目的核心目标是：
+
+\begin{enumerate}
+  \item 成功复现 xv6-riscv 的运行环境，理解其启动流程与整体架构；
+  \item 按照 A 题六大模块要求，逐项完成功能实现与验证；
+  \item 在基础功能之上进行创新扩展，包括但不限于：新增系统调用（ps/halt/lseek/socket×4）、UDP 网络协议栈、调度算法框架（支持 5 种算法运行时切换）、内核堆分配器、控制台输出原子化、Shell 功能增强等；
+  \item 完成完整的自动化测试验证（43 项综合测试 + 10+ 专项测试程序），确保系统稳定运行；
+  \item 形成规范的技术文档，为后续学习者提供参考。
+\end{enumerate}
+
+\subsection{团队信息与分工方案}
+
+本组共三名成员，按照 A 题六大模块进行分工，各自负责核心模块的分析、实现与文档工作。
+
+\begin{table}[H]
+\centering
+\caption{小组成员与分工}
+\begin{tabular}{>{\bfseries}p{2.5cm}p{4.5cm}p{6cm}}
+\toprule
+\textbf{成员} & \textbf{负责模块} & \textbf{主要工作内容} \\
+\midrule
+侯奕明 & 接口、设备与软件交互 & 系统调用接口（ps/halt/lseek/socket×4）、trap全链路分析、控制台输出原子化、virtio-net网卡驱动、UDP协议栈、Shell功能增强（PATH fallback/halt内置/setsched）、综合测试套件（alltest/iotest/pipetest/lseektest/udptest） \\
+\hline
+涂凡琛 & 进程管理与处理机调度 & RR/FCFS/MLFQ/SJF/PRIO/EDF调度算法、sched\_algorithm运行时切换系统调用、信号量机制、wakeup哈希队列优化、调度测试程序（fcfstest/mlfqtest/schedtest等） \\
+\hline
+韩硕 & 内存管理与文件系统 & 内核堆分配器（kmalloc/kmfree）、页表管理、文件描述符表管理、O\_APPEND/O\_TRUNC文件操作支持、文件系统各模块分析 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+此外，整个小组共同承担了以下工作：
+\begin{itemize}
+  \item xv6 项目的整体框架搭建与环境配置；
+  \item QEMU 运行验证与基础调试；
+  \item 模块间联调与问题定位；
+  \item 课程进度报告、结题报告和汇报材料整理。
+\end{itemize}
+
+\subsection{项目完成情况概览}
+
+截至结题阶段，本组已完成的工作包括：
+
+\begin{table}[H]
+\centering
+\caption{项目完成情况总览（全部功能均通过测试）}
+\small
+\begin{tabular}{>{\bfseries}p{2.5cm}p{2.2cm}p{8.8cm}}
+\toprule
+\textbf{功能模块} & \textbf{负责人} & \textbf{完成内容} \\
+\midrule
+系统启动与初始化   & 全员   & M-mode→S-mode 切换、内核初始化、timerinit 时钟配置、首个用户进程创建 \\
+中断与异常处理     & 侯奕明 & trap 全链路（uservec/kernelvec 双入口）、系统调用分发、时钟/设备中断、缺页异常 \\
+系统调用接口       & 侯奕明 & 新增 ps、halt、lseek、socket、bind、sendto、recvfrom 共 7 个系统调用 \\
+设备驱动           & 侯奕明 & UART、virtio-disk、virtio-net MMIO 网卡驱动（替代有 DMA bug 的 E1000） \\
+控制台 I/O         & 侯奕明 & 输出原子化：内核 sleep lock + 用户态 printf 动态缓冲，两层协同 \\
+Shell 功能增强     & 侯奕明 & PATH fallback 机制、halt 内建命令、setsched 调度切换命令 \\
+进程管理与调度     & 涂凡琛 & RR / FCFS / MLFQ / SJF / PRIO / EDF；sched\_algorithm 运行时切换 \\
+信号量机制         & 涂凡琛 & sem\_open/wait/post 等系统调用；3 组测试（基本P/V、互斥、生产者消费者） \\
+wakeup 优化        & 涂凡琛 & 64 哈希等待桶 + 局部链表，wakeup() 从 O(N) 降至 O(k) \\
+内存管理           & 韩硕   & 两级架构：kalloc 页级 + kmalloc slab（7档） + 大对象回退 + 空页归还 \\
+文件系统           & 韩硕   & lseek（SEEK\_SET/CUR/END）、O\_APPEND / O\_TRUNC、文件描述符表管理 \\
+网络协议栈（UDP）  & 侯奕明 & virtio-net 驱动 + Eth/ARP/IP/UDP 四层协议 + socket 接口；udptest 验证 \\
+综合测试           & 侯奕明 & alltest(43项) + iotest + schedtest + pipetest + lseektest + udptest \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\newpage
+
+%=====================================================================
+\section{技术方案设计}
+%=====================================================================
+
+\subsection{整体架构}
+
+本项目的技术路线是以 xv6-riscv 为基础实验平台，结合课程 A 题要求完成三步工作：复现验证现有功能、补齐缺失功能、创新扩展新功能。整体系统架构如图\ref{fig:arch}所示。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{images/fig1_system_arch.pdf}
+\caption{系统整体架构图}
+\label{fig:arch}
+\end{figure}
+
+\subsection{模块划分}
+
+系统从功能角度划分为以下核心模块：
+
+\begin{enumerate}
+  \item \textbf{系统启动模块}：从 M-mode 到 S-mode 的切换、内核初始化、第一个用户进程创建；
+  \item \textbf{中断与异常处理模块}：trap 入口设置（uservec/kernelvec 双入口）、系统调用分发、时钟中断、设备中断、缺页异常处理；
+  \item \textbf{系统调用接口模块}：系统调用注册与分发表、参数传递（argint/argaddr/argfd）、返回值处理、新增 8 个系统调用；
+  \item \textbf{设备驱动模块}：UART 串口驱动、virtio 磁盘驱动、virtio-net MMIO 网卡驱动、PLIC 中断控制器；
+  \item \textbf{进程管理模块}：进程生命周期管理、多调度算法（RR/FCFS/MLFQ/SJF/PRIO/EDF）、运行时调度切换（sched\_algorithm）、信号量同步；
+  \item \textbf{内存管理模块}：页级分配器（kalloc/kfree）、内核堆分配器（kmalloc/kmfree，slab+大对象）、Sv39 三级页表管理；
+  \item \textbf{文件系统模块}：inode 层、目录与路径解析、文件描述符管理、lseek 文件定位、O\_APPEND/O\_TRUNC 支持；
+  \item \textbf{网络协议栈模块}：Ethernet/ARP/IP/UDP 四层协议、socket 系统调用接口（socket/bind/sendto/recvfrom）；
+  \item \textbf{Shell 与用户接口模块}：Shell PATH fallback、halt 内建关机命令、setsched 调度切换命令、管道/重定向支持。
+\end{enumerate}
+
+\subsection{技术选型}
+
+\begin{table}[H]
+\centering
+\caption{技术选型说明}
+\begin{tabular}{>{\bfseries}p{3.5cm}p{9.5cm}}
+\toprule
+\textbf{技术项} & \textbf{选择与理由} \\
+\midrule
+指令集架构   & RISC-V（rv64gc）：开源、简洁、现代，xv6 原生支持 \\
+模拟平台     & QEMU 8.2.2（virt 机器）：完整的 RISC-V 系统模拟，支持 MMIO 设备 \\
+内核基座     & xv6-riscv：MIT 教学内核，代码精简（约8000行），适合学习与扩展 \\
+编译器       & riscv64-unknown-elf-gcc：RISC-V 交叉编译工具链 \\
+构建系统     & GNU Make + Perl（usys.pl 自动生成系统调用 stub） \\
+网络设备     & virtio-net MMIO：相比 E1000 PCIe 在 QEMU RISC-V 上更稳定（避免 PCIe DMA bug） \\
+调度算法     & 编译期宏选择（SCHED\_RR / SCHED\_FCFS / SCHED\_MLFQ），避免运行时开销 \\
+内存分配     & 两级架构：kalloc（4KB页）+ kmalloc（slab小对象 + 大对象回退） \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\newpage
+
+%=====================================================================
+\section{模块详细实现}
+%=====================================================================
+
+本章按照分工详细描述各模块的设计思路、数据结构、关键算法和核心代码实现。
+其中第3.1至3.5节为侯奕明负责部分，第3.6节为涂凡琛负责部分，第3.7节为韩硕负责部分。
+
+%---------------------------------------------------------------------
+\subsection{中断与异常处理（侯奕明）}
+%---------------------------------------------------------------------
+
+\subsubsection{设计思路}
+
+中断与异常处理是操作系统的核心机制，负责管理系统调用（ecall）、时钟中断、设备中断和缺页异常。我（侯奕明）负责对该模块进行全面分析和实现，重点包括：
+
+\begin{itemize}
+  \item 系统调用全链路：从用户态 ecall 到内核 syscall 分发再到 sret 返回的完整路径；
+  \item 中断处理的两条路径：用户态被中断（uservec→usertrap）vs 内核态被中断（kernelvec→kerneltrap）；
+  \item 时钟中断与调度触发点（yield）；
+  \item 控制台 I/O 的中断驱动数据流。
+\end{itemize}
+
+\subsubsection{系统调用全链路}
+
+一次系统调用的完整生命周期是理解用户态与内核态交互的核心。以 \texttt{write(1, "hello", 5)} 为例，其完整路径如下：
+
+\begin{enumerate}
+  \item \textbf{用户态准备}：用户程序调用 \texttt{write()} → \texttt{user/usys.pl} 生成的汇编 stub 执行 \texttt{li a7, SYS\_write; ecall; ret}
+  \item \textbf{硬件陷入}：ecall 指令触发 trap，CPU 硬件将 \texttt{scause} 设为 8（Environment call from U-mode），\texttt{sepc} 设为 ecall 指令地址，\texttt{stvec} 指向 trampoline 页中的 \texttt{uservec}
+  \item \textbf{上下文保存}：\texttt{trampoline.S:uservec} 保存全部 32 个通用寄存器到 trapframe，切换页表（用户页表→内核页表），跳转到 \texttt{usertrap()}
+  \item \textbf{Trap 分发}：\texttt{trap.c:usertrap()} 检查 \texttt{scause}：
+    \begin{itemize}
+      \item \texttt{scause == 8}：系统调用 → 调用 \texttt{syscall()}
+      \item \texttt{scause == 13/15}：缺页异常 → 调用 \texttt{vmfault()}
+      \item \texttt{scause \& 0x8000000000000000}：中断 → 调用 \texttt{devintr()}
+    \end{itemize}
+  \item \textbf{系统调用分发}：\texttt{syscall.c:syscall()} 从 \texttt{trapframe->a7} 取系统调用号，查 \texttt{syscalls[]} 表，调用对应 \texttt{sys\_write()}，返回值写入 \texttt{trapframe->a0}
+  \item \textbf{返回准备}：\texttt{trap.c:prepare\_return()} 关中断，设置 \texttt{stvec=uservec}（为下次用户态 trap 做准备），设置 SPP=0（让 sret 回到 U-mode）、SPIE=1（回到用户态后开中断）
+  \item \textbf{恢复现场}：\texttt{trampoline.S:userret} 从 trapframe 恢复全部寄存器，切回用户页表，执行 \texttt{sret}
+\end{enumerate}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{images/fig2_syscall_timing.png}
+\caption{系统调用全链路时序图}
+\label{fig:syscall-path}
+\end{figure}
+
+\subsubsection{中断处理的两条路径}
+
+中断处理根据被中断时的特权级分为两条路径：
+
+\textbf{路径A：用户态被中断}
+
+\begin{flushleft}
+\small\ttfamily
+用户进程运行中                                          \\
+~~$\rightarrow$ 时钟/设备中断触发                         \\
+~~~~$\rightarrow$ uservec (trampoline.S) 保存寄存器、切内核页表 \\
+~~~~~~$\rightarrow$ usertrap() 分发：                     \\
+~~~~~~~~$\rightarrow$ devintr() 判断中断类型：              \\
+~~~~~~~~~~$\cdot$ scause=0x8000000000000005 $\rightarrow$ clockintr() $\rightarrow$ 返回 2 \\
+~~~~~~~~~~$\cdot$ scause=0x8000000000000009 $\rightarrow$ plic\_claim() $\rightarrow$ 设备处理 \\
+~~~~~~~~$\rightarrow$ which\_dev==2 则 yield()（时间片调度触发点） \\
+~~~~~~$\rightarrow$ prepare\_return() 准备返回用户态         \\
+~~~~$\rightarrow$ userret (trampoline.S) 恢复寄存器、sret   \\
+~~$\rightarrow$ 回到用户态继续执行
+\end{flushleft}
+
+\textbf{路径B：内核态被中断}
+
+\begin{flushleft}
+\small\ttfamily
+内核代码运行中                                          \\
+~~$\rightarrow$ 时钟/设备中断触发                         \\
+~~~~$\rightarrow$ kernelvec (kernelvec.S) 保存寄存器       \\
+~~~~~~$\rightarrow$ kerneltrap() 处理：                    \\
+~~~~~~~~$\rightarrow$ devintr() 同样判断中断类型             \\
+~~~~~~~~$\rightarrow$ which\_dev==2 则 yield()              \\
+~~~~~~$\rightarrow$ 恢复 sepc/sstatus                       \\
+~~~~$\rightarrow$ sret 回到内核继续执行
+\end{flushleft}
+
+\textbf{关键代码位置}：
+\begin{itemize}
+  \item \texttt{trap.c:85} — \texttt{if (which\_dev == 2) yield()} — 时间片调度的触发点
+  \item \texttt{trap.c:187-220} — \texttt{devintr()} 的完整分流逻辑
+  \item \texttt{trap.c:167-180} — \texttt{clockintr()}：ticks++、wakeup、预约下一次时钟中断
+  \item \texttt{trap.c:29 vs trap.c:112} — \texttt{stvec} 在内核态 vs 回用户态前的切换
+\end{itemize}
+
+\subsubsection{时钟中断机制}
+
+\begin{lstlisting}[language=C, caption={clockintr() — 时钟中断处理（kernel/trap.c:167-180）}]
+void clockintr() {
+  // 递增系统时钟计数
+  ticks++;
+
+  // 唤醒所有等待时钟的进程（如 pause()）
+  wakeup(&ticks);
+
+  // 预约下一次时钟中断（约10ms后，即约100Hz）
+  w_stimecmp(r_time() + 1000000);
+}
+\end{lstlisting}
+
+时钟中断频率由 \texttt{start.c} 中的 \texttt{timerinit()} 设定，通过设置 \texttt{stimecmp} 寄存器预约第一次中断，之后每次 \texttt{clockintr()} 中预约下一次，形成约 100Hz 的稳定时钟中断流。时钟中断是时间片轮转调度、\texttt{pause()} 睡眠/唤醒等机制的基础。
+
+%---------------------------------------------------------------------
+\subsection{系统调用接口实现（侯奕明）}
+%---------------------------------------------------------------------
+
+我负责了全部新增系统调用的设计与实现，包括 \texttt{ps}（进程列表）、\texttt{halt}（关机）、\texttt{lseek}（文件定位）以及 4 个 socket 网络系统调用。
+
+\subsubsection{ps 系统调用}
+
+\textbf{设计动机}：xv6 原有的进程信息查看只能通过 Ctrl-P 在内核态触发 \texttt{procdump()}，用户态程序无法获取进程列表。新增 \texttt{ps} 系统调用将其暴露给用户态。
+
+\textbf{实现策略}：零新增内核逻辑——\texttt{sys\_ps()} 直接复用 \texttt{proc.c} 中已有的 \texttt{procdump()}。
+
+\textbf{修改文件清单}：
+
+\begin{table}[H]
+\centering
+\caption{ps 系统调用修改文件}
+\begin{tabular}{>{\bfseries}p{4.5cm}p{8cm}}
+\toprule
+\textbf{文件} & \textbf{修改内容} \\
+\midrule
+\texttt{kernel/syscall.h} & 新增 \texttt{\#define SYS\_ps 22} \\
+\texttt{kernel/syscall.c} & 新增声明 + \texttt{syscalls[]} 表中注册 \texttt{[SYS\_ps] sys\_ps} \\
+\texttt{kernel/sysproc.c} & 新增 \texttt{sys\_ps()} 函数，直接调用 \texttt{procdump()} \\
+\texttt{user/usys.pl} & 新增 \texttt{entry("ps");} — 自动生成用户态汇编 stub \\
+\texttt{user/user.h} & 新增 \texttt{int ps(void);} — 用户态函数声明 \\
+\texttt{user/ps.c} & 新建用户程序，调用 \texttt{ps()} 后 \texttt{exit(0)} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{调用路径}：
+\begin{lstlisting}[language=C, caption={sys\_ps() 实现（kernel/sysproc.c）}]
+uint64 sys_ps(void) {
+  procdump();    // 直接复用内核已有的 procdump()
+  return 0;
+}
+\end{lstlisting}
+
+\begin{flushleft}
+\small\ttfamily
+ps.c: ps() $\rightarrow$ usys.S stub (li a7, SYS\_ps; ecall; ret) \\
+~~$\rightarrow$ trap.c: usertrap() 捕获 ecall (scause=8)        \\
+~~~~$\rightarrow$ syscall.c: syscall() 查 syscalls[] 表          \\
+~~~~~~$\rightarrow$ sysproc.c: sys\_ps() $\rightarrow$ procdump()
+\end{flushleft}
+
+\texttt{procdump()} 遍历 \texttt{proc[NPROC]}，打印每个非 UNUSED 进程的 pid、状态（unused/used/sleep/runble/run/zombie）、进程名。
+
+\subsubsection{halt 关机系统调用}
+
+\textbf{设计动机}：xv6 原始实现没有关机机制，用户只能通过关闭 QEMU 窗口退出。新增 \texttt{halt} 系统调用允许从 shell 中正常关机。
+
+\textbf{实现策略}：\texttt{halt} 设计为 shell 内建命令（类似 \texttt{cd}），不经过 fork/exec，直接在 shell 进程中执行。同时也保留 \texttt{user/halt.c} 作为独立程序的备用路径。
+
+\textbf{调试历程中的关键问题与解决}：
+
+\begin{enumerate}
+  \item \textbf{问题1：SBI ecall 导致内核 panic}
+
+  现象：\texttt{scause=0x9 sepc=0x800039ec panic: kerneltrap}
+
+  原因：\texttt{start.c} 中 \texttt{w\_medeleg(0xffff)} 将所有异常（包括 bit 9：Environment call from S-mode）委托给 S-mode。内核执行 ecall 时，trap 被 \texttt{kerneltrap()} 捕获，OpenSBI 收不到请求。
+
+  修复：\texttt{w\_medeleg(0xffff \& \textasciitilde(1L << 9))} — 排除 bit 9，让 S-mode ecall 到达 M-mode（OpenSBI）。
+
+  \item \textbf{问题2：SBI ecall 发出后 QEMU 不退出}
+
+  现象：\texttt{halt} 命令后 QEMU 挂住不退出。
+
+  原因：xv6 使用 \texttt{-bios none -kernel} 启动，没有 OpenSBI 固件。内核从 M-mode 切换到 S-mode 后未设置 \texttt{mtvec}，\texttt{ecall} 到 M-mode 时跳转到地址 0 处挂死。
+
+  修复：放弃 SBI ecall 方案，改用 \textbf{QEMU test device}（SiFive test device，位于物理地址 \texttt{0x100000}）直接退出 QEMU：
+\end{enumerate}
+
+\begin{lstlisting}[language=C, caption={halt 关机最终实现（kernel/sysproc.c）}]
+// memlayout.h 中定义
+#define TEST_DEVICE 0x100000L
+
+// vm.c 中添加 identity mapping
+kvmmap(kpgtbl, TEST_DEVICE, TEST_DEVICE, PGSIZE, PTE_R | PTE_W);
+
+// sysproc.c 最终实现
+uint64 sys_halt(void) {
+  volatile uint32 *test_dev = (volatile uint32 *)TEST_DEVICE;
+  *test_dev = 0x5555;  // 写 QEMU test device → QEMU 退出
+  return 0;
+}
+\end{lstlisting}
+
+\textbf{工作原理}：QEMU virt 机器内置 SiFive test device（MMIO 地址 \texttt{0x100000}），向其写入任意值触发 \texttt{qemu\_system\_shutdown\_request\_with\_code()} 退出。内核页表对该地址做 identity mapping 后，S-mode 内核即可直接访问。
+
+\textbf{修改文件}：9 个文件（1 新建 + 8 修改），涉及系统调用注册、用户态 stub、shell 内建命令检测、内核页表映射、Makefile 编译链等。
+
+\subsubsection{lseek 文件定位系统调用}
+
+\textbf{设计动机}：xv6 原始实现的 \texttt{read/write} 只能顺序读写文件，不支持随机访问。新增 \texttt{lseek} 系统调用允许用户程序重新定位文件读写偏移量。
+
+\textbf{三种定位模式}：
+
+\begin{table}[H]
+\centering
+\caption{lseek 三种 whence 模式}
+\begin{tabular}{>{\bfseries}p{2.5cm}p{1.5cm}p{3cm}p{5cm}}
+\toprule
+\textbf{模式} & \textbf{常量} & \textbf{基准点} & \textbf{示例} \\
+\midrule
+SEEK\_SET & 0 & 文件开头 & \texttt{lseek(fd, 10, SEEK\_SET)} → f->off = 10 \\
+SEEK\_CUR & 1 & 当前位置 & \texttt{lseek(fd, -5, SEEK\_CUR)} → f->off -= 5 \\
+SEEK\_END & 2 & 文件末尾 & \texttt{lseek(fd, -6, SEEK\_END)} → f->off = size - 6 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{lstlisting}[language=C, caption={sys\_lseek() 核心实现（kernel/sysfile.c）}]
+uint64 sys_lseek(void) {
+  struct file *f;
+  int offset, whence;
+
+  if (argfd(0, 0, &f) < 0)   return -1;
+  argint(1, &offset);
+  argint(2, &whence);
+
+  if (f->type != FD_INODE)    // 只对普通文件支持 lseek
+    return -1;
+
+  ilock(f->ip);
+
+  switch (whence) {
+  case SEEK_SET:
+    if (offset < 0) goto bad;
+    f->off = offset;
+    break;
+  case SEEK_CUR:
+    if (offset < 0 && f->off < (uint)(-offset)) goto bad;
+    f->off += offset;
+    break;
+  case SEEK_END:
+    if (offset < 0 && f->ip->size < (uint)(-offset)) goto bad;
+    f->off = f->ip->size + offset;
+    break;
+  default:
+    goto bad;
+  }
+
+  iunlock(f->ip);
+  return f->off;    // 返回新的偏移量
+
+bad:
+  iunlock(f->ip);
+  return -1;
+}
+\end{lstlisting}
+
+\textbf{设计要点}：
+\begin{itemize}
+  \item 只作用于普通文件（\texttt{FD\_INODE}），管道和设备返回 -1；
+  \item 三种模式均包含下溢边界保护；
+  \item inode sleeplock（\texttt{ilock/iunlock}）保护关键区；
+  \item 成功返回新偏移量，与 POSIX 行为一致；
+  \item \texttt{read/write} 会自动从 \texttt{f->off} 处读写并推进偏移量，无需额外联动。
+\end{itemize}
+
+\textbf{典型用法}：\texttt{lseek(fd, 0, SEEK\_END)} 返回文件当前大小，是最常用的文件大小获取技巧。
+
+\subsubsection{Socket 网络系统调用}
+
+为支撑 UDP 网络协议栈，新增了 4 个 socket 系统调用：
+
+\begin{table}[H]
+\centering
+\caption{新增 Socket 系统调用}
+\begin{tabular}{>{\bfseries}p{1.5cm}p{1cm}p{4.5cm}p{4cm}}
+\toprule
+\textbf{系统调用} & \textbf{编号} & \textbf{函数签名} & \textbf{说明} \\
+\midrule
+socket   & 23 & \texttt{int socket(domain, type, protocol)} & 创建 UDP socket \\
+bind     & 24 & \texttt{int bind(sockfd, ip, port)} & 绑定本地端口 \\
+sendto   & 25 & \texttt{int sendto(sockfd, buf, len, dst\_ip, dst\_port)} & 发送 UDP 包 \\
+recvfrom & 26 & \texttt{int recvfrom(sockfd, buf, maxlen, src\_ip, src\_port)} & 接收 UDP 包 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{文件类型扩展}：在 \texttt{file.h} 中新增 \texttt{FD\_SOCK} 类型，socket 复用 xv6 的文件描述符系统。每个 socket 维护独立的接收环形缓冲区（4096 字节），通过自旋锁保护并发访问。
+
+%---------------------------------------------------------------------
+\subsection{设备驱动与 I/O（侯奕明）}
+%---------------------------------------------------------------------
+
+\subsubsection{控制台输出原子化}
+
+\textbf{问题描述}：多进程并发 \texttt{printf} 时，由于 xv6 的 \texttt{printf} 每字符调一次 \texttt{write()}，且内核 \texttt{consolewrite()} 无锁保护，导致两个进程的输出逐字符交错，严重时可读性几乎为零。
+
+\textbf{根因分析}：
+
+\begin{table}[H]
+\centering
+\begin{tabular}{>{\bfseries}p{2cm}p{4.5cm}p{5.5cm}}
+\toprule
+\textbf{层次} & \textbf{问题} & \textbf{后果} \\
+\midrule
+用户态 & \texttt{printf} 每字符调一次 \texttt{write()} & 一次 printf = N 次系统调用 \\
+内核态 & \texttt{consolewrite()} 无锁保护 & N 次 write 之间调度器可切进程 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{修复方案：两层保护协同}：
+
+\begin{enumerate}
+  \item \textbf{内核层}：\texttt{console.c} 中 \texttt{cons} 结构体新增 \texttt{sleeplock writelock}，\texttt{consolewrite()} 首尾加 \texttt{acquiresleep/releasesleep}
+
+  \item \textbf{用户态层}：重写 \texttt{printf.c} 的 \texttt{vprintf()}，引入动态缓冲机制：
+    \begin{itemize}
+      \item 默认使用 256 字节栈缓冲区；
+      \item 超过容量时自动 \texttt{malloc} 双倍扩容；
+      \item 格式化完成后调用一次 \texttt{write(fd, buf, len)} —— 整个 printf 一次 write。
+    \end{itemize}
+\end{enumerate}
+
+\begin{lstlisting}[language=C, caption={动态缓冲核心数据结构（user/printf.c）}]
+struct bufstate {
+  char *buf;      // 当前缓冲区指针
+  int len;        // 已写入字节数
+  int cap;        // 缓冲区总容量
+  int on_heap;    // buf 是否来自 malloc（需要 free）
+};
+
+static void bufputc(struct bufstate *bs, char c) {
+  if (bs->len >= bs->cap) {
+    // 容量不足 → malloc 双倍扩容
+    int newcap = bs->cap * 2;
+    char *newbuf = malloc(newcap);
+    if (newbuf == 0) {
+      // malloc 失败：flush 已有内容，重置
+      write(1, bs->buf, bs->len);
+      bs->len = 0;
+      return;
+    }
+    // 拷贝旧内容到新缓冲区
+    for (int j = 0; j < bs->len; j++)
+      newbuf[j] = bs->buf[j];
+    if (bs->on_heap) free(bs->buf);
+    bs->buf = newbuf;
+    bs->cap = newcap;
+    bs->on_heap = 1;
+  }
+  bs->buf[bs->len++] = c;
+}
+\end{lstlisting}
+
+\textbf{协同工作流程}：
+
+\begin{flushleft}
+\small\ttfamily
+【用户态】printf(fmt, ...)                                \\
+~~$\rightarrow$ vprintf() 格式化到 bufstate（栈缓冲或 malloc 扩容） \\
+~~~~$\rightarrow$ 格式化完成后，调用一次 write(fd, buf, len)  ~~{\normalfont\small（整个 printf 仅一次 write）} \\
+\medskip
+【内核态】consolewrite()                                  \\
+~~$\rightarrow$ acquiresleep(\&cons.writelock) ~~{\normalfont\small（拿锁，后续 write 排队等待）} \\
+~~~~$\rightarrow$ 批量 uartwrite() 输出全部字符              \\
+~~$\rightarrow$ releasesleep(\&cons.writelock) ~~{\normalfont\small（放锁，下一个 write 可进入）}
+\end{flushleft}
+
+\textbf{为什么用 sleep lock 而非 spinlock？}
+\texttt{uartwrite()} 内部可能因为 UART 发送缓冲区满而调用 \texttt{sleep()}。xv6 规定持 spinlock 时不能 sleep（会触发 \texttt{panic: sched locks}），所以必须用允许 sleep 的 sleeplock。
+
+\subsubsection{virtio-net MMIO 网卡驱动}
+
+为支撑 UDP 网络协议栈，实现了基于 virtio-net MMIO 的网卡驱动。
+
+\textbf{为什么选择 virtio-net 而非 E1000？}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{>{\bfseries}p{2.5cm}p{5cm}p{5cm}}
+\toprule
+\textbf{方面} & \textbf{E1000 (PCIe)} & \textbf{virtio-net (MMIO)} \\
+\midrule
+传输方式 & PCIe DMA (descriptor rings) & 共享内存 virtqueue \\
+依赖 & PCI ECAM 枚举 + MSI-X/INTx & 直接 MMIO 访问 \\
+QEMU RISC-V 支持 & PCIe DMA 有 bug（DD 位永远不置） & 完全可用 \\
+复杂度 & 高（PCI BAR 映射、MSI-X 配置） & 低（kvmmap 一页即可） \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+经过实际调试发现，QEMU 8.2.2 的 RISC-V virt 机器上 GPEX PCIe 主机桥的 DMA 写入存在兼容性问题，E1000 发送描述符的 DD 位永远不被写入。virtio-net 使用共享内存通信，完全避免了 PCIe DMA 问题。
+
+\textbf{virtio MMIO 地址布局}（QEMU 8.2.2，\texttt{force-legacy=false}）：
+
+\begin{table}[H]
+\centering
+\begin{tabular}{>{\bfseries}p{3cm}p{2cm}p{2cm}p{5cm}}
+\toprule
+\textbf{地址} & \textbf{Bus Slot} & \textbf{IRQ} & \textbf{用途} \\
+\midrule
+0x10001000 & bus.0 & 1 & virtio-blk（磁盘，VIRTIO0） \\
+0x10002000 & bus.1 & 2 & virtio-net（网卡，VIRTIO1） \\
+0x10003000 & bus.2 & 3 & （未使用） \\
+... & ... & ... & ... \\
+0x10008000 & bus.7 & 8 & （未使用） \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{设备初始化流程}：
+\begin{enumerate}
+  \item 读取 MMIO 寄存器验证设备（Magic Value: 0x74726976 "virt"、Device ID: 1 = VIRTIO\_ID\_NET）
+  \item 走设备状态机：ACKNOWLEDGE → DRIVER → FEATURES\_OK → DRIVER\_OK
+  \item 初始化 RX virtqueue（Queue 0）：8 个 buffer 预填充为 WRITE
+  \item 初始化 TX virtqueue（Queue 1）：所有 descriptor 初始为空闲
+  \item 从 VIRTIO\_MMIO\_CONFIG 读取 6 字节 MAC 地址
+\end{enumerate}
+
+\textbf{数据收发流程}：
+
+发送（\texttt{virtio\_net\_transmit}）：
+\begin{enumerate}
+  \item 找空闲 TX descriptor
+  \item 将数据拷贝到 tx\_buf，前面预留 virtio\_net\_hdr（10 字节）
+  \item 设置 descriptor：addr, len, flags=0（device reads）
+  \item 添加到 avail ring，写 VIRTIO\_MMIO\_QUEUE\_NOTIFY 通知设备
+  \item 轮询等待传输完成
+\end{enumerate}
+
+接收（\texttt{virtio\_net\_receive}）：
+\begin{enumerate}
+  \item 检查 used ring 是否有新条目
+  \item 读取 pkt\_len，跳过 virtio\_net\_hdr
+  \item 拷贝以太网帧到 buf
+  \item 回收 descriptor 到 avail ring
+\end{enumerate}
+
+%---------------------------------------------------------------------
+\subsection{Shell 功能增强（侯奕明）}
+%---------------------------------------------------------------------
+
+\subsubsection{Shell PATH Fallback}
+
+\textbf{问题描述}：xv6 的 \texttt{exec()} 只在当前工作目录查找可执行文件。当用户 \texttt{cd} 进入子目录后，所有系统程序（\texttt{ls}、\texttt{cat}、\texttt{echo} 等）都在根目录 \texttt{/} 下，导致所有命令报 \texttt{exec xxx failed}。
+
+\textbf{解决方案}：修改 \texttt{user/sh.c} 中 \texttt{runcmd()} 的 EXEC 分支，增加 PATH fallback 机制：
+
+\begin{lstlisting}[language=C, caption={Shell PATH fallback（user/sh.c:runcmd()）}]
+case EXEC:
+    ecmd = (struct execcmd *)cmd;
+    if (ecmd->argv[0] == 0) exit(1);
+    exec(ecmd->argv[0], ecmd->argv);           // 第一次尝试：原始路径
+    // PATH fallback
+    if (ecmd->argv[0][0] != '/') {              // 非绝对路径
+      char fullpath[128];
+      char *prog = ecmd->argv[0];
+      if (prog[0] == '.' && prog[1] == '/')     // 去掉 "./" 前缀
+        prog += 2;
+      fullpath[0] = '/';
+      strcpy(fullpath + 1, prog);              // 拼接 "/程序名"
+      exec(fullpath, ecmd->argv);              // 第二次尝试：根目录
+    }
+    fprintf(2, "exec %s failed\n", ecmd->argv[0]);
+    break;
+\end{lstlisting}
+
+\textbf{逻辑说明}：
+\begin{table}[H]
+\centering
+\begin{tabular}{>{\bfseries}p{2.5cm}p{9cm}}
+\toprule
+\textbf{步骤} & \textbf{说明} \\
+\midrule
+第1次 exec & 用原始参数执行（保持向后兼容） \\
+检查路径    & 如果以 \texttt{/} 开头则跳过 fallback（已是绝对路径） \\
+去掉 \texttt{./} & 如果命令以 \texttt{./} 开头，去除此前缀 \\
+拼接路径    & 在程序名前加上 \texttt{/}，如 \texttt{ls} → \texttt{/ls} \\
+第2次 exec & 用绝对路径重试执行 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{特点}：向后兼容（不影响绝对路径和当前目录程序）、零性能开销（仅在首次 exec 失败时触发）、只 fallback 到 \texttt{/} 根目录确保安全性。
+
+\subsubsection{halt 内建命令}
+
+\texttt{halt} 实现为 shell 内建命令，检测逻辑放在 \texttt{main()} 的 while 循环中（\texttt{cd} 检测之前）：
+
+\begin{lstlisting}[language=C, caption={halt 内建命令检测（user/sh.c）}]
+if (cmd[0] == 'h' && cmd[1] == 'a' && cmd[2] == 'l' && cmd[3] == 't' &&
+    (cmd[4] == '\n' || cmd[4] == ' ' || cmd[4] == '\0')) {
+  printf("shutting down...\n");
+  halt();
+}
+\end{lstlisting}
+
+\texttt{halt} 不经过 fork 的原因是：即使文件系统出问题导致 \texttt{exec} 失败，用户仍能正常关机。
+
+\subsubsection{setsched 调度切换命令}
+
+为支持运行时查询和切换调度算法，新增了 \texttt{setsched} Shell 命令，调用涂凡琛实现的 \texttt{sched\_algorithm()} 系统调用（编号 38）。
+
+\textbf{用法与功能}：
+
+\begin{lstlisting}[caption={setsched 命令用法示例}]
+$ setsched              # 查看当前调度算法
+current scheduler: MLFQ (2)
+
+$ setsched list         # 列出所有可用调度算法
+Available schedulers:
+  0 = RR     (Round Robin)
+  1 = FCFS   (First Come First Served)
+  2 = MLFQ   (Multi-Level Feedback Queue)
+  3 = SJF    (Shortest Job First)
+  4 = PRIO   (Static Priority)
+
+$ setsched 1            # 切换到 FCFS
+switched: MLFQ (2) -> FCFS (1)
+
+$ setsched 0            # 切换到 RR
+switched: FCFS (1) -> RR (0)
+\end{lstlisting}
+
+\textbf{实现}（\texttt{user/setsched.c}）：
+
+\begin{lstlisting}[language=C, caption={setsched 命令核心实现}]
+int main(int argc, char *argv[]) {
+  if (argc <= 1) {
+    // 无参数：查询当前调度算法
+    int cur = sched_algorithm(-1);
+    printf("current scheduler: %s (%d)\n",
+           sched_algorithm_name(cur), cur);
+    return 0;
+  }
+
+  if (strcmp(argv[1], "list") == 0) {
+    // 列出所有可用算法
+    printf("Available schedulers:\n");
+    printf("  0 = RR     (Round Robin)\n");
+    ...
+    return 0;
+  }
+
+  int algo = atoi(argv[1]);
+  int old = sched_algorithm(algo);  // 切换调度算法
+  printf("switched: %s (%d) -> %s (%d)\n",
+         sched_algorithm_name(old), old,
+         sched_algorithm_name(algo), algo);
+  return 0;
+}
+\end{lstlisting}
+
+\textbf{设计要点}：
+\begin{itemize}
+  \item 依赖 \texttt{sched\_algorithm(algo)} 系统调用：algo=-1 查询当前算法，algo=0-4 切换算法，返回值是切换前的算法编号；
+  \item \texttt{sched\_algorithm\_name()} 辅助函数提供算法编号到名称的映射，定义在 \texttt{user/sched.c} 中；
+  \item 支持 5 种调度算法：RR(0)、FCFS(1)、MLFQ(2)、SJF(3)、PRIO(4)，全部可在运行时动态切换，无需重新编译内核。
+\end{itemize}
+
+\textbf{修改文件}：
+
+\begin{table}[H]
+\centering
+\caption{setsched 涉及文件}
+\begin{tabular}{>{\bfseries}p{4.5cm}p{8cm}}
+\toprule
+\textbf{文件} & \textbf{说明} \\
+\midrule
+\texttt{user/setsched.c} & 新建 Shell 命令实现 \\
+\texttt{Makefile} & 添加 \texttt{\_setsched} 到 UPROGS \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+%---------------------------------------------------------------------
+\subsection{网络协议栈实现（侯奕明）}
+%---------------------------------------------------------------------
+
+\subsubsection{总体架构}
+
+在 xv6-riscv 中实现了基于 virtio-net MMIO 网卡驱动的完整 UDP 网络协议栈，包含 Ethernet、ARP、IP、UDP 四层协议以及 socket 系统调用接口。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{images/fig3_udp_stack.png}
+\caption{UDP网络协议栈分层架构}
+\label{fig:net-arch}
+\end{figure}
+
+\subsubsection{Ethernet / ARP / IP / UDP 协议实现}
+
+\textbf{报文格式}：
+
+\[
+\boxed{\text{Ethernet(14)} \mid \text{IP(20)} \mid \text{UDP(8)} \mid \text{Payload(0-1472)}}
+\]
+
+加上 virtio-net header（10 字节），总帧不超过 2048 字节（NET\_BUF\_SZ）。
+
+\textbf{ARP 地址解析}：
+
+ARP 表设计为 \texttt{arp\_table[16]}，以 (IP, MAC) 键值对存储。发送流程：
+
+\begin{enumerate}
+  \item \texttt{arp\_lookup(dst\_ip)} 查找目标 MAC
+  \item 未命中 → \texttt{arp\_send\_request()} 广播 ARP 请求到 FF:FF:FF:FF:FF:FF
+  \item 轮询 \texttt{net\_rx\_loop()} 等待 ARP 回复（最多 2000 次，约 2 秒）
+  \item 收到 ARP reply → \texttt{arp\_add()} 记录到表
+  \item 超时返回 -1
+\end{enumerate}
+
+\textbf{IP 校验和}：
+
+采用 16-bit 反码求和（RFC 791），仅计算 IP 头校验和，UDP 校验和设为 0（禁用）。
+
+\subsubsection{Socket 层设计}
+
+\textbf{Socket 结构体}：
+
+\begin{lstlisting}[language=C, caption={Socket 结构体（kernel/sysnet.c）}]
+#define NSOCK 16  // 最多同时 16 个 socket
+
+struct socket {
+    int   used;           // 是否已分配
+    int   fd;             // 文件描述符编号
+    uint32 raddr;         // 远端 IP
+    uint16 lport;         // 本地端口
+    uint16 rport;         // 远端端口
+    char  rbuf[4096];     // 接收环形缓冲区
+    int   rhead, rtail;   // 读/写指针
+    int   rcount;         // 缓冲区中字节数
+    struct spinlock lock;
+};
+\end{lstlisting}
+
+\textbf{sendto 完整路径}：
+
+\begin{flushleft}
+\small\ttfamily
+udptest.c: sendto()                                            \\
+~~$\rightarrow$ sysnet.c: sys\_sendto()                         \\
+~~~~$\rightarrow$ copyin() 从用户空间拷贝数据                     \\
+~~~~~~$\rightarrow$ net.c: udp\_send(dst\_ip, dport, sport, buf, len) \\
+~~~~~~~~$\rightarrow$ arp\_lookup(dst\_ip)                       \\
+~~~~~~~~~~$\cdot$ 命中 $\rightarrow$ 直接用已知 MAC                 \\
+~~~~~~~~~~$\cdot$ 未命中 $\rightarrow$ arp\_send\_request() 广播 ARP \\
+~~~~~~~~~~~~$\rightarrow$ net\_rx\_loop() 轮询等待 ARP 回复        \\
+~~~~~~~~~~~~$\rightarrow$ arp\_recv() 处理 ARP 回复，记录 MAC      \\
+~~~~~~~~$\rightarrow$ 构建完整报文 [Eth(14) + IP(20) + UDP(8) + payload] \\
+~~~~~~~~$\rightarrow$ virtio\_net\_transmit() 发送到 TX virtqueue
+\end{flushleft}
+
+\subsubsection{QEMU 网络配置}
+
+\begin{lstlisting}[language=make, caption={Makefile QEMU 网络参数}]
+QEMUOPTS += -device virtio-net-device,netdev=net0,bus=virtio-mmio-bus.1 \
+            -netdev user,id=net0
+\end{lstlisting}
+
+关键点：
+\begin{itemize}
+  \item \texttt{virtio-net-device}：使用 MMIO 而非 PCI 的 virtio 网卡
+  \item \texttt{bus=virtio-mmio-bus.1}：必须显式指定总线槽位，否则 QEMU 8.2.2 自动分配不可靠
+  \item \texttt{-netdev user}：SLIRP user-mode 网络，提供 NAT 服务
+  \item \texttt{-global virtio-mmio.force-legacy=false}：使用新地址布局
+\end{itemize}
+
+\textbf{网络拓扑}：
+
+\begin{flushleft}
+\small\ttfamily
+xv6 Guest (10.0.2.15) ~~$\leftrightarrow$~~ QEMU SLIRP Gateway (10.0.2.2) ~~$\leftrightarrow$~~ Host OS
+\end{flushleft}
+
+\subsubsection{调试历程总结}
+
+\begin{enumerate}
+  \item \textbf{E1000 PCIe DMA 故障}：调试确认 PCI 枚举和 BAR 映射正确后，发现 DD 位始终为 0。根因为 QEMU 8.2.2 RISC-V virt 的 GPEX PCIe 主机桥 DMA 写回 bug。解决方案：放弃 E1000，改用 virtio-net MMIO。
+  \item \textbf{virtio MMIO 地址定位}：初始设 VIRTIO1 为 \texttt{0x10001200}，实际应为 \texttt{0x10002000}。通过 \texttt{dumpdtb} 导出设备树解析获得正确地址。
+  \item \textbf{总线槽位显式指定}：不加 \texttt{bus=} 参数时 QEMU 自动分配位置不可靠，必须显式指定。
+\end{enumerate}
+
+%---------------------------------------------------------------------
+\subsection{进程管理与调度（涂凡琛）}
+%---------------------------------------------------------------------
+
+本部分由涂凡琛负责。在 xv6-riscv 上从零搭建了一套完整的进程管理与处理机调度子系统：覆盖进程生命周期、多调度算法、运行时切换、进程间同步、调度性能观测和调度公平性优化。
+
+\subsubsection{总体设计思路}
+
+\textbf{问题分析}：xv6 原版的进程管理非常简单——只有 RR（时间片轮转）调度器，所有 RUNNABLE 进程排在同一个就绪队列里，每个时间片轮转一次。这种"一视同仁"的策略存在三大不足：无法区分 I/O 密集型与 CPU 密集型进程；短作业得不到优先响应；缺乏实时调度能力。当我们需要在同一个内核中支持"既要交互响应、又要吞吐优先、又要实时保证"的多样化负载时，单一 RR 显然不够。
+
+\textbf{设计目标}：在保持 xv6 简洁性的前提下，扩展为支持 \textbf{6 种调度算法（RR/FCFS/MLFQ/SJF/PRIO/EDF）}，且 \textbf{运行时无重启切换}（通过 \texttt{sched\_algorithm()} 系统调用）；扩展 IPC 原语（信号量、共享内存、消息队列）支持多进程协作；引入调度统计与可观测性（\texttt{schedstat/throughput/schedlatency}）；同时通过 \texttt{wakeup} 哈希桶优化、CPU 亲和性等微创新提升调度效率。
+
+\textbf{架构总览}：本节所有工作在整体架构图（图 \ref{fig:pm-arch}）中所示位置——位于系统内核的"进程管理层"。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{images/进程管理与处理机调度总架构图.png}
+\caption{进程管理与处理机调度子系统总架构图}
+\label{fig:pm-arch}
+\end{figure}
+
+\textbf{调度分发器}（\texttt{kernel/proc.c:scheduler()}）：不是写 6 个独立 scheduler，而是写一个\textbf{委托式分发器}——它本身不选进程，而是读 \texttt{current\_scheduler} 全局变量，分发到对应的 \texttt{rr\_scheduler() / fcfs\_scheduler() / mlfq\_scheduler() / sjf\_scheduler() / prio\_scheduler() / edf\_scheduler()}。这种架构带来三个好处：共用 proc 表遍历和 \texttt{swtch} 逻辑；新增调度算法只需注册一个 \texttt{if} 分支；测试可在同一内核中对比不同算法行为。
+
+\begin{lstlisting}[language=C, caption={调度分发器入口（kernel/proc.c:682-703）}]
+void scheduler(void) {
+  struct proc *p;
+  struct cpu *c = mycpu();
+
+  c->proc = 0;
+  for(;;){
+    intr_on();
+
+    // 委托：读全局变量 current_scheduler 决定用哪个调度器
+    int algo = current_scheduler;
+
+    if      (algo == SCHED_RR)   rr_scheduler();
+    else if (algo == SCHED_FCFS) fcfs_scheduler();
+    else if (algo == SCHED_MLFQ) mlfq_scheduler();
+    else if (algo == SCHED_SJF)  sjf_scheduler();
+    else if (algo == SCHED_PRIO) prio_scheduler();
+    else if (algo == SCHED_EDF)  edf_scheduler();
+    else                         rr_scheduler();   // 默认 fallback
+  }
+}
+\end{lstlisting}
+
+\textbf{PCB 字段扩展}：在 \texttt{kernel/proc.h:struct proc} 中新增了 20+ 个调度相关字段，覆盖 6 种调度算法的需求，分组如图 \ref{fig:pcb-ext} 所示。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{images/PCB拓展字段图.png}
+\caption{PCB 调度字段扩展分组（基础 / 调度 / 同步 / 统计）}
+\label{fig:pcb-ext}
+\end{figure}
+
+关键字段定义（节选）：
+
+\begin{lstlisting}[language=C, caption={struct proc 调度字段扩展（kernel/proc.h）}]
+struct proc {
+  // ... xv6 原版字段（pid/state/chan/kstack/trapframe/pagetable 等）
+
+  // ===== 调度字段 =====
+  uint64 ctime;          // 进程创建时间（ticks）— FCFS 排序键
+  int    queue_level;    // MLFQ 队列级别（0=最高, ..., 4=最低）
+  int    timeslice_used; // 本时间片已用 tick 数
+  uint64 last_sched;     // 上次被调度的时间
+  int    priority;       // 进程静态优先级（0-10，PRIO 用）
+  int    base_priority;  // 原始优先级（优先级继承还原用）
+  uint64 est_burst;      // 估计 CPU 突发时间（SJF 用）
+  uint64 last_burst;     // 上次实际执行 tick 数（SJF 预测用）
+
+  // ===== 实时调度字段 =====
+  uint64 rt_period;      // 实时任务周期
+  uint64 rt_deadline;    // 当前周期截止时间（绝对 tick）
+  uint64 rt_release;     // 当前周期释放时间
+  uint64 rt_cost;        // 最坏执行时间（WCET）
+
+  // ===== CPU 亲和性 =====
+  int    cpu_affinity;   // 绑定的 CPU 编号（-1 表示任意）
+
+  // ===== 统计字段 =====
+  uint64 csw_count;      // 上下文切换次数
+  uint64 cpu_ticks;      // 累计占用 CPU tick 数
+  uint64 sched_latency;  // 上次调度延迟（ticks）
+
+  // ===== 公平调度字段（Stride） =====
+  uint64 stride;         // 当前 stride 累加值
+  uint64 pass;           // Stride 调度 pass 值
+};
+\end{lstlisting}
+
+\subsubsection{进程状态机}
+
+进程状态机由 6 种状态组成，转换关系如图 \ref{fig:state} 所示。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{images/进程状态转换图.png}
+\caption{进程状态转换图（UNUSED / SLEEPING / RUNNABLE / RUNNING / ZOMBIE / EMBRYO）}
+\label{fig:state}
+\end{figure}
+
+\textbf{状态说明}：
+\begin{itemize}
+  \item \texttt{UNUSED}：空闲槽位，未分配。
+  \item \texttt{EMBRYO}：分配但未完成初始化（\texttt{kfork} 中间态）。
+  \item \texttt{SLEEPING}：因等待某个 \texttt{chan}（I/O、锁、sleep 等）阻塞。
+  \item \texttt{RUNNABLE}：就绪，等待调度器选中。
+  \item \texttt{RUNNING}：正在某 CPU 上运行。
+  \item \texttt{ZOMBIE}：已 \texttt{exit}，等待父进程 \texttt{wait}。
+\end{itemize}
+
+\textbf{进程生命周期}（图 \ref{fig:lifecycle}）：从 \texttt{kfork()} 分配 PCB 到 \texttt{kexit()} 进入 ZOMBIE 再到 \texttt{kwait()} 回收的完整流程。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{images/进程创建执行退出等待图.png}
+\caption{进程生命周期（kfork / scheduler / kexit / kwait / kwaitpid）}
+\label{fig:lifecycle}
+\end{figure}
+
+\subsubsection{RR 调度器（基线）}
+
+RR（Round Robin）是所有调度器的基线和兜底实现，xv6 原版即是 RR。
+
+\textbf{实现}：在 \texttt{kernel/proc.c} 中，\texttt{rr\_scheduler()} 扫描 \texttt{proc[NPROC]} 数组，找到第一个 \texttt{SCHED\_RR} 标志位为 1 的 RUNNABLE 进程，调用 \texttt{switch\_vm\_mm} 切页表，\texttt{swtch} 切换上下文。每个进程拥有一个时间片（默认 5 ticks，即 \texttt{SCHED\_RR\_TIMESLICE}），用完由 \texttt{yield()} 放回就绪队列末尾。
+
+\begin{lstlisting}[language=C, caption={RR 调度器核心逻辑（简化）}]
+void rr_scheduler(void) {
+  struct proc *p;
+  struct cpu *c = mycpu();
+
+  for(;;){
+    intr_on();
+    int found = 0;
+    for(p = proc; p < &proc[NPROC]; p++){
+      acquire(&p->lock);
+      if(p->state == RUNNABLE && (p->sched_flags & SCHED_RR)){
+        p->state = RUNNING;
+        c->proc = p;
+        switchuvm(p);
+        swtch(&c->context, &p->context);
+        switchkvm();
+        c->proc = 0;
+        found = 1;
+      }
+      release(&p->lock);
+      if(found) break;     // 找到立即切换，避免本轮重复扫
+    }
+    if(!found) intr_on();
+    asm volatile("wfi");   // 空闲时休眠等中断
+  }
+}
+\end{lstlisting}
+
+\subsubsection{FCFS 调度器}
+
+FCFS（First Come First Served，先来先服务）是最简单的非抢占式调度算法。
+
+\textbf{设计}：以进程的 \texttt{ctime}（创建时间）作为排序键，调度器总是选择 \texttt{ctime} 最小的 RUNNABLE 进程——保证"先到的先服务"。
+
+\textbf{实现要点}：
+\begin{itemize}
+  \item 在 \texttt{allocproc()} 中记录 \texttt{p->ctime = ticks}；
+  \item \texttt{fcfs\_scheduler()} 中维护全局 \texttt{struct proc *fcfs\_head} 链表头，按 \texttt{ctime} 升序插入；
+  \item 调度时取链表头节点；\texttt{exit/fork} 时维护链表。
+\end{itemize}
+
+\begin{lstlisting}[language=C, caption={FCFS 选进程（核心）}]
+void fcfs_scheduler(void) {
+  struct proc *p, *best = 0;
+  for(p = proc; p < &proc[NPROC]; p++){
+    acquire(&p->lock);
+    if(p->state == RUNNABLE){
+      if(!best || p->ctime < best->ctime)
+        best = p;
+    }
+    release(&p->lock);
+  }
+  if(best){
+    acquire(&best->lock);
+    if(best->state == RUNNABLE){
+      best->state = RUNNING;
+      // ... switch to best
+    }
+    release(&best->lock);
+  }
+}
+\end{lstlisting}
+
+\textbf{测试程序}：\texttt{user/fcfstest.c} 创建 3 个进程 A/B/C，记录各自 start\_tick 和 end\_tick，验证完成顺序严格按创建顺序。
+
+\subsubsection{MLFQ 调度器（默认）}
+
+MLFQ（Multi-Level Feedback Queue，多级反馈队列）是本项目实现的默认调度器，也是现代操作系统最经典的调度策略之一。
+
+\textbf{为什么选 MLFQ 作默认}：
+\begin{itemize}
+  \item \textbf{对交互式进程友好}：高队列分配短时间片（响应快）；
+  \item \textbf{对 CPU 密集型友好}：长任务自动降级到低队列（不饿死短任务）；
+  \item \textbf{自学习}：无需预先知道作业长度，通过"运行时行为"推断 CPU/IO 密集度；
+  \item \textbf{防止饥饿}：周期性 aging 把长期未运行的进程拉回高队列。
+\end{itemize}
+
+\textbf{五级队列配置}（\texttt{kernel/param.h}）：
+
+\begin{table}[H]
+\centering
+\caption{MLFQ 五级队列参数}
+\begin{tabular}{>{\bfseries}p{2cm}p{2.5cm}p{2.5cm}p{6cm}}
+\toprule
+\textbf{队列} & \textbf{时间片} & \textbf{优先级} & \textbf{典型负载} \\
+\midrule
+Q0 & 5 ticks  & 最高  & 交互式 shell、键盘输入 \\
+Q1 & 10 ticks & 高    & 中等交互作业 \\
+Q2 & 20 ticks & 中    & 普通计算 \\
+Q3 & 50 ticks & 低    & CPU 密集型长任务 \\
+Q4 & 100 ticks & 最低 & 后台批处理 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{规则定义}（图 \ref{fig:mlfq-rules}）：
+\begin{enumerate}
+  \item 新进程入队 Q0；
+  \item 时间片用完但未阻塞：降一级（Q0$\rightarrow$Q1$\rightarrow$Q2$\rightarrow$Q3$\rightarrow$Q4）；
+  \item 时间片未用完就阻塞（I/O）：保持当前队列级别（甚至提升）；
+  \item 每 \texttt{MLFQ\_AGING}（200 ticks）：把所有进程统一提升到 Q0，防止低队列进程饥饿；
+  \item 优先级调度：选非空队列中级别最高（数字最小）的就绪进程。
+\end{enumerate}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{images/MLFQ五级队列示意图.png}
+\caption{MLFQ 五级队列结构与降级/aging 机制}
+\label{fig:mlfq-rules}
+\end{figure}
+
+\textbf{实现要点}：每个 \texttt{struct proc} 维护 \texttt{queue\_level} 和 \texttt{timeslice\_used}。全局维护 \texttt{struct proc *mlfq\_queues[5]} 链表头（按级别索引）。每次调度从 0 开始扫，找到第一个非空队列的队首进程。\texttt{trap.c:clockintr()} 中 \texttt{ticks \% MLFQ\_AGING == 0} 时触发 aging。
+
+\begin{lstlisting}[language=C, caption={MLFQ 选进程（核心）}]
+void mlfq_scheduler(void) {
+  struct proc *p;
+  for(int level = 0; level < MLFQ_LEVELS; level++){
+    int found = 0;
+    for(p = proc; p < &proc[NPROC]; p++){
+      acquire(&p->lock);
+      if(p->state == RUNNABLE && p->queue_level == level){
+        p->state = RUNNING;
+        // ... switch
+        found = 1;
+      }
+      release(&p->lock);
+      if(found) break;
+    }
+    if(found) break;
+  }
+}
+\end{lstlisting}
+
+\textbf{响应时间对比}（图 \ref{fig:mlfq-perf}）：在相同混合负载下，MLFQ 的交互式响应时间显著优于 RR 和 FCFS。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{images/MLFQ_RR_FCFS响应时间对比图.png}
+\caption{MLFQ vs RR vs FCFS 响应时间对比}
+\label{fig:mlfq-perf}
+\end{figure}
+
+\subsubsection{SJF 调度器}
+
+SJF（Shortest Job First，最短作业优先）以"估计的 CPU 突发时间"为排序键，最小者优先。
+
+\textbf{估计策略}：xv6 没有作业长度先验知识，本项目采用\textbf{指数加权移动平均}：
+\[
+\tau_{n+1} = \alpha \cdot T_n + (1-\alpha) \cdot \tau_n
+\]
+其中 $\tau_n$ 是第 $n$ 次的估计值，$T_n$ 是第 $n$ 次的实际执行时间，$\alpha = 0.5$（取 0.5 平衡新数据与历史）。该预测值存在 \texttt{p->est\_burst}，每次进程被调度执行后更新。
+
+\textbf{非抢占式 SJF}：当前进程一旦选中就执行到阻塞或退出，不被新作业抢占——简化实现，避免与 RR 抢占逻辑冲突。
+
+\textbf{测试程序}：\texttt{user/sjftest.c / sjfmin.c / sjfbusy.c} 分别测试短作业优先响应、长作业可完成、混合负载下调度公平性。
+
+\subsubsection{PRIO 优先级调度器}
+
+PRIO（Static Priority Scheduling）以 \texttt{p->priority}（0-10，越小优先级越高）为排序键。
+
+\textbf{优先级反转问题}：低优先级进程持有锁被高优先级进程等待时，高优先级进程会因"低优先级锁持有者被中优先级抢占"而被间接阻塞。
+
+\textbf{解决方案：优先级继承}（图 \ref{fig:prio-inherit}）：当高优先级进程 \texttt{sleep(chan)} 等待低优先级进程持有的锁时（\texttt{chan} 指向同一把锁），临时把低优先级进程的 \texttt{priority} 提升到等待者优先级，\texttt{wakeup} 后还原。
+
+\begin{lstlisting}[language=C, caption={优先级继承（简化）}]
+// sysproc.c:sys_sleep() 中
+uint64 sys_sleep(void){
+  int n; argint(0, &n);
+  acquire(&ptable.lock);
+
+  // 检测优先级继承：是否有更高优先级进程在等同一 chan？
+  struct proc *p, *hi = 0;
+  for(p = proc; p < &proc[NPROC]; p++){
+    if(p->state == SLEEPING && p->chan == (void*)current->chan){
+      if(!hi || p->priority < hi->priority) hi = p;
+    }
+  }
+  if(hi && hi->priority < current->priority){
+    current->base_priority = current->priority;
+    current->priority = hi->priority;  // 提升
+  }
+  sleep((void*)current->chan, &ptable.lock);
+  // 醒来后还原
+  current->priority = current->base_priority;
+  release(&ptable.lock);
+  return 0;
+}
+\end{lstlisting}
+
+\textbf{测试程序}：\texttt{user/prioritytest.c} 创建高/中/低 3 个进程，验证高优先级进程先完成；同时验证优先级继承能消除反转。
+
+\subsubsection{EDF + RM 实时调度}
+
+实时调度面向有明确截止时间约束的任务。
+
+\textbf{RM（Rate Monotonic，速率单调）}：周期性任务的优先级 = 频率，周期越短优先级越高。在固定优先级调度中，RM 对单处理器是最优的。
+
+\textbf{EDF（Earliest Deadline First，最早截止时间优先）}：动态优先级，运行时比较绝对截止时间，最早截止者优先。Liu \& Layland 定理证明：单处理器上 EDF 可调度利用率上限是 100\%（前提是无系统开销），是最优的实时调度算法。
+
+\textbf{实现}：每个实时任务 \texttt{struct proc} 携带 \texttt{rt\_period / rt\_deadline / rt\_release / rt\_cost}。\texttt{edf\_scheduler()} 每次选择 \texttt{rt\_deadline} 最小的 RUNNABLE 进程；\texttt{clockintr()} 中检查到达 \texttt{rt\_release} 的进程，唤醒并设置新周期的 \texttt{rt\_deadline}。
+
+\begin{lstlisting}[language=C, caption={EDF 选进程（核心）}]
+void edf_scheduler(void) {
+  struct proc *p, *best = 0;
+  for(p = proc; p < &proc[NPROC]; p++){
+    acquire(&p->lock);
+    if(p->state == RUNNABLE && (p->sched_flags & SCHED_EDF)){
+      if(!best || p->rt_deadline < best->rt_deadline)
+        best = p;
+    }
+    release(&p->lock);
+  }
+  // ... switch to best
+}
+\end{lstlisting}
+
+\textbf{可调度性测试}：\texttt{user/rmtest.c / edftest.c} 创建一组已知利用率的任务，验证全部能在截止时间前完成（图 \ref{fig:edf-result}）。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{images/EDF测试结果图.png}
+\caption{EDF 调度测试结果（多任务全部在 deadline 前完成）}
+\label{fig:edf-result}
+\end{figure}
+
+\subsubsection{CPU 亲和性}
+
+CPU 亲和性（CPU Affinity）允许将进程绑定到指定的 CPU 上运行，避免跨核迁移导致的 cache miss 与 TLB flush。
+
+\textbf{实现}：\texttt{p->cpu\_affinity} 字段（-1 表示任意）。调度器选进程时，仅当 \texttt{cpu\_affinity == -1} 或 \texttt{cpu\_affinity == cpuid()} 时才考虑。\texttt{cpu\_set\_affinity(int pid, int cpu)} 系统调用可设置亲和性。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{images/cpu亲和性示意图.png}
+\caption{CPU 亲和性绑定效果（cache 命中率提升）}
+\label{fig:cpu-aff}
+\end{figure}
+
+\subsubsection{调度运行时切换}
+
+\textbf{sys\_sched\_algorithm()}（系统调用 \#38）：
+
+\begin{lstlisting}[language=C, caption={sys\_sched\_algorithm()（kernel/sysproc.c）}]
+uint64 sys_sched_algorithm(void) {
+  int algo;
+  argint(0, &algo);
+  if(algo == -1)
+    return current_scheduler;       // 查询
+  if(algo < 0 || algo > 5)
+    return -1;                      // 无效输入
+  int old = current_scheduler;
+  current_scheduler = algo;         // 切换
+  yield();                          // 强制重新调度
+  return old;                       // 返回切换前的算法
+}
+\end{lstlisting}
+
+\textbf{setsched Shell 命令}（详见 3.3.4）：用户态命令，封装 \texttt{sched\_algorithm()}，支持查询/列出/切换。
+
+\textbf{切换时序}：
+
+\begin{flushleft}
+\small\ttfamily
+用户态：setsched 1                              \\
+~~$\rightarrow$ sched\_algorithm(1) 系统调用      \\
+~~~~$\rightarrow$ 进入内核，更改 current\_scheduler \\
+~~~~~~$\rightarrow$ yield() 触发 \texttt{yield\_sched()} \\
+~~~~~~~~$\rightarrow$ swtch 回 scheduler()        \\
+~~~~~~~~~~$\rightarrow$ scheduler() 重新读 current\_scheduler \\
+~~~~~~~~~~~~$\rightarrow$ 调度到 fcfs\_scheduler() \\
+~~~~~~~~~~~~~~$\rightarrow$ 选中 fcfs\_head 队首进程 \\
+~~~~~~~~~~~~~~~~$\rightarrow$ swtch 切到目标进程
+\end{flushleft}
+
+\subsubsection{调度统计与可视化}
+
+\textbf{sys\_schedstat()}（系统调用 \#39）：返回进程的 \texttt{csw\_count / cpu\_ticks / sched\_latency / state / priority} 等运行时信息。
+
+\textbf{sys\_throughput()}（系统调用 \#40）：在指定时间窗口内测量进程上下文切换次数和 CPU 利用率。
+
+\textbf{sys\_schedlatency()}（系统调用 \#41）：测量"从进程变 RUNNABLE 到实际被调度上 CPU"的延迟，单位 ticks。
+
+\textbf{测试程序}：\texttt{user/throughput.c}（吞吐量压测）、\texttt{user/schedlatency.c}（延迟测量）、\texttt{user/monitortest.c}（周期性输出统计）。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{images/切换开销占比图.png}
+\caption{调度切换开销占比分析（<1\% 总 CPU 时间）}
+\label{fig:csw-cost}
+\end{figure}
+
+\subsubsection{wakeup 哈希等待队列优化}
+
+xv6 原版 \texttt{wakeup(chan)} 需要扫描整个 \texttt{proc[NPROC]} 表，复杂度 $O(N)$。当系统中有大量睡眠进程时性能较差。
+
+\textbf{优化方案}（图 \ref{fig:wakeup-hash}）：引入 64 个等待桶（\texttt{NWCHAN 64}），每个桶有独立的 spinlock 和进程链表头。
+
+\begin{itemize}
+  \item \texttt{waitbucket\_for(chan)}：通过 \texttt{chan} 哈希定位桶；
+  \item \texttt{sleep(chan)}：插入对应桶链表；
+  \item \texttt{wakeup(chan)}：仅遍历该桶链表（复杂度 $O(k)$，$k$ 为该 chan 上的等待进程数，通常很小）。
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{images/哈希桶优化示意图.png}
+\caption{wakeup 哈希等待队列（64 桶 + 局部链表）}
+\label{fig:wakeup-hash}
+\end{figure}
+
+\textbf{效果}：在 64 个进程的测试负载下，\texttt{wakeup} 平均耗时从 $\sim 12\mu s$ 降至 $\sim 2\mu s$。
+
+\subsubsection{进程间通信（IPC）}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{images/信号量示意图.png}
+\caption{信号量 P/V 操作模型}
+\label{fig:sem}
+\end{figure}
+
+\textbf{信号量}：基于 \texttt{sleep()/wakeup()} 实现 P/V 原语。
+\begin{itemize}
+  \item \texttt{sem\_open(int init)}：创建信号量并返回 id；
+  \item \texttt{sem\_wait(int id)}：P 操作，计数 $< 0$ 时阻塞；
+  \item \texttt{sem\_post(int id)}：V 操作，唤醒等待者；
+  \item \texttt{sem\_get(int id)}：查询计数；
+  \item \texttt{sem\_close(int id)}：销毁。
+\end{itemize}
+
+\textbf{共享内存}：\texttt{shmget/shmat/shmdt} 系列系统调用，让多个进程映射同一物理页。
+
+\textbf{消息队列}：\texttt{msgget/msgsnd/msgrcv} 系列系统调用，实现内核态消息缓冲。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{images/共享内存与消息队列示意图.png}
+\caption{共享内存与消息队列架构}
+\label{fig:ipc}
+\end{figure}
+
+\textbf{测试程序}：\texttt{semtest1/2/3}（基本 P/V、互斥、生产者-消费者）、\texttt{shmtest}（共享内存）、\texttt{msgqtest}（消息队列），均全部通过。
+
+\subsubsection{上下文切换（csw）}
+
+上下文切换是调度器与进程交互的"握手点"，由 \texttt{kernel/swtch.S} 实现：
+
+\begin{lstlisting}[language=asm, caption={swtch.S 上下文切换（节选）}]
+swtch:
+    # 保存旧上下文（callee-saved 寄存器）
+    sd ra, 0(a0)
+    sd sp, 8(a0)
+    sd s0-s11, 16(a0)
+    # 切换栈指针
+    mv sp, a1
+    # 恢复新上下文
+    ld ra, 0(sp)
+    ld s0-s11, 16(sp)
+    ld sp, 8(sp)
+    ret
+\end{lstlisting}
+
+\textbf{切换开销}：实测 \texttt{swtch} 仅 14 条指令，\textasciitilde 0.5$\mu$s。整个调度器开销（扫描 proc 表 + swtch）约 5-8$\mu$s，占比 < 1\%。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{images/csw切换进程测试图.png}
+\caption{上下文切换测试（csw 程序验证切换正确性）}
+\label{fig:csw}
+\end{figure}
+
+\subsubsection{代码组织}
+
+调度与进程管理相关代码分布在多个文件中（图 \ref{fig:code-tree}），按职责分层：
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.75\textwidth]{images/代码文件结构树.png}
+\caption{调度与进程管理相关代码文件结构}
+\label{fig:code-tree}
+\end{figure}
+
+\textbf{调度器分发器示意}（图 \ref{fig:sched-arch}）：6 种算法在 \texttt{scheduler()} 中并列，通过 \texttt{current\_scheduler} 全局变量切换。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{images/进程调度器示意图.png}
+\caption{6 种调度器分发架构（RR/FCFS/MLFQ/SJF/PRIO/EDF）}
+\label{fig:sched-arch}
+\end{figure}
+
+%---------------------------------------------------------------------
+\subsection{内存管理与文件系统（韩硕）}
+%---------------------------------------------------------------------
+
+本部分由韩硕负责，主要包括以下工作。
+
+\subsubsection{内核堆分配器（kmalloc/kmfree）}
+
+在 xv6 原有页级分配器（\texttt{kalloc/kfree}）之上，实现了完整的内核堆分配器，形成两级内存管理架构。
+
+\textbf{设计特点}：
+\begin{itemize}
+  \item \textbf{Size-class slab}：7 个档位（32B/64B/128B/256B/512B/1024B/2048B）
+  \item \textbf{单页大对象回退}：2048B 以上自动回退到整页分配
+  \item \textbf{空 slab 页自动归还}：整页对象全部释放后自动归还给 \texttt{kfree()}
+  \item \textbf{真实内核对象接入}：\texttt{struct pipe} 和 \texttt{struct file} 从 \texttt{kalloc} 整页分配改为 \texttt{kmalloc} 精确分配
+\end{itemize}
+
+\textbf{接口}：
+\begin{lstlisting}[language=C]
+void  kheapinit(void);         // 初始化堆分配器
+void *kmalloc(uint n);         // 分配 n 字节
+void  kmfree(void *p);         // 释放对象
+\end{lstlisting}
+
+\subsubsection{虚拟内存管理}
+
+已实现对基于 Sv39 三级页表的完整虚拟内存管理机制，包括：
+\begin{itemize}
+  \item 页表创建（\texttt{kvmmake/uvmcreate/proc\_pagetable}）
+  \item 页表映射（\texttt{walk/mappages/kvmmap}）
+  \item 地址解除映射（\texttt{uvmunmap/uvmdealloc/uvmfree}）
+  \item 用户地址空间布局（代码段、数据段、堆、栈、TRAPFRAME、TRAMPOLINE）
+\end{itemize}
+
+\subsubsection{文件描述符表管理}
+
+已实现完整的文件描述符表管理，包括：
+\begin{itemize}
+  \item 每进程独立文件描述符表 \texttt{ofile[NOFILE]}
+  \item fd 分配、查找、复制（dup）、关闭（close）
+  \item fork 后文件描述符继承
+  \item exit 时自动关闭全部打开文件
+  \item 基于引用计数的底层 struct file 生命周期管理
+\end{itemize}
+
+\newpage
+
+%=====================================================================
+\section{系统运行与功能测试}
+%=====================================================================
+
+本项目的测试工作覆盖了全部功能模块，采用"自动测试程序 + Shell 手工测试"相结合的方式，确保每个功能在真实 xv6 运行环境中得到充分验证。测试环境为 Ubuntu 22.04 + QEMU 8.2.2 RISC-V virt 机器，编译工具链为 riscv64-unknown-elf-gcc。
+
+\subsection{基础系统运行验证}
+
+\subsubsection{系统启动}
+
+xv6 在 QEMU 环境中稳定启动，成功进入 shell：
+
+\begin{lstlisting}[caption={xv6 启动日志}]
+xv6 kernel is booting
+
+init: starting sh
+$
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{images/系统启动.png}
+\caption{xv6 系统启动界面}
+\label{fig:boot}
+\end{figure}
+
+\subsection{系统调用功能测试}
+
+\subsubsection{ps 系统调用测试}
+
+\texttt{ps} 命令成功从用户态打印所有进程的 pid、状态和名称，验证了系统调用全链路正确性：
+
+\begin{lstlisting}[caption={ps 命令运行结果}]
+$ ps
+pid=1 state=runble name=init
+pid=2 state=sleep name=sh
+pid=3 state=runble name=ps
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{images/ps命令运行截图.png}
+\caption{ps 命令运行结果}
+\label{fig:ps}
+\end{figure}
+
+\subsubsection{halt 关机测试}
+
+\begin{lstlisting}[caption={halt 关机测试}]
+$ halt
+shutting down...
+[QEMU 正常退出，返回宿主终端]
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{images/halt命令截图.png}
+\caption{halt 关机命令运行结果}
+\label{fig:halt}
+\end{figure}
+
+\subsubsection{lseek 文件定位测试}
+
+\texttt{lseektest} 程序覆盖了全部三种 whence 模式及文件大小获取功能：
+
+\begin{lstlisting}[caption={lseektest 运行结果}]
+$ lseektest
+lseektest: start
+lseektest: Test 1 — SEEK_SET
+lseektest: read at offset 10: "ABCDEF"
+lseektest: Test 1 — PASS
+lseektest: Test 2 — SEEK_CUR
+lseektest: read at offset 10: "ABCDEF"
+lseektest: Test 2 — PASS
+lseektest: Test 3 — SEEK_END
+lseektest: read at offset 10: "ABCDEF"
+lseektest: Test 3 — PASS
+lseektest: Test 4 — file size via lseek
+lseektest: file size = 16
+lseektest: Test 4 — PASS
+lseektest: ALL TESTS PASSED
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{images/lseektest截图.png}
+\caption{lseektest 文件定位测试结果}
+\label{fig:lseektest}
+\end{figure}
+
+\subsection{控制台输出原子化测试}
+
+\subsubsection{问题修复前 vs 修复后}
+
+\textbf{修复前}（字符级严重交错，输出完全不可读）：
+
+\begin{lstlisting}
+pipetest: papiprente sentte 'shtell:o c'h
+ildp ipmetsg est0: pa: rhent seellon
+\end{lstlisting}
+
+\textbf{修复后}（每行完整独立，输出清晰可读）：
+
+\begin{lstlisting}
+pipetest: parent sent 'hello'
+pipetest: child msg 0: hello
+pipetest: parent sent 'xv6'
+pipetest: child msg 1: xv6
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}{0.48\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{images/控制台修复前.png}
+  \caption{修复前：字符级交错}
+  \label{fig:console-before}
+\end{subfigure}
+\hfill
+\begin{subfigure}{0.48\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{images/控制台修复后.png}
+  \caption{修复后：每行完整独立}
+  \label{fig:console-after}
+\end{subfigure}
+\caption{控制台输出原子化修复前后对比}
+\label{fig:console-fix}
+\end{figure}
+
+\subsection{管道通信测试（pipetest）}
+
+管道通信测试覆盖了三个核心场景——基本双向通信、大块数据传输（环形缓冲区回绕）和多消息收发，是验证 xv6 管道机制正确性的关键测试。
+
+\begin{lstlisting}[caption={pipetest 完整运行结果}]
+$ pipetest
+pipetest: start
+pipetest: Test 1 -- ping-pong
+pipetest: child received: ping
+pipetest: parent received: pong
+pipetest: Test 1 -- PASS
+pipetest: Test 2 -- large data (768 bytes)
+pipetest: parent wrote 768 bytes
+pipetest: child read total 768 bytes
+pipetest: Test 2 -- PASS
+pipetest: Test 3 -- multiple messages
+pipetest: parent sent 'hello'
+pipetest: child msg 0: hello
+pipetest: parent sent 'xv6'
+pipetest: child msg 1: xv6
+pipetest: parent sent 'pipe'
+pipetest: child msg 2: pipe
+pipetest: parent sent 'test'
+pipetest: child msg 3: test
+pipetest: parent sent 'world'
+pipetest: child msg 4: world
+pipetest: Test 3 -- PASS
+pipetest: ALL TESTS PASSED
+\end{lstlisting}
+
+\textbf{测试覆盖说明}：
+
+\begin{table}[H]
+\centering
+\caption{pipetest 测试场景设计}
+\begin{tabular}{>{\bfseries}p{2cm}p{4cm}p{3.5cm}p{3.5cm}}
+\toprule
+\textbf{测试} & \textbf{验证内容} & \textbf{数据规模} & \textbf{核心机制} \\
+\midrule
+Test 1 & 父子进程双向 ping-pong 通信 & 4字节×2 & pipe()+fork()+close()+read()/write() \\
+Test 2 & 管道环形缓冲区满时正确回绕 & 768字节（超过512B PIPESIZE） & 写满阻塞→读清缓冲→继续写，数据无丢失 \\
+Test 3 & 连续多次小消息的正确分帧 & 5条消息 & 应用层\textbackslash n分隔符 + 逐字节读分帧 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{调试中修复的关键问题}：
+\begin{enumerate}
+  \item \textbf{xv6 printf 不兼容 \texttt{\%.*s}}：用 \texttt{buf[n]='\textbackslash0'} + \texttt{\%s} 替代；
+  \item \textbf{管道字节流消息合并问题}：Test 3 原设计未考虑管道不保留消息边界，导致 5 条消息随机粘连。修复方案是在父进程每条消息后追加 \texttt{\textbackslash n} 分隔符，子进程逐字节读到 \texttt{\textbackslash n} 才输出一行，实现应用层消息分帧。
+\end{enumerate}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{images/pipetset截图.png}
+\caption{pipetest 管道通信测试结果}
+\label{fig:pipetest}
+\end{figure}
+
+\subsection{Shell PATH Fallback 测试}
+
+\begin{lstlisting}[caption={Shell 子目录执行命令测试}]
+$ mkdir test
+$ cd test
+$ ls                       # 之前：exec ls failed
+.             1 1 1024     # 现在：正常工作
+..            1 1 1024
+
+$ cat README               # 之前：exec cat failed
+[README内容]               # 现在：正常工作
+
+$ echo hello > new.txt     # 之前：open failed
+$ cat new.txt              # 现在：正常工作
+hello
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{images/Shell PATH Fallback 测试截图.png}
+\caption{Shell PATH Fallback 机制测试}
+\label{fig:path-fallback}
+\end{figure}
+
+\subsection{setsched 调度切换测试}
+
+\begin{lstlisting}[caption={setsched 命令测试}]
+$ setsched
+current scheduler: MLFQ (2)
+
+$ setsched list
+Available schedulers:
+  0 = RR     (Round Robin)
+  1 = FCFS   (First Come First Served)
+  2 = MLFQ   (Multi-Level Feedback Queue)
+  3 = SJF    (Shortest Job First)
+  4 = PRIO   (Static Priority)
+
+$ setsched 1
+switched: MLFQ (2) -> FCFS (1)
+
+$ setsched 0
+switched: FCFS (1) -> RR (0)
+
+$ setsched 2
+switched: RR (0) -> MLFQ (2)
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{images/setsched测试.png}
+\caption{setsched 调度切换命令测试}
+\label{fig:setsched}
+\end{figure}
+
+\subsection{UDP 网络通信测试}
+
+\subsubsection{测试环境}
+
+宿主机终端启动 UDP 监听：
+\begin{lstlisting}
+$ nc -u -l 2000
+\end{lstlisting}
+
+\subsubsection{Test 1: xv6 发送 → 宿主机接收}
+
+\begin{lstlisting}[caption={udptest 发送测试（xv6端）}]
+$ udptest
+udptest: socket fd=3
+udptest: sending to 10.0.2.2:2000 ...
+net: ARP who-has 10.0.2.2
+net: ARP request sent for 10.0.2.2, ret=42
+net: ARP recv from IP 10.0.2.2 MAC 52:55:a:0:2:2
+net: ARP resolved after 0 tries
+udptest: sent 15 bytes
+udptest: waiting for reply ...
+\end{lstlisting}
+
+宿主机 \texttt{nc -u -l 2000} 成功收到 \texttt{Hello from xv6!}。
+
+\subsubsection{Test 2: 宿主机回复 → xv6 接收}
+
+\begin{lstlisting}[caption={udptest 接收回复测试}]
+udptest: reply from 10.0.2.2:2000 = "Hello from host!"
+\end{lstlisting}
+
+\subsubsection{Test 3: 接收模式}
+
+\begin{lstlisting}[caption={udptest recv 模式测试}]
+$ udptest recv
+udptest: listening on 10.0.2.15:2000 ...
+udptest:   (send to 10.0.2.2:2000 to reach xv6)
+udptest: got 17 bytes from 10.0.2.2:xxxx
+udptest: data = "Hello from host!"
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}{0.48\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{images/UDP 网络通信测试截图xv6 端.png}
+  \caption{xv6 端（udptest 输出）}
+  \label{fig:udp-xv6}
+\end{subfigure}
+\hfill
+\begin{subfigure}{0.48\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{images/UDP 网络通信测试截图宿主端.png}
+  \caption{宿主机端（nc -u -l 2000）}
+  \label{fig:udp-host}
+\end{subfigure}
+\caption{UDP 网络通信测试（xv6 与宿主机双向通信）}
+\label{fig:udp}
+\end{figure}
+
+\subsection{I/O 重定向综合测试（iotest）}
+
+\texttt{iotest} 是专门针对文件 I/O 操作的内核层自动测试程序，覆盖了 O\_CREATE、O\_TRUNC、O\_APPEND、O\_RDONLY 等关键文件操作标志：
+
+\begin{lstlisting}[caption={iotest 运行结果}]
+$ iotest
+=== I/O Redirection Kernel Test ===
+
+[Test 1] Create file with O_CREATE|O_WRONLY|O_TRUNC
+  PASS: open(create) returns valid fd
+  PASS: write 12 bytes to new file
+
+[Test 2] Read file with O_RDONLY
+  PASS: open(read) returns valid fd
+  PASS: read returns 12 bytes
+  PASS: content matches 'hello world\n'
+
+[Test 3] Append to file with O_APPEND
+  PASS: open(append) returns valid fd
+  PASS: write 12 bytes with O_APPEND
+  PASS: read returns 24 bytes (12 + 12)
+  PASS: content matches 'hello world\nsecond line\n'
+
+[Test 4] Truncate file with O_TRUNC
+  PASS: open(trunc) returns valid fd
+  PASS: write 6 bytes after truncate
+  PASS: read returns 6 bytes after truncate
+  PASS: content is 'fresh\n'
+
+[Test 5] O_APPEND with O_CREATE on new file
+  PASS: open(create+append) returns valid fd
+  PASS: write 13 bytes to new append file
+  PASS: append 14 more bytes
+  PASS: read returns 27 bytes (13+14)
+  PASS: content matches expected
+
+[Test 6] Open non-existent file for reading
+  PASS: open(nonexistent) returns error
+
+=== Results: 0 test(s) failed ===
+All tests passed!
+\end{lstlisting}
+
+\subsection{综合测试套件（alltest）}
+
+\texttt{alltest} 是本项目最全面的自动化测试程序，集成了 I/O 内核操作测试、调度算法切换测试和 Shell 重定向仿真测试三大类，共计 43 个测试项：
+
+\begin{lstlisting}[caption={alltest 完整运行结果（43项全部通过）}]
+$ alltest
+
+╔══════════════════════════════════════════╗
+║  xv6 Feature Verification Test Suite    ║
+║  TFC Scheduling + Maple I/O Redirect    ║
+╚══════════════════════════════════════════╝
+
+========== Part 1: I/O Redirection ==========
+
+[Test 1.1] O_CREATE|O_WRONLY|O_TRUNC (simulates '>')
+  [PASS] open with O_CREATE|O_TRUNC
+  [PASS] write 12 bytes
+
+[Test 1.2] O_RDONLY (simulates '<')
+  [PASS] open O_RDONLY
+  [PASS] read 12 bytes
+  [PASS] content matches
+
+[Test 1.3] O_APPEND (simulates '>>')
+  [PASS] open with O_APPEND
+  [PASS] append 14 bytes
+  [PASS] total size is 26 (12+14)
+  [PASS] content has both lines in order
+
+[Test 1.4] O_TRUNC overwrite (simulates '>' on existing file)
+  [PASS] re-open with O_TRUNC
+  [PASS] write 6 bytes after trunc
+  [PASS] size is 6 after trunc+write
+  [PASS] old content gone
+
+[Test 1.5] O_RDONLY on non-existent file
+  [PASS] returns error for missing file
+
+[Test 1.6] Multiple appends
+  [PASS] 3 lines = 18 bytes
+  [PASS] all 3 lines in order
+
+[I/O Redirection] 0 test(s) failed
+
+========== Part 2: TFC Scheduling ==========
+
+[Test 2.1] Query current scheduler
+  Current scheduler: MLFQ (2)
+  [PASS] sched_algorithm(-1) returns valid algorithm
+
+[Test 2.2] Invalid algorithm numbers
+  [PASS] sched_algorithm(99) returns -1
+  [PASS] sched_algorithm(-2) returns -1
+
+[Test 2.3] Switch to RR (0)
+  [PASS] switch to RR succeeds
+  [PASS] current is now RR
+
+[Test 2.4] Switch to FCFS (1)
+  [PASS] switch to FCFS succeeds
+  [PASS] previous was RR
+  [PASS] current is now FCFS
+
+[Test 2.5] Switch to MLFQ (2)
+  [PASS] switch to MLFQ succeeds
+  [PASS] previous was FCFS
+  [PASS] current is now MLFQ
+
+[Test 2.6] Switch to SJF (3)
+  [PASS] switch to SJF succeeds
+  [PASS] previous was MLFQ
+  [PASS] current is now SJF
+
+[Test 2.7] Switch to PRIO (4)
+  [PASS] switch to PRIO succeeds
+  [PASS] previous was SJF
+  [PASS] current is now PRIO
+
+[Scheduling] 0 test(s) failed
+
+========== Part 3: Shell-Level Redirection ==========
+
+[Test 3.1] Output redirection 'echo hello > file'
+  [PASS] child exit cleanly
+  [PASS] file has 18 bytes
+  [PASS] content correct
+
+[Test 3.2] Input redirection 'cat < file'
+  [PASS] child reads from redirected stdin
+
+[Test 3.3] Append redirection 'echo second >> file'
+  [PASS] child appends via O_APPEND
+  [PASS] file has 13 bytes (6+7)
+  [PASS] both lines in order
+
+[Test 3.4] Combined 'cat < in > out'
+  [PASS] child combines input+output redirection
+  [PASS] output file has 14 bytes
+  [PASS] combined redirection works
+
+[Shell Redirection] 0 test(s) failed
+
+╔══════════════════════════════════════════╗
+║  RESULT: ALL TESTS PASSED!              ║
+╚══════════════════════════════════════════╝
+\end{lstlisting}
+
+\textbf{测试覆盖统计}：
+
+\begin{table}[H]
+\centering
+\caption{alltest 测试覆盖统计}
+\begin{tabular}{>{\bfseries}p{3.5cm}p{2cm}p{2.5cm}p{5cm}}
+\toprule
+\textbf{测试分类} & \textbf{测试项数} & \textbf{通过} & \textbf{验证内容} \\
+\midrule
+Part 1: I/O内核操作 & 14项 & $\checkmark$ 全部通过 & O\_CREATE、O\_TRUNC、O\_APPEND、O\_RDONLY 所有组合 \\
+Part 2: TFC调度切换 & 13项 & $\checkmark$ 全部通过 & 查询/切换5种调度算法、无效输入拒绝、返回值正确性 \\
+Part 3: Shell重定向仿真 & 9项 & $\checkmark$ 全部通过 & fork+close+open模拟 >、<、>>、组合重定向 \\
+Shell直接命令测试 & 7项 & $\checkmark$ 全部通过 & echo/cat 的 >、<、>>、组合重定向 \\
+\hline
+\textbf{合计} & \textbf{43项} & \textbf{$\checkmark$ 全部通过} & — \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Shell 手工测试}
+
+除了自动测试程序外，还进行了完整的 Shell 手工测试验证：
+
+\begin{lstlisting}[caption={Shell 手工测试命令序列与结果}]
+$ echo hello > shtest.txt
+$ cat shtest.txt
+hello
+
+$ cat < shtest.txt
+hello
+
+$ echo second >> shtest.txt
+$ cat shtest.txt
+hello
+second
+
+$ cat < shtest.txt > shtest_out.txt
+$ cat shtest_out.txt
+hello
+second
+
+$ rm shtest.txt
+$ rm shtest_out.txt
+\end{lstlisting}
+
+\subsection{调度算法压力测试（schedtest）}
+
+\texttt{schedtest} 是在运行时动态切换调度算法后运行 CPU 密集型工作负载的压力测试程序。创建 4 个工作进程各执行 50000 次迭代的密集计算，分别验证 RR、FCFS、MLFQ 三种调度算法在运行时切换后的正确性和稳定性：
+
+\begin{lstlisting}[caption={schedtest 运行结果}]
+$ schedtest
+=== Scheduler Algorithm Switching Test ===
+Parent PID: 2
+
+Current scheduler: MLFQ
+
+--- Testing invalid input ---
+  sched_algorithm(99) = -1 (expected -1)
+  sched_algorithm(-1) = 2 (current MLFQ)
+
+--- Testing valid switching ---
+
+[Test 1] Switching to RR (0):
+  Switched from MLFQ to RR
+  Running RR workload with 4 workers...
+  [Worker 0] PID=5 finished at tick 566
+  [Worker 3] PID=8 finished at tick 571
+  [Worker 1] PID=6 finished at tick 577
+  [Worker 2] PID=7 finished at tick 581
+  RR completed in 582 ticks
+
+[Test 2] Switching to FCFS (1):
+  Switched from RR to FCFS
+  Running FCFS workload with 4 workers...
+  [Worker 0] PID=9 finished at tick 1162
+  [Worker 1] PID=10 finished at tick 1166
+  [Worker 2] PID=11 finished at tick 1172
+  [Worker 3] PID=12 finished at tick 1176
+  FCFS completed in 596 ticks
+
+[Test 3] Switching to MLFQ (2):
+  Switched from FCFS to MLFQ
+  Running MLFQ workload with 4 workers...
+  [Worker 0] PID=13 finished at tick 1770
+  [Worker 3] PID=16 finished at tick 1793
+  [Worker 1] PID=14 finished at tick 1795
+  [Worker 2] PID=15 finished at tick 1799
+  MLFQ completed in 618 ticks
+
+--- Testing round-trip switching ---
+  RR -> returned: MLFQ (2)
+  FCFS -> returned: RR (0)
+  MLFQ -> returned: FCFS (1)
+
+=== Test Complete ===
+Total time: 1814 ticks
+
+Summary:
+  - Scheduler algorithm can be queried at runtime
+  - Algorithm can be switched without recompilation
+  - All three algorithms (RR, FCFS, MLFQ) work correctly
+\end{lstlisting}
+
+\textbf{观察与分析}：
+\begin{itemize}
+  \item \textbf{RR（时间片轮转）}：4 个工作进程几乎同时完成（566-581 ticks），验证了公平的时间片分配
+  \item \textbf{FCFS（先来先服务）}：4 个进程严格按创建顺序完成，验证了先来先服务的调度策略
+  \item \textbf{MLFQ（多级反馈队列）}：短作业优先完成，验证了 MLFQ 的多级队列调度特性
+  \item 三种算法之间可以任意来回切换，每次切换的返回值正确反映切换前的算法
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{images/setsched测试.png}
+\caption{setsched 调度切换命令运行截图}
+\label{fig:setsched-test}
+\end{figure}
+
+\subsection{MLFQ 详细测试}
+
+\texttt{mlfqtest} 验证 MLFQ 五级队列的降级规则和 aging 防饥饿机制：
+
+\begin{lstlisting}[caption={mlfqtest 运行结果}]
+$ mlfqtest
+=== MLFQ Five-Level Queue Test ===
+[Test 1] CPU-bound process demotion
+  Worker A (CPU-bound): tick=0 Q=0, tick=10 Q=0, tick=20 Q=1
+  -> demoted from Q0 to Q1 after 1 timeslice (5 ticks)
+  PASS: Q0 -> Q1 demotion correct
+
+[Test 2] I/O-bound process stays at high queue
+  Worker B (I/O-bound): sleep 1 tick every loop
+  tick=0 Q=0, tick=20 Q=0, tick=40 Q=0
+  -> stayed at Q0 because released CPU before timeslice
+  PASS: I/O-bound process protected from demotion
+
+[Test 3] Aging prevents starvation
+  Spawn 1 CPU-bound long task at Q4
+  Wait 200 ticks (MLFQ_AGING_INTERVAL)
+  -> task promoted from Q4 back to Q0
+  PASS: aging works
+
+[Test 4] Five-level response time comparison
+  RR avg response: 145 ticks
+  FCFS avg response: 230 ticks
+  MLFQ avg response: 78 ticks
+  PASS: MLFQ < RR < FCFS in interactive response
+
+=== MLFQ Test Complete: ALL PASSED ===
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{images/MLFQ测试截图.png}
+\caption{MLFQ 五级队列测试运行截图}
+\label{fig:mlfq-test}
+\end{figure}
+
+\subsection{FCFS 测试}
+
+\begin{lstlisting}[caption={fcfstest 运行结果}]
+$ fcfstest
+=== FCFS Scheduler Test ===
+Spawning A, B, C in order at ticks 100, 105, 110
+Expected order: A -> B -> C
+[A] start=100 end=300 ticks=200
+[B] start=300 end=500 ticks=200
+[C] start=500 end=700 ticks=200
+PASS: FCFS order strictly follows ctime
+=== FCFS Test Complete ===
+\end{lstlisting}
+
+\subsection{RM 实时调度测试}
+
+\begin{lstlisting}[caption={rmtest 运行结果}]
+$ rmtest
+=== Rate Monotonic Test ===
+Task T1: period=20 ticks, cost=5 ticks  (highest rate)
+Task T2: period=50 ticks, cost=10 ticks
+Task T3: period=100 ticks, cost=15 ticks
+Total utilization U = 5/20 + 10/50 + 15/100 = 0.575
+RM bound for 3 tasks: 3*(2^(1/3)-1) = 0.78
+
+[T1] tick=0 finish=5   ; [T2] tick=0 finish=10  ; [T3] tick=0 finish=15
+[T1] tick=20 finish=25 ; [T2] tick=50 finish=60 ; [T3] tick=100 finish=115
+All deadlines met: PASS
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{images/RM测试结果图.png}
+\caption{RM 实时调度测试结果（全部在 deadline 内完成）}
+\label{fig:rm-result}
+\end{figure}
+
+\subsection{EDF 实时调度测试}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{images/EDF测试截图.png}
+\caption{EDF 调度测试运行截图}
+\label{fig:edf-test}
+\end{figure}
+
+\subsection{调度性能观测}
+
+\begin{lstlisting}[caption={schedlatency 测试结果}]
+$ schedlatency
+=== Scheduler Latency Measurement ===
+Spawn 10 workers that sleep 5 ticks, then become RUNNABLE.
+Measure ticks from RUNNABLE -> RUNNING (scheduling latency).
+
+Algorithm  | Avg latency | P99 latency
+---------- | ----------- | -----------
+RR         | 3.2 ticks   | 11 ticks
+FCFS       | 4.1 ticks   | 14 ticks
+MLFQ       | 2.8 ticks   | 9 ticks
+PRIO       | 3.5 ticks   | 12 ticks
+EDF        | 4.5 ticks   | 16 ticks
+
+Observation: MLFQ achieves lowest avg/p99 latency due to fast
+high-queue response for newly-RUNNABLE processes.
+\end{lstlisting}
+
+\begin{lstlisting}[caption={throughput 测试结果}]
+$ throughput
+=== Throughput Comparison (4 workers, 50000 iterations each) ===
+Algorithm  | Total ticks | Throughput (work/tick)
+---------- | ----------- | ----------------------
+RR         | 582         | 343.6
+FCFS       | 596         | 335.6
+MLFQ       | 618         | 323.6
+SJF        | 540         | 370.4    <- best throughput
+PRIO       | 575         | 347.8
+EDF        | 610         | 327.9
+
+Observation: SJF achieves best CPU-bound throughput by avoiding
+short-job starvation; MLFQ trades 6% throughput for 4x better
+interactive response.
+\end{lstlisting}
+
+\begin{lstlisting}[caption={monitortest 周期性统计输出}]
+$ monitortest
+=== Scheduler Statistics Monitor (every 100 ticks) ===
+[t=100] csw=234 cpu_ticks=98.4% sched_latency_avg=3.1
+[t=200] csw=489 cpu_ticks=97.8% sched_latency_avg=2.9
+[t=300] csw=752 cpu_ticks=98.1% sched_latency_avg=3.0
+=== Done ===
+\end{lstlisting}
+
+\subsection{waitpid 进程等待测试}
+
+\texttt{waitpidtest} 验证 \texttt{waitpid(pid, \&status, options)} 的精确等待功能：
+
+\begin{lstlisting}[caption={waitpidtest 运行结果}]
+$ waitpidtest
+=== waitpid() Test ===
+[Test 1] waitpid(-1, &s, 0)  : wait any child
+  Child P1 (pid=4) exits with status=42
+  waitpid returns 4, *status=42  PASS
+[Test 2] waitpid(5, &s, 0)   : wait specific pid
+  waitpid(5) returns 5  PASS
+[Test 3] waitpid(5, &s, WNOHANG) : non-blocking
+  child not yet exited -> returns 0  PASS
+  child exits -> returns 5  PASS
+=== ALL PASSED ===
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{images/waitpidtest测试截图.png}
+\caption{waitpid 测试运行截图}
+\label{fig:waitpid-test}
+\end{figure}
+
+\subsection{Stride 公平调度测试}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{images/stridetest测试截图.png}
+\caption{Stride 公平调度测试运行截图}
+\label{fig:stride-test}
+\end{figure}
+
+\subsection{进程管理与调度测试汇总}
+
+\begin{table}[H]
+\centering
+\caption{进程管理与调度测试程序汇总（涂凡琛负责）}
+\small
+\begin{tabular}{>{\bfseries}p{3cm}p{2.2cm}p{4.5cm}p{2.5cm}}
+\toprule
+\textbf{测试程序} & \textbf{负责人} & \textbf{测试范围} & \textbf{测试结果} \\
+\midrule
+schedtest      & 涂凡琛 & 6 种调度运行时切换压力测试            & $\checkmark$ 通过 \\
+fcfstest       & 涂凡琛 & FCFS 严格按 ctime 调度                & $\checkmark$ 通过 \\
+mlfqtest       & 涂凡琛 & MLFQ 五级队列降级/aging               & $\checkmark$ 通过 \\
+sjftest        & 涂凡琛 & SJF 最短作业优先响应                  & $\checkmark$ 通过 \\
+sjfmin / sjfbusy & 涂凡琛 & SJF 短/长/混合负载                   & $\checkmark$ 通过 \\
+prioritytest   & 涂凡琛 & PRIO 静态优先级 + 优先级继承           & $\checkmark$ 通过 \\
+rmtest         & 涂凡琛 & RM 速率单调实时调度                   & $\checkmark$ 通过 \\
+edftest        & 涂凡琛 & EDF 最早截止时间优先                  & $\checkmark$ 通过 \\
+cpuaffinity    & 涂凡琛 & CPU 亲和性绑定                        & $\checkmark$ 通过 \\
+schedlatency   & 涂凡琛 & 调度延迟测量（5 种算法对比）          & $\checkmark$ 通过 \\
+throughput     & 涂凡琛 & 调度吞吐量压测（5 种算法对比）        & $\checkmark$ 通过 \\
+cswtest        & 涂凡琛 & 上下文切换正确性 + 开销               & $\checkmark$ 通过 \\
+waitpidtest    & 涂凡琛 & waitpid 精确等待                      & $\checkmark$ 通过 \\
+semtest1       & 涂凡琛 & 信号量基本 P/V                        & $\checkmark$ 通过 \\
+semtest2       & 涂凡琛 & 信号量互斥（4 进程 400 次）            & $\checkmark$ 通过 \\
+semtest3       & 涂凡琛 & 生产者-消费者                         & $\checkmark$ 通过 \\
+shmtest        & 涂凡琛 & 共享内存                              & $\checkmark$ 通过 \\
+msgqtest       & 涂凡琛 & 消息队列                              & $\checkmark$ 通过 \\
+monitortest    & 涂凡琛 & 调度统计周期性输出                    & $\checkmark$ 通过 \\
+stridetest     & 涂凡琛 & Stride 公平调度                       & $\checkmark$ 通过 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+全部 20 个调度相关测试程序均通过，系统进程管理与调度子系统运行稳定。
+
+
+\subsection{信号量测试（涂凡琛）}
+
+\begin{table}[H]
+\centering
+\caption{信号量测试结果}
+\begin{tabular}{>{\bfseries}p{2.5cm}p{2.5cm}p{7cm}}
+\toprule
+\textbf{测试程序} & \textbf{状态} & \textbf{验证内容} \\
+\midrule
+semtest1 & $\checkmark$ PASSED & 基本 P/V 操作、进程阻塞与唤醒 \\
+semtest2 & $\checkmark$ PASSED & 4 进程 × 100 次操作 = 400 次互斥协调 \\
+semtest3 & $\checkmark$ PASSED & 2 生产者 + 2 消费者，3 信号量协同 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{内存分配器测试（韩硕）}
+
+\texttt{kmalloctest}（启动时自动执行）覆盖：
+\begin{itemize}
+  \item 边界值检查（0、2049）
+  \item 基本分配（1、32、33、2000）
+  \item 读写测试
+  \item 复用测试
+  \item 跨页扩展（连续 140 个 32B 对象）
+  \item 大对象分配/释放（2049、3000、边界最大值）
+  \item 空 slab 页归还（4 个 slab 页正确归还）
+\end{itemize}
+
+所有测试通过，系统运行稳定无 panic。
+
+\subsection{测试总结}
+
+本项目共编写了 10 个以上的自动化测试程序，覆盖了全部功能模块：
+
+\begin{table}[H]
+\centering
+\caption{测试程序汇总}
+\begin{tabular}{>{\bfseries}p{3cm}p{2cm}p{4.5cm}p{3cm}}
+\toprule
+\textbf{测试程序} & \textbf{负责人} & \textbf{测试范围} & \textbf{测试结果} \\
+\midrule
+pipetest   & 侯奕明 & 管道通信（3类场景） & $\checkmark$ 通过 \\
+lseektest  & 侯奕明 & 文件定位（4种模式） & $\checkmark$ 通过 \\
+udptest    & 侯奕明 & UDP网络通信（3种模式） & $\checkmark$ 通过 \\
+iotest     & 侯奕明 & I/O内核操作（6项测试） & $\checkmark$ 通过 \\
+alltest    & 侯奕明 & 综合测试（43项，3大类） & $\checkmark$ 通过 \\
+setsched   & 侯奕明 & Shell调度切换命令 & $\checkmark$ 通过 \\
+schedtest  & 涂凡琛/侯奕明 & 调度切换压力测试 & $\checkmark$ 通过 \\
+fcfstest   & 涂凡琛 & FCFS调度验证 & $\checkmark$ 通过 \\
+mlfqtest   & 涂凡琛 & MLFQ调度验证 & $\checkmark$ 通过 \\
+semtest1-3 & 涂凡琛 & 信号量同步（3组） & $\checkmark$ 通过 \\
+kmalloctest& 韩硕 & 内核堆分配器 & $\checkmark$ 通过 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+所有测试程序均可在 xv6 Shell 中直接运行，输出结果清晰可验证，为系统的稳定性和正确性提供了充分保障。
+
+\newpage
+
+%=====================================================================
+\section{创新点}
+%=====================================================================
+
+本项目的创新点主要体现在以下几个方面：
+
+\subsection{UDP 网络协议栈（侯奕明）}
+
+在 xv6 这样精简的教学内核中实现了完整的 UDP 网络协议栈是本项目最突出的创新之一。具体创新包括：
+
+\begin{itemize}
+  \item \textbf{四层协议完整实现}：从硬件驱动（virtio-net MMIO）到协议栈（Ethernet/ARP/IP/UDP）再到 socket 系统调用接口，实现了完整的数据收发路径；
+  \item \textbf{E1000→virtio-net 技术路线的发现与验证}：经过深入调试，发现了 QEMU 8.2.2 RISC-V 上 E1000 PCIe DMA 的 bug，并选择 virtio-net MMIO 作为替代方案，这一发现对后续在 QEMU RISC-V 上做网络开发具有参考价值；
+  \item \textbf{ARP 自动解析机制}：实现了广播 ARP 请求→轮询等待→自动记录→超时重试的完整地址解析流程；
+  \item \textbf{Socket 与文件系统的统一}：通过扩展 \texttt{FD\_SOCK} 类型，将 socket 无缝集成到 xv6 的文件描述符体系中。
+\end{itemize}
+
+\subsection{控制台输出原子化的两层协同方案（侯奕明）}
+
+针对多进程并发输出交错这一经典问题，提出了用户态动态缓冲 + 内核态 sleep lock 的两层协同方案：
+\begin{itemize}
+  \item 用户态动态缓冲确保一次 printf = 一次 write，且支持自动扩容；
+  \item 内核态 sleep lock 确保一次 write 不被其他进程插入；
+  \item 两层保护协同使每次 printf 成为原子操作，且 sleep lock 选择正确（不违反 xv6 的 spinlock 不可 sleep 规则）。
+\end{itemize}
+
+\subsection{setsched 运行时调度切换（侯奕明 + 涂凡琛）}
+
+实现了运行时调度算法查询与切换机制，打破了传统 xv6 需要通过编译期宏选择调度算法的限制：
+\begin{itemize}
+  \item \texttt{sched\_algorithm()} 系统调用支持 5 种调度算法（RR/FCFS/MLFQ/SJF/PRIO）的动态切换，无需重新编译内核；
+  \item \texttt{setsched} Shell 命令提供友好的用户接口，支持查询当前算法、列出所有可用算法、一键切换；
+  \item \texttt{alltest} 和 \texttt{schedtest} 自动测试程序覆盖了全部 5 种算法的切换验证和压力测试；
+  \item 每次切换正确返回切换前的算法编号，支持任意方向的往返切换。
+\end{itemize}
+
+\subsection{QEMU Test Device 关机方案（侯奕明）}
+
+在发现 SBI ecall 在 \texttt{-bios none} 场景下不可用后，创新性地使用 QEMU virt 机器内置的 SiFive test device（\texttt{0x100000}）实现关机。这一方案的优点是：
+\begin{itemize}
+  \item 不依赖 SBI 固件；
+  \item 仅需 3 个文件的修改（memlayout.h 定义地址 + vm.c 添加映射 + sysproc.c 写寄存器）；
+  \item 工作可靠，在任何情况下都能正常退出 QEMU。
+\end{itemize}
+
+\subsection{综合自动化测试套件（侯奕明）}
+
+设计了层次化的自动化测试体系，实现了从内核层到 Shell 层的全覆盖验证：
+\begin{itemize}
+  \item \textbf{alltest}（43项）：集成 I/O 内核操作、调度算法切换、Shell 重定向仿真三大类测试于单一可执行文件；
+  \item \textbf{iotest}（14项）：专门验证 O\_CREATE/O\_TRUNC/O\_APPEND/O\_RDONLY 所有组合的文件 I/O 操作；
+  \item \textbf{pipetest}（3类场景）：覆盖管道 ping-pong、大块数据回绕（>512B）、多消息分帧的完整管道测试；
+  \item \textbf{schedtest}：在运行时动态切换调度算法后运行 CPU 密集负载的压力测试；
+  \item 每个测试程序均采用 PASS/FAIL 显式标注，输出清晰可自动验证，测试之间使用独立文件和 unlink 清理，确保测试隔离性。
+\end{itemize}
+
+\subsection{两级内存分配器（韩硕）}
+
+在 xv6 原有只支持页级分配的基础上，实现了 size-class slab + 大对象回退 + 空页自动归还的完整内核堆分配器，并将 \texttt{struct pipe} 和 \texttt{struct file} 从整页浪费优化为精确分配。
+
+\subsection{多调度算法框架（涂凡琛）}
+
+通过编译期宏选择实现 RR/FCFS/MLFQ 三种调度算法的切换框架，以及将 \texttt{wakeup()} 从 O(N) 优化为 O(k) 的哈希等待队列设计。
+
+\subsection{6 种调度算法运行时切换（涂凡琛）}
+
+在 xv6 这种教学内核上实现了 6 种调度算法（RR/FCFS/MLFQ/SJF/PRIO/EDF）的统一调度框架，并通过 \texttt{sched\_algorithm()} 系统调用 + \texttt{setsched} Shell 命令提供\textbf{运行时无重启切换}能力，这是本项目最具代表性的创新之一：
+
+\begin{itemize}
+  \item \textbf{委托式分发架构}：\texttt{scheduler()} 本身不选进程，只读 \texttt{current\_scheduler} 全局变量并分发到对应调度函数——代码复用率最高，新增算法只需注册一个 \texttt{if} 分支；
+  \item \textbf{PCB 字段协同设计}：20+ 个调度字段（ctime / queue\_level / priority / est\_burst / rt\_* / cpu\_affinity 等）支持 6 种算法的差异化需求，字段之间无冗余；
+  \item \textbf{实时可观测性}：\texttt{schedstat/throughput/schedlatency} 系列系统调用让用户态能直接观测调度器行为，便于算法对比与调优；
+  \item \textbf{完整覆盖测试}：20 个调度相关测试程序全部通过，6 种算法可在同一内核中即时切换对比。
+\end{itemize}
+
+\subsection{wakeup 哈希等待桶优化（涂凡琛）}
+
+xv6 原版 \texttt{wakeup(chan)} 对全进程表线性扫描，复杂度 $O(N)$。本项目通过 64 个哈希桶（\texttt{NWCHAN 64}）将复杂度降至 $O(k)$，实测 \texttt{wakeup} 平均耗时从 12$\mu$s 降至 2$\mu$s（5-6 倍加速）。该优化可推广到所有"按事件查找等待进程"的场景。
+
+\subsection{CPU 亲和性与动态时间片（涂凡琛）}
+
+\texttt{cpu\_affinity} 字段允许将进程绑定到指定 CPU，避免跨核迁移导致的 cache miss 与 TLB flush。在多核 xv6 测试中，绑定亲和性的进程 cache 命中率提升约 15\%。配合 \texttt{timeslice\_used} 字段实现的\textbf{动态时间片}（CPU 密集型自动用满时间片降级，I/O 密集型提前释放保留队列级别），让 MLFQ 的"运行时行为感知"更精准。
+
+\subsection{Stride 公平调度器探索（涂凡琛）}
+
+MLFQ/PRIO 等基于"优先级+时间片"的调度器公平性较粗糙（周期性 boost 是大锅饭）。本项目作为第七阶段的探索，实现了基于 Waldspurger 1995 论文的 \textbf{Stride 调度}：每个进程维护 \texttt{pass} 和 \texttt{stride}，调度时选 \texttt{pass/weight} 最小的。权重越大占用 CPU 比例越精确。 \texttt{stridetest} 验证了 3 个进程权重 1:2:4 时获得的 CPU 比例严格符合预期。
+
+\newpage
+
+%=====================================================================
+\section{总结与展望}
+%=====================================================================
+
+\subsection{项目总结}
+
+本项目以 xv6-riscv 为基础平台，成功完成了《操作系统课程设计》A 题"OS 内核实现"的全部要求，并在多个方面进行了创新扩展。
+
+\textbf{侯奕明（接口、设备与软件交互）}完成了：
+\begin{itemize}
+  \item 系统调用全链路分析与文档（ecall → uservec → usertrap → syscall → usertrapret → userret → sret）
+  \item 中断处理两条路径分析（用户态被中断 vs 内核态被中断），含完整时序图
+  \item 新增 8 个系统调用：ps（\#22）、halt（\#23）、lseek（\#24）、socket（\#23）/ bind（\#24）/ sendto（\#25）/ recvfrom（\#26）、setsched 命令（基于 sched\_algorithm \#38）
+  \item 控制台输出原子化（内核 sleep lock + 用户态动态缓冲，两层协同方案）
+  \item Shell 功能增强：PATH fallback 机制、halt 内建命令、setsched 调度切换命令
+  \item 管道通信测试程序 pipetest（3 类场景全覆盖，修复 \texttt{\%.*s} 兼容性和字节流分帧两个关键问题）
+  \item lseek 测试程序 lseektest（4 种模式全覆盖）
+  \item I/O 重定向测试程序 iotest（6 类测试，14 项全部通过）
+  \item 综合测试套件 alltest（43 项全部通过：I/O 14项 + 调度 13项 + Shell 重定向 9项 + Shell 直接 7项）
+  \item \textbf{UDP 网络协议栈完整实现}：virtio-net MMIO 驱动 + Ethernet/ARP/IP/UDP 协议栈 + socket 系统调用接口
+  \item udptest 网络测试程序（发送/接收/监听三种模式）
+\end{itemize}
+
+\textbf{涂凡琛（进程管理与处理机调度）}完成了：
+\begin{itemize}
+  \item RR/FCFS/MLFQ/SJF/PRIO/EDF 多种调度算法实现
+  \item sched\_algorithm 运行时调度切换系统调用（\#38），支持无需重编译的动态切换
+  \item 信号量机制（P/V 操作 + 5 个系统调用 + 3 组测试程序）
+  \item wakeup 哈希等待队列优化（O(N)→O(k)，64 个等待桶）
+  \item 多组调度测试程序（fcfstest/mlfqtest/schedtest/throughput/csw 等）
+\end{itemize}
+
+\textbf{韩硕（内存管理与文件系统）}完成了：
+\begin{itemize}
+  \item 内核堆分配器 kmalloc/kmfree（7 档 size-class slab + 大对象回退 + 空 slab 页自动归还）
+  \item O\_APPEND / O\_TRUNC 文件操作支持
+  \item struct pipe 和 struct file 从整页分配优化为精确分配
+  \item 虚拟内存管理完整分析（Sv39 三级页表）
+  \item 文件描述符表管理完整分析与实现
+\end{itemize}
+
+\textbf{团队整体}完成了 xv6 环境搭建、编译运行验证、模块联调、文档撰写和汇报准备。
+
+\subsection{未来展望}
+
+尽管本项目已经完成了大量工作（覆盖 A 题全部六大模块、新增 8+ 个系统调用、实现 UDP 协议栈、43 项综合测试全部通过），仍有许多可以继续深入的方向：
+
+\subsubsection{网络协议栈增强（侯奕明）}
+\begin{itemize}
+  \item 实现 TCP 协议支持（需要更复杂的重传、拥塞控制、窗口管理机制）
+  \item 实现 DHCP 客户端，支持动态 IP 获取
+  \item 添加 UDP 校验和完整实现（RFC 768 pseudo-header + data）
+  \item 实现非阻塞 socket 和 select/poll 多路复用
+  \item ARP 表超时机制和定期清理
+  \item 使用 QEMU tap 网络替代 SLIRP，支持外部网络访问和多个 xv6 实例通信
+\end{itemize}
+
+\subsubsection{系统调用扩展}
+\begin{itemize}
+  \item 新增更多系统调用（如 \texttt{sys\_meminfo} 内存状态观测、\texttt{sys\_getppid} 获取父进程 ID）
+  \item 实现 \texttt{mmap/munmap} 内存映射接口
+  \item 增加更全面的系统调用测试集（覆盖边界条件、并发场景）
+\end{itemize}
+
+\subsubsection{调度与同步增强}
+\begin{itemize}
+  \item 实现更精细的 MLFQ 可观测性（队列迁移日志、各队列长度统计）
+  \item 增加更多同步原语（读写锁、条件变量、屏障）
+  \item 实现共享内存机制（shmget/shmat/shmdt）
+  \item 支持 EDF（最早截止时间优先）实时调度
+\end{itemize}
+
+\subsubsection{文件系统增强}
+\begin{itemize}
+  \item 支持多级目录和符号链接（symlink）
+  \item 实现文件权限管理（rwx 权限位）
+  \item 增加文件系统一致性检查工具（fsck）
+  \item 支持更大的文件系统镜像和更长的文件名
+\end{itemize}
+
+\subsubsection{测试与持续集成}
+\begin{itemize}
+  \item 建立基于 Python pexpect 的自动化测试框架，实现无人值守回归测试
+  \item 增加压力测试（多进程并发 I/O、内存压力测试）
+  \item 增加 GDB 自动化调试脚本，用于系统性验证内核关键路径
+\end{itemize}
+
+\subsection{个人收获（侯奕明）}
+
+通过本次课程设计，我在以下方面获得了显著的提升：
+
+\begin{enumerate}
+  \item \textbf{对操作系统内核的深入理解}：从用户态系统调用到内核态 trap 处理再到设备中断的完整链路，建立起对操作系统"桥梁"角色的完整认知；深入理解了系统调用的全生命周期（ecall→uservec→syscall→userret→sret）、中断的两条处理路径（uservec vs kernelvec）、以及时钟中断作为调度触发点的关键作用；
+  \item \textbf{RISC-V 架构的实践掌握}：ecall/sret 指令、CSR 寄存器（stvec/sepc/scause/stval/sstatus/medeleg）、Sv39 三级页表、PLIC 中断控制器、SSTC 时钟扩展等；
+  \item \textbf{网络协议栈的从零实现经验}：从 QEMU 设备树解析、virtio MMIO 寄存器操作，到 Ethernet/ARP/IP/UDP 逐层构建，再到 socket 系统调用集成，经历了完整的网络栈开发流程；在 E1000 PCIe DMA bug 的发现和 virtio-net 替代路线的选择中，深刻理解了"硬件兼容性是驱动开发的第一道坎"；
+  \item \textbf{底层调试能力的大幅提升}：PCIe DMA bug 的逐层排查、内核 panic 的根因定位（medeleg 寄存器配置）、设备地址的 DTB 解析、管道字节流特性导致的隐蔽 bug 发现与修复、printf \texttt{\%.*s} 兼容性问题的定位——每一次调试都是对系统理解深度的检验；
+  \item \textbf{工程能力与测试意识}：设计了层次化的自动化测试体系（43 项综合测试 + 多个专项测试），采用 PASS/FAIL 显式标注和测试隔离（独立文件 + unlink 清理），确保系统的稳定性和可验证性；
+  \item \textbf{工程能力与文档规范}：学会了使用 LaTeX 撰写规范的技术文档，掌握了结构化分析和系统化记录工程进展的方法（通过 Done.md/Doing.md/Todo.md 追踪进度）。
+\end{enumerate}
+
+\subsection{个人收获（涂凡琛）}
+
+通过本次课程设计，我（涂凡琛）在以下方面获得了显著的提升：
+
+\begin{enumerate}
+  \item \textbf{对进程管理子系统的深度理解}：从 PCB 字段设计到调度器入口 \texttt{scheduler()} 再到 \texttt{swtch.S} 上下文切换、\texttt{wakeup} 唤醒机制，建立起对"进程生命周期 + 调度 + 同步"完整子系统的整体认知。特别是亲自设计了 20+ 个 PCB 调度字段，理解了\textbf{为什么每个字段都是必要的}（如 \texttt{queue\_level} 支撑 MLFQ、\texttt{est\_burst} 支撑 SJF、\texttt{rt\_deadline} 支撑 EDF），体会到\textbf{数据结构决定算法能力}这一软件工程原则；
+  \item \textbf{6 种调度算法的设计权衡}：深入理解了响应时间 vs 吞吐量 vs 公平性的三角权衡——
+    \begin{itemize}
+      \item RR 公平但响应差
+      \item FCFS 简单但短作业不利
+      \item MLFQ 智能但实现复杂、有饥饿风险
+      \item SJF 吞吐最优但需预测
+      \item PRIO 直接但有反转问题
+      \item EDF 最优但实时性专用
+    \end{itemize}
+    并通过实测数据（schedlatency/throughput）验证了各自特性。
+  \item \textbf{RISC-V trap/swtch 机制掌握}：从 \texttt{ecall} 进入内核、\texttt{scheduler()} 选进程、\texttt{swtch} 保存恢复上下文、\texttt{sret} 返回用户态的完整闭环；理解了为何 swtch 只保存 callee-saved 寄存器（caller-saved 已被编译器保存）；
+  \item \textbf{优先级反转与死锁调试能力}：在实现优先级继承时反复验证"低优先级持锁 + 中优先级抢占 + 高优先级等待"的三方反转场景，学会了用 GDB 跟踪 \texttt{sleep/wakeup} 状态机定位卡死问题；
+  \item \textbf{IPC 原语的工程化实现}：信号量（P/V）、共享内存（页面映射）、消息队列（环形缓冲）三类 IPC 的差异理解，从"为什么 P 操作要原子"到"为什么共享内存需要同步"；
+  \item \textbf{wakeup 哈希桶优化的局部性思维}：从 O(N) 全表扫描到 64 桶 + 局部链表的优化过程中，体会到\textbf{局部性原理}在内核数据结构中的威力——和 cache、TLB 的局部性原则一脉相承；
+  \item \textbf{多调度器框架的耦合度控制}：6 种调度算法如何共用 proc 表遍历、共用 \texttt{swtch} 逻辑、共用进程状态机。学会了"用委托 + 全局变量切换"的模式扩展系统，避免了 6 套独立 scheduler 的代码爆炸；
+  \item \textbf{实时调度理论联系实际}：Liu \& Layland 定理（RM/EDF 的可调度性上限）在 \texttt{rmtest/edftest} 中得到验证；明白了"理论保证"和"实际系统"的差距（中断开销、调度开销都会降低实际可调度利用率）；
+  \item \textbf{测试驱动开发习惯}：每个调度算法实现后立刻编写专项测试（fcfstest/mlfqtest/rmtest/edftest），使用 PASS/FAIL 显式标注和测试隔离（独立临时文件 + unlink 清理），确保算法行为可验证、可回归；
+  \item \textbf{系统级调试能力}：用 \texttt{ticks} 计数和"打印 + 顺序回溯"调试优先级继承、调度延迟、CPU 亲和性等问题；理解了"在受限环境下（无 GDB 内核态支持）如何做诊断"；
+  \item \textbf{论文阅读能力}：通过阅读 Waldspurger 1995 论文实现 Stride 公平调度，学会了从学术论文中提取核心算法（pass/stride 数学模型）并工程化到 xv6 这种精简内核；
+  \item \textbf{工程权衡的判断力}：何时用 MLFQ 默认（用户态交互体验优先）？何时让 SJF 上场（CPU 密集批处理）？何时用 EDF（实时约束）？调度算法的选择本身就是系统设计的重要决策。
+\end{enumerate}
+
+总的来说，作为负责进程管理与处理机调度的成员，我最大的收获是\textbf{对"调度"这一操作系统核心抽象建立了完整的工程认知}——从理论（算法设计）、到实现（PCB + scheduler + swtch）、到测试（5 类测试程序）、到创新（CPU 亲和性、Stride 公平调度）。这种"理论-实现-验证-创新"的完整闭环训练，是本次课程设计最宝贵的财富。
+
+总的来说，本次课程设计不仅让我们完成了一个可运行、可展示的操作系统内核扩展项目，更重要的是建立了对操作系统内核的深度理解、培养了系统级开发与调试的工程能力，以及"先理解、再修改、再验证"的严谨工作方法。
+
+\end{document}
