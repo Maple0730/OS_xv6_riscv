@@ -6,6 +6,7 @@ BK=$(B)/kernel
 BU=$(B)/user
 BM=$(B)/mkfs
 FSIMG=$(B)/fs.img
+FSIMG1=$(B)/fs1.img
 KERNEL=$(BK)/kernel
 
 OBJS = \
@@ -104,7 +105,7 @@ endif
 LDFLAGS = -z max-page-size=4096
 DEPFLAGS = -MMD -MP -MF $(@:.o=.d)
 
-all: $(KERNEL) $(FSIMG)
+all: $(KERNEL) $(FSIMG) $(FSIMG1)
 
 $(B) $(BK) $(BU) $(BM):
 	mkdir -p $@
@@ -227,6 +228,9 @@ UPROGS=\
 $(FSIMG): $(BM)/mkfs README $(UPROGS) | $(B)
 	$(BM)/mkfs $@ README $(UPROGS)
 
+$(FSIMG1): $(BM)/mkfs | $(B)
+	$(BM)/mkfs $@
+
 -include $(BK)/*.d $(BU)/*.d
 
 clean: 
@@ -249,16 +253,18 @@ endif
 QEMUOPTS = -machine virt -bios none -kernel $(KERNEL) -m 256M -smp $(CPUS) -nographic
 QEMUOPTS += -global virtio-mmio.force-legacy=false
 QEMUOPTS += -drive file=$(FSIMG),if=none,format=raw,id=x0
+QEMUOPTS += -drive file=$(FSIMG1),if=none,format=raw,id=x1
 QEMUOPTS += -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
-QEMUOPTS += -device virtio-net-device,netdev=net0,bus=virtio-mmio-bus.1 -netdev user,id=net0
+QEMUOPTS += -device virtio-blk-device,drive=x1,bus=virtio-mmio-bus.1
+QEMUOPTS += -device virtio-net-device,netdev=net0,bus=virtio-mmio-bus.2 -netdev user,id=net0
 
-qemu: check-qemu-version $(KERNEL) $(FSIMG)
+qemu: check-qemu-version $(KERNEL) $(FSIMG) $(FSIMG1)
 	$(QEMU) $(QEMUOPTS)
 
 .gdbinit: .gdbinit.tmpl-riscv
 	sed "s/:1234/:$(GDBPORT)/" < $^ > $@
 
-qemu-gdb: $(KERNEL) .gdbinit $(FSIMG)
+qemu-gdb: $(KERNEL) .gdbinit $(FSIMG) $(FSIMG1)
 	@echo "*** Now run 'gdb' in another window." 1>&2
 	$(QEMU) $(QEMUOPTS) -S $(QEMUGDB)
 

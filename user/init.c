@@ -24,6 +24,8 @@ main(void)
   dup(0); // stdout
   dup(0); // stderr
 
+  mkdir("/desktop");
+  mkdir("/disk1");
 
   for (;;) {
     if (!first)

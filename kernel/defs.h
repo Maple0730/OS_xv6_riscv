@@ -40,6 +40,8 @@ int             filewrite(struct file*, uint64, int n);
 int             fileseek(struct file*, int, int);
 // fs.c
 void            fsinit(int);
+int             fsdevvalid(int);
+int             fsmountpoint(struct inode*, const char*);
 int             dirlink(struct inode*, char*, uint);
 struct inode*   dirlookup(struct inode*, char*, uint*);
 struct inode*   ialloc(uint, short);
@@ -76,8 +78,8 @@ extern int      phys_ram_detected;
 // log.c
 void            initlog(int, struct superblock*);
 void            log_write(struct buf*);
-void            begin_op(void);
-void            end_op(void);
+void            begin_op(uint);
+void            end_op(uint);
 
 // pipe.c
 int             pipealloc(struct file**, struct file**);
@@ -254,7 +256,7 @@ void            plic_complete(int);
 // virtio_disk.c
 void            virtio_disk_init(void);
 void            virtio_disk_rw(struct buf *, int);
-void            virtio_disk_intr(void);
+void            virtio_disk_intr(int);
 
 // virtio_net.c
 void            virtio_net_init(void);

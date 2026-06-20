@@ -54,7 +54,11 @@ def main():
         '-nographic', '-display', 'none',
         '-global', 'virtio-mmio.force-legacy=false',
         '-drive', 'file=build/fs.img,if=none,format=raw,id=x0',
+        '-drive', 'file=build/fs1.img,if=none,format=raw,id=x1',
         '-device', 'virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0',
+        '-device', 'virtio-blk-device,drive=x1,bus=virtio-mmio-bus.1',
+        '-device', 'virtio-net-device,netdev=net0,bus=virtio-mmio-bus.2',
+        '-netdev', 'user,id=net0',
         '-serial', f'pipe:{IN_PIPE[:-3]}',  # /tmp/xv6_pipe
     ]
     proc = subprocess.Popen(qemu_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)

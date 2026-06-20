@@ -216,6 +216,7 @@ main(void)
   }
 
   boot_animation();
+  chdir("/desktop");
 
   // Read and run input commands.
   while (getcmd(buf, sizeof(buf)) >= 0) {

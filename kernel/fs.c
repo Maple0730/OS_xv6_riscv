@@ -30,10 +30,22 @@
 #include "file.h"
 
 #define min(a, b) ((a) < (b) ? (a) : (b))
-// there should be one superblock per disk device, but we run with
-// only one device
-// 每个磁盘设备应该有一个超级块，但当前系统只运行一个设备。
-struct superblock sb;
+struct superblock superblocks[NDISK];
+
+struct mountent {
+  char name[DIRSIZ];
+  uint parent_dev;
+  uint parent_inum;
+  uint target_dev;
+};
+
+static struct mountent mounts[] = {
+  {.name = "disk1", .parent_dev = ROOTDEV, .parent_inum = ROOTINO, .target_dev = DISK1DEV},
+};
+
+static struct superblock *sb_for(uint dev);
+static struct mountent *mount_by_name(struct inode *dp, const char *name);
+static struct mountent *mount_by_target(struct inode *ip);
 
 // Read the super block.
 static void//读取超级块
@@ -50,11 +62,25 @@ readsb(int dev, struct superblock *sb)
 void//文件系统初始化
 fsinit(int dev)
 {
-  readsb(dev, &sb);
-  if (sb.magic != FSMAGIC)
+  struct superblock *sb = sb_for(dev);
+
+  readsb(dev, sb);
+  if (sb->magic != FSMAGIC)
     panic("invalid file system");
-  initlog(dev, &sb);
+  initlog(dev, sb);
   ireclaim(dev);
+}
+
+int
+fsdevvalid(int dev)
+{
+  return dev >= ROOTDEV && dev < ROOTDEV + NDISK;
+}
+
+int
+fsmountpoint(struct inode *dp, const char *name)
+{
+  return mount_by_name(dp, name) != 0;
 }
 
 // Zero a block.
@@ -76,13 +102,14 @@ bzero(int dev, int bno)
 static uint//分配空闲磁盘块
 balloc(uint dev)
 {
+  struct superblock *sb = sb_for(dev);
   int b, bi, m;
   struct buf *bp;
 
   bp = 0;
-  for (b = 0; b < sb.size; b += BPB) {
-    bp = bread(dev, BBLOCK(b, sb));
-    for (bi = 0; bi < BPB && b + bi < sb.size; bi++) {
+  for (b = 0; b < sb->size; b += BPB) {
+    bp = bread(dev, BBLOCK(b, (*sb)));
+    for (bi = 0; bi < BPB && b + bi < sb->size; bi++) {
       m = 1 << (bi % 8);
       if ((bp->data[bi / 8] & m) == 0) { // Is block free?
         bp->data[bi / 8] |= m;           // Mark block in use.
@@ -102,10 +129,11 @@ balloc(uint dev)
 static void//释放磁盘块
 bfree(int dev, uint b)
 {
+  struct superblock *sb = sb_for(dev);
   struct buf *bp;
   int bi, m;
 
-  bp = bread(dev, BBLOCK(b, sb));
+  bp = bread(dev, BBLOCK(b, (*sb)));
   bi = b % BPB;
   m = 1 << (bi % 8);
   if ((bp->data[bi / 8] & m) == 0)
@@ -266,12 +294,13 @@ static struct inode *iget(uint dev, uint inum);
 struct inode *//在磁盘上分配一个新的 inode
 ialloc(uint dev, short type)
 {
+  struct superblock *sb = sb_for(dev);
   int inum;
   struct buf *bp;
   struct dinode *dip;
 
-  for (inum = 1; inum < sb.ninodes; inum++) {
-    bp = bread(dev, IBLOCK(inum, sb));
+  for (inum = 1; inum < sb->ninodes; inum++) {
+    bp = bread(dev, IBLOCK(inum, (*sb)));
     dip = (struct dinode *)bp->data + inum % IPB;//锁的颗粒度更细
     if (dip->type == 0) { // a free inode
       memset(dip, 0, sizeof(*dip));
@@ -293,10 +322,11 @@ ialloc(uint dev, short type)
 void//把内存 inode 的关键字段刷回磁盘
 iupdate(struct inode *ip)
 {
+  struct superblock *sb = sb_for(ip->dev);
   struct buf *bp;
   struct dinode *dip;
 
-  bp = bread(ip->dev, IBLOCK(ip->inum, sb));
+  bp = bread(ip->dev, IBLOCK(ip->inum, (*sb)));
   dip = (struct dinode *)bp->data + ip->inum % IPB;
   dip->type = ip->type;
   dip->major = ip->major;
@@ -360,6 +390,7 @@ idup(struct inode *ip)
 void//从磁盘拿到内存并上锁
 ilock(struct inode *ip)
 {
+  struct superblock *sb = sb_for(ip->dev);
   struct buf *bp;
   struct dinode *dip;
 
@@ -369,7 +400,7 @@ ilock(struct inode *ip)
   acquiresleep(&ip->lock);
 
   if (ip->valid == 0) {
-    bp = bread(ip->dev, IBLOCK(ip->inum, sb));
+    bp = bread(ip->dev, IBLOCK(ip->inum, (*sb)));
     dip = (struct dinode *)bp->data + ip->inum % IPB;
     ip->type = dip->type;
     ip->major = dip->major;
@@ -442,9 +473,10 @@ void//用于启动恢复 orphaned inode。 如果磁盘上有 type != 0 && nlink
 //说明上次崩溃前它本该被回收但没做完，这里会触发回收闭环
 ireclaim(int dev)
 {
-  for (int inum = 1; inum < sb.ninodes; inum++) {
+  struct superblock *sb = sb_for(dev);
+  for (int inum = 1; inum < sb->ninodes; inum++) {
     struct inode *ip = 0;
-    struct buf *bp = bread(dev, IBLOCK(inum, sb));
+    struct buf *bp = bread(dev, IBLOCK(inum, (*sb)));
     struct dinode *dip = (struct dinode *)bp->data + inum % IPB;
     if (dip->type != 0 && dip->nlink == 0) { // is an orphaned inode
       printf("ireclaim: orphaned inode %d\n", inum);
@@ -452,11 +484,11 @@ ireclaim(int dev)
     }
     brelse(bp);
     if (ip) {
-      begin_op();
+      begin_op(dev);
       ilock(ip);
       iunlock(ip);
       iput(ip);
-      end_op();
+      end_op(dev);
     }
   }
 }
@@ -767,6 +799,7 @@ static struct inode *
 namex(char *path, int nameiparent, char *name)
 {
   struct inode *ip, *next;
+  struct mountent *mnt;
 
   if (*path == '/')
     ip = iget(ROOTDEV, ROOTINO);
@@ -784,7 +817,11 @@ namex(char *path, int nameiparent, char *name)
       iunlock(ip);
       return ip;
     }
-    if ((next = dirlookup(ip, name, 0)) == 0) {
+    if (namecmp(name, "..") == 0 && (mnt = mount_by_target(ip)) != 0) {
+      next = iget(mnt->parent_dev, mnt->parent_inum);
+    } else if ((mnt = mount_by_name(ip, name)) != 0) {
+      next = iget(mnt->target_dev, ROOTINO);
+    } else if ((next = dirlookup(ip, name, 0)) == 0) {
       iunlockput(ip);
       return 0;
     }
@@ -809,4 +846,34 @@ struct inode *//返回父目录和最后一段名字
 nameiparent(char *path, char *name)
 {
   return namex(path, 1, name);
+}
+
+static struct superblock *
+sb_for(uint dev)
+{
+  if (!fsdevvalid(dev))
+    panic("sb_for");
+  return &superblocks[dev - ROOTDEV];
+}
+
+static struct mountent *
+mount_by_name(struct inode *dp, const char *name)
+{
+  for (int i = 0; i < NELEM(mounts); i++) {
+    if (dp->dev == mounts[i].parent_dev &&
+        dp->inum == mounts[i].parent_inum &&
+        namecmp(mounts[i].name, name) == 0)
+      return &mounts[i];
+  }
+  return 0;
+}
+
+static struct mountent *
+mount_by_target(struct inode *ip)
+{
+  for (int i = 0; i < NELEM(mounts); i++) {
+    if (ip->dev == mounts[i].target_dev && ip->inum == ROOTINO)
+      return &mounts[i];
+  }
+  return 0;
 }

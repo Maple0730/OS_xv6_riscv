@@ -541,9 +541,9 @@ kexit(int status)
     }
   }
 
-  begin_op();
+  begin_op(ROOTDEV);
   iput(p->cwd);
-  end_op();
+  end_op(ROOTDEV);
   p->cwd = 0;
 
   acquire(&wait_lock);
@@ -1270,6 +1270,7 @@ forkret(void)
     // regular process (e.g., because it calls sleep), and thus cannot
     // be run from main().
     fsinit(ROOTDEV);
+    fsinit(DISK1DEV);
 
     first = 0;
     // ensure other cores see first=0.

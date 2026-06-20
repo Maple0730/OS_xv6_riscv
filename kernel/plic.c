@@ -14,6 +14,7 @@ plicinit(void)
   // set desired IRQ priorities non-zero (otherwise disabled).
   *(uint32 *)(PLIC + UART0_IRQ * 4) = 1;
   *(uint32 *)(PLIC + VIRTIO0_IRQ * 4) = 1;
+  *(uint32 *)(PLIC + VIRTIO1_IRQ * 4) = 1;
   int eirq = virtio_net_irq();
   if (eirq >= 0)
     *(uint32 *)(PLIC + eirq * 4) = 1;
@@ -26,7 +27,7 @@ plicinithart(void)
 
   // set enable bits for this hart's S-mode
   // for the uart and virtio disk.
-  uint32 en = (1 << UART0_IRQ) | (1 << VIRTIO0_IRQ);
+  uint32 en = (1 << UART0_IRQ) | (1 << VIRTIO0_IRQ) | (1 << VIRTIO1_IRQ);
   int eirq = virtio_net_irq();
   if (eirq >= 0) {
     // PLIC enable registers use 1 bit per IRQ; IRQs >= 32 are in the next register

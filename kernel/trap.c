@@ -227,7 +227,9 @@ devintr()
     if (irq == UART0_IRQ) {
       uartintr();
     } else if (irq == VIRTIO0_IRQ) {
-      virtio_disk_intr();
+      virtio_disk_intr(irq);
+    } else if (irq == VIRTIO1_IRQ) {
+      virtio_disk_intr(irq);
     } else if (irq == virtio_net_irq()) {
       virtio_net_intr();
     } else if (irq) {

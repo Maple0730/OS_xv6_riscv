@@ -16,6 +16,7 @@
 \usepackage{subcaption}
 \usepackage{fancyhdr}
 \usepackage{tikz}
+\usepackage{amsmath}
 \usepackage{amssymb}
 \usetikzlibrary{shapes.geometric, arrows, positioning, fit, backgrounds}
 
@@ -127,7 +128,7 @@
 \hline
 涂凡琛 & 进程管理与处理机调度 & FCFS/MLFQ/RR调度算法、信号量机制、wakeup哈希队列优化、调度测试程序 \\
 \hline
-韩硕 & 内存管理与文件系统 & 内核堆分配器（kmalloc/kmfree）、页表管理、文件描述符表管理、文件系统各模块分析 \\
+韩硕 & 系统启动、内存管理与文件管理 & 启动链路与特权级切换、启动时内存探测、页表与物理页分配管理、内核堆分配器、文件描述符与路径解析、文件/目录操作 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -160,7 +161,7 @@ Shell功能增强          & 已完成 & PATH fallback/halt内置 & $\checkmark$
 进程管理与调度         & 已完成 & FCFS/MLFQ & $\checkmark$ 通过 \\
 信号量机制             & 已完成 & 3组测试 & $\checkmark$ 通过 \\
 内存管理               & 已完成 & kmalloc堆分配器 & $\checkmark$ 通过 \\
-文件系统               & 已完成 & lseek/文件描述符管理 & $\checkmark$ 通过 \\
+文件管理               & 已完成 & lseek/文件描述符管理/路径解析 & $\checkmark$ 通过 \\
 网络协议栈（UDP）      & 新增   & 全协议栈 & $\checkmark$ 通过 \\
 wakeup哈希队列优化     & 已完成 & O(N)→O(k) & $\checkmark$ 通过 \\
 \bottomrule
@@ -227,7 +228,7 @@ wakeup哈希队列优化     & 已完成 & O(N)→O(k) & $\checkmark$ 通过 \\
 %=====================================================================
 
 本章按照分工详细描述各模块的设计思路、数据结构、关键算法和核心代码实现。
-其中第3.1至3.5节为侯奕明负责部分（重点），第3.6节为涂凡琛负责部分，第3.7节为韩硕负责部分。
+其中第3.1至3.5节为侯奕明负责部分（重点），第3.6节为涂凡琛负责部分，第3.7至3.9节为韩硕负责部分，分别对应系统启动、内存管理与文件管理三个模块。
 
 %---------------------------------------------------------------------
 \subsection{中断与异常处理（侯奕明）}
@@ -720,7 +721,7 @@ case EXEC:
 \begin{lstlisting}[language=C, caption={halt 内建命令检测（user/sh.c）}]
 if (cmd[0] == 'h' && cmd[1] == 'a' && cmd[2] == 'l' && cmd[3] == 't' &&
     (cmd[4] == '\n' || cmd[4] == ' ' || cmd[4] == '\0')) {
-  printf("shutting down...\n");
+  shutdown_animation();
   halt();
 }
 \end{lstlisting}
@@ -892,21 +893,117 @@ int priority;         // 进程优先级
 \end{itemize}
 
 %---------------------------------------------------------------------
-\subsection{内存管理与文件系统（韩硕）}
+\subsection{系统启动（韩硕）}
 %---------------------------------------------------------------------
 
-本部分由韩硕负责，主要包括以下工作。
+本节主要介绍系统从 QEMU 启动到进入 xv6 内核主函数，再到拉起第一个用户态 shell 的完整过程。相比原始 xv6 的直接阅读，本报告更强调“启动链路中每一步做了什么、为什么必须这么做、以及当前实现已经验证到什么程度”。
 
-\subsubsection{内核堆分配器（kmalloc/kmfree）}
+\subsubsection{启动链路}
 
-在 xv6 原有页级分配器（\texttt{kalloc/kfree}）之上，实现了完整的内核堆分配器，形成两级内存管理架构。
+当前系统已经实现 RISC-V 平台下从 QEMU 启动到进入 shell 的完整启动链路，核心路径为：
+\[
+\_entry \rightarrow start() \rightarrow main() \rightarrow userinit() \rightarrow init \rightarrow sh
+\]
 
-\textbf{设计特点}：
+\textbf{启动入口与加载位置}：
 \begin{itemize}
-  \item \textbf{Size-class slab}：7 个档位（32B/64B/128B/256B/512B/1024B/2048B）
-  \item \textbf{单页大对象回退}：2048B 以上自动回退到整页分配
-  \item \textbf{空 slab 页自动归还}：整页对象全部释放后自动归还给 \texttt{kfree()}
-  \item \textbf{真实内核对象接入}：\texttt{struct pipe} 和 \texttt{struct file} 从 \texttt{kalloc} 整页分配改为 \texttt{kmalloc} 精确分配
+  \item QEMU 通过 \texttt{-kernel} 将内核镜像加载到 \texttt{0x80000000}
+  \item \texttt{kernel.ld} 将最早入口 \texttt{\_entry} 放在该地址
+  \item CPU 上电后从 \texttt{kernel/entry.S} 开始执行
+\end{itemize}
+
+\subsubsection{关键初始化步骤}
+
+\textbf{早期栈与 C 运行环境准备}：
+\begin{itemize}
+  \item \texttt{entry.S} 为每个 hart 计算独立启动栈 \texttt{stack0}
+  \item 在跳转到 \texttt{start()} 之前就完成 \texttt{sp} 初始化
+  \item 启动参数中的 DTB 指针也在该阶段从 \texttt{a1} 保存下来，供后续内存探测使用
+\end{itemize}
+
+\textbf{M 态到 S 态切换}：
+\begin{itemize}
+  \item \texttt{start()} 中设置 \texttt{mstatus.MPP = S}
+  \item 将 \texttt{mepc} 指向 \texttt{main}
+  \item 完成中断/异常委托、PMP 配置、定时器初始化和 \texttt{tp = hartid}
+  \item 最终通过 \texttt{mret} 切换到 S 态并进入内核主函数
+\end{itemize}
+
+\subsubsection{课程要求对应与实现结果}
+
+\textbf{Trap 向量与启动结果}：
+\begin{itemize}
+  \item 系统通过 \texttt{stvec} 安装 RISC-V trap 向量，等价完成课程要求中的中断向量初始化
+  \item \texttt{main()} 中继续完成控制台、内存、页表、进程、设备与文件系统初始化
+  \item 最终创建第一个用户进程并进入 shell，说明启动链路已经稳定闭环
+\end{itemize}
+
+从课程要求角度看，当前系统启动模块已经覆盖以下关键指标：
+\begin{itemize}
+  \item 能在模拟器中稳定启动并进入内核主函数
+  \item 已完成从 M 态到 S 态的切换
+  \item 已初始化 trap 向量
+  \item 已为每个 CPU 设置启动栈指针，为 C 语言运行环境做好准备
+  \item 启动后能继续完成设备、文件系统和首个用户进程初始化，最终进入交互式 shell
+\end{itemize}
+
+这说明系统启动并不是“只能跑起来”，而是已经具备了完整、可复现、可继续扩展的内核启动骨架。
+
+%---------------------------------------------------------------------
+\subsection{内存管理（韩硕）}
+%---------------------------------------------------------------------
+
+本节主要介绍物理内存、虚拟内存以及内核动态分配三层能力。当前实现不再仅依赖 xv6 默认的固定物理内存上界，而是补上了运行时 RAM 探测，并将其接入页分配器、页表映射和共享内存合法性判断。
+
+\subsubsection{物理页框分配与启动时内存探测}
+
+当前内存管理由“物理页框分配 + 虚拟内存管理 + 内核堆分配器”三部分组成。
+
+\textbf{物理页框分配器}：
+\begin{itemize}
+  \item 底层 \texttt{kalloc/kfree} 采用基于空闲链表的简单页分配器
+  \item 每个空闲页使用 \texttt{struct run} 链入 \texttt{kmem.freelist}
+  \item 分配与回收粒度统一为 4KB 页框
+\end{itemize}
+
+\textbf{启动时物理内存探测}：
+\begin{itemize}
+  \item 新增启动时 DTB 解析能力，读取 \texttt{/memory/reg} 获取 RAM 起止范围
+  \item 运行时维护 \texttt{phys\_ram\_start}、\texttt{phys\_ram\_end}、\texttt{phys\_ram\_detected}
+  \item \texttt{kinit()} 将内核镜像结尾 \texttt{end} 到 \texttt{phys\_ram\_end} 之间的页加入空闲链表
+  \item \texttt{kfree()} 合法性检查、内核直接映射和共享内存地址校验也统一使用运行时探测结果
+\end{itemize}
+
+\subsubsection{虚拟内存与按需分页}
+
+\textbf{虚拟内存管理}：
+\begin{itemize}
+  \item 页表创建（\texttt{kvmmake/uvmcreate/proc\_pagetable}）
+  \item 页表映射（\texttt{walk/mappages/kvmmap}）
+  \item 地址解除映射（\texttt{uvmunmap/uvmdealloc/uvmfree}）
+  \item 用户地址空间布局（代码段、数据段、堆、栈、TRAPFRAME、TRAMPOLINE）
+  \item 缺页处理与 lazy \texttt{sbrk}，支持首次访问时再分配物理页
+\end{itemize}
+
+\textbf{用户地址空间布局}：
+\begin{itemize}
+  \item 低地址部分依次是代码段、数据段与 bss
+  \item 中间通过 \texttt{sbrk} 扩展堆空间
+  \item 高地址部分保留用户栈、\texttt{TRAPFRAME} 和 \texttt{TRAMPOLINE}
+  \item \texttt{exec()} 负责把 ELF 中的各段装入页表，并为用户栈压入参数
+\end{itemize}
+
+当前系统已经支持基于 lazy \texttt{sbrk} 的按需分页：调用 \texttt{sbrk} 时先只增加逻辑地址空间大小，真正访问未映射页时再通过缺页异常进入 \texttt{vmfault()}，由内核分配物理页并建立映射。这种实现方式虽然不包含 swap 或页面置换，但已经满足课程要求中的 Demand Paging 基本能力。
+
+\subsubsection{内核堆分配器与课程指标}
+
+\textbf{内核堆分配器}：
+\begin{itemize}
+  \item 在 xv6 原有页级分配器之上实现 \texttt{kmalloc/kmfree} 两级架构
+  \item 采用 7 个 size-class slab 档位（32B/64B/128B/256B/512B/1024B/2048B）
+  \item 2048B 以上对象自动回退到整页分配
+  \item 空 slab 页会自动归还给 \texttt{kfree()}
+  \item \texttt{struct pipe} 和 \texttt{struct file} 已从整页分配改为 \texttt{kmalloc} 精确分配
 \end{itemize}
 
 \textbf{接口}：
@@ -916,26 +1013,145 @@ void *kmalloc(uint n);         // 分配 n 字节
 void  kmfree(void *p);         // 释放对象
 \end{lstlisting}
 
-\subsubsection{虚拟内存管理}
-
-已实现对基于 Sv39 三级页表的完整虚拟内存管理机制，包括：
+\textbf{课程指标对应}：
 \begin{itemize}
-  \item 页表创建（\texttt{kvmmake/uvmcreate/proc\_pagetable}）
-  \item 页表映射（\texttt{walk/mappages/kvmmap}）
-  \item 地址解除映射（\texttt{uvmunmap/uvmdealloc/uvmfree}）
-  \item 用户地址空间布局（代码段、数据段、堆、栈、TRAPFRAME、TRAMPOLINE）
+  \item 已支持远超 4MB 的物理内存管理，实测在 \texttt{QEMU -m 128M} 和 \texttt{-m 256M} 下均能正确识别
+  \item 页大小为 4KB
+  \item 已支持基于 lazy \texttt{sbrk} 的按需分页
+  \item 普通页分配路径支持释放后重用；若将扩展共享内存路径一并纳入，则“绝对无泄漏”仍需保留严格性说明
 \end{itemize}
+
+综合来看，当前内存管理已经形成“运行时物理内存探测 + 4KB 页框分配 + Sv39 页表管理 + slab 堆分配器”的完整层次，既覆盖了课程要求，也为后续继续实现更复杂的虚拟内存机制保留了扩展空间。
+
+%---------------------------------------------------------------------
+\subsection{文件管理（韩硕）}
+%---------------------------------------------------------------------
+
+本节主要介绍文件描述符表、文件/目录基本操作、路径解析和 \texttt{lseek} 支持。这里采用“从进程视角到文件系统视角”的写法，便于说明一个用户态 fd 最终如何映射到底层 inode 和磁盘数据块。
 
 \subsubsection{文件描述符表管理}
 
-已实现完整的文件描述符表管理，包括：
+文件管理部分不仅包括文件描述符表，还包括文件/目录操作、路径解析与 \texttt{lseek} 支持。
+
+\textbf{文件描述符表管理}：
 \begin{itemize}
   \item 每进程独立文件描述符表 \texttt{ofile[NOFILE]}
   \item fd 分配、查找、复制（dup）、关闭（close）
   \item fork 后文件描述符继承
   \item exit 时自动关闭全部打开文件
-  \item 基于引用计数的底层 struct file 生命周期管理
+  \item 基于引用计数的底层 \texttt{struct file} 生命周期管理
 \end{itemize}
+
+\textbf{实现意义}：
+\begin{itemize}
+  \item 用户态看到的是整数 fd，内核态实际管理的是 \texttt{struct file}
+  \item \texttt{dup()} 共享同一个打开文件对象，因此会共享文件偏移
+  \item \texttt{fork()} 后父子进程继承同一组打开文件引用
+  \item \texttt{exit()} 时自动关闭全部 fd，避免进程级资源泄漏
+\end{itemize}
+
+\subsubsection{文件与目录基本操作}
+
+\textbf{文件与目录基本操作}：
+\begin{itemize}
+  \item 普通文件创建通过 \texttt{open(path, O\_CREATE)} 与 \texttt{create()} 完成
+  \item 目录创建通过 \texttt{mkdir()} 与 \texttt{create(T\_DIR)} 完成
+  \item 删除通过 \texttt{unlink()} 删除目录项并递减 inode 链接计数
+  \item 打开/关闭通过 \texttt{namei()}、\texttt{filealloc()}、\texttt{fdalloc()}、\texttt{fileclose()} 完成
+  \item 读写通过 \texttt{fileread()/filewrite()} 调用 inode 层 \texttt{readi()/writei()} 实现
+\end{itemize}
+
+\textbf{分层理解}：
+\begin{itemize}
+  \item \texttt{sysfile.c} 负责系统调用参数、权限与事务边界
+  \item \texttt{file.c} 负责打开文件对象、偏移和引用计数
+  \item \texttt{fs.c} 负责 inode、目录项、路径遍历和实际数据读写
+\end{itemize}
+
+\subsubsection{路径解析与 seek 支持}
+
+\textbf{路径解析与 seek}：
+\begin{itemize}
+  \item \texttt{namei()} / \texttt{nameiparent()} 基于 \texttt{namex()} 实现绝对路径和相对路径解析
+  \item \texttt{skipelem()} 负责路径分段，\texttt{dirlookup()} 负责逐层目录查找
+  \item 已补齐 \texttt{lseek}，支持 \texttt{SEEK\_SET}、\texttt{SEEK\_CUR}、\texttt{SEEK\_END}
+  \item 当前文件系统已满足至少 128 个文件、单文件大于 64KB、目录层级至少 3 层嵌套等课程指标
+\end{itemize}
+
+\textbf{\texttt{lseek} 的作用}：
+\begin{itemize}
+  \item \texttt{lseek()} 本身不读写数据，只修改 \texttt{struct file} 中的当前偏移 \texttt{off}
+  \item 后续 \texttt{read()} 和 \texttt{write()} 会从新的偏移开始工作
+  \item 当前实现支持普通文件的偏移调整，不支持目录、管道和设备文件的随机访问
+\end{itemize}
+
+\subsubsection{文件系统整体总结}
+
+从整体结构看，当前 xv6 的文件系统可以理解为一个分层的简化类 Unix inode 文件系统。最底层是 VirtIO 块设备与缓冲缓存层 \texttt{bio.c}，负责把磁盘块读入内存并缓存复用；往上是日志层 \texttt{log.c}，负责保证多块更新的崩溃一致性；再往上是 \texttt{fs.c} 的 inode、目录项和路径解析逻辑，以及 \texttt{file.c} 的打开文件对象管理；最上层才是 \texttt{sysfile.c} 向用户态提供的 \texttt{open/read/write/close/mkdir/unlink/chdir} 等系统调用接口。
+
+\textbf{为什么需要日志层}：
+\begin{itemize}
+  \item 一次文件系统操作通常不会只改一个块，而是会同时修改 inode、位图块、目录块甚至数据块
+  \item 如果系统在“部分块已经写盘、部分块还没写盘”时崩溃，磁盘状态就可能出现不一致
+  \item \texttt{log.c} 的目标，就是把“涉及多个块的更新”组织成一次事务，要么整体生效，要么重启后通过恢复机制把它补完整
+\end{itemize}
+
+\textbf{日志采用的技术路线}：
+\begin{itemize}
+  \item xv6 使用的是块级 \textbf{physical redo log}
+  \item 日志区在磁盘上由一个日志头块和若干日志数据块组成
+  \item 日志头记录当前事务包含多少个块，以及这些块最终要写回到哪些 home block
+  \item 每个日志数据块保存的是“修改后的完整块内容”，而不是更细粒度的字段差异
+\end{itemize}
+
+\textbf{日志在内存中的状态管理}：
+\begin{itemize}
+  \item \texttt{struct log} 是全局单实例，记录日志区起点、设备号、活动系统调用数量和当前日志头
+  \item \texttt{outstanding} 表示当前有多少文件系统系统调用正在事务范围内执行
+  \item \texttt{committing} 表示是否正在提交，避免新的修改和提交流程相互交错
+  \item \texttt{lh} 是内存中的日志头，保存本次事务涉及的目标块号数组
+\end{itemize}
+
+\textbf{事务边界：\texttt{begin\_op()} 与 \texttt{end\_op()}}：
+\begin{itemize}
+  \item 文件系统相关系统调用开始时调用 \texttt{begin\_op()}，结束时调用 \texttt{end\_op()}
+  \item \texttt{begin\_op()} 会检查当前是否正在提交，或者剩余日志空间是否足够；若不够则睡眠等待
+  \item 这样做的目的是为并发中的系统调用预留日志容量，避免多个操作一起把有限的日志块耗尽
+  \item \texttt{end\_op()} 会减少 \texttt{outstanding}；如果这是最后一个活动操作，就触发真正的 \texttt{commit()}
+\end{itemize}
+
+\textbf{修改记录：\texttt{log\_write()}}：
+\begin{itemize}
+  \item 上层修改某个缓存块后，不直接 \texttt{bwrite()} 到最终磁盘位置，而是调用 \texttt{log\_write()}
+  \item \texttt{log\_write()} 只把“这个块号属于当前事务”记录到日志头中，并通过 \texttt{bpin()} 暂时固定该缓存块
+  \item 如果同一个块在一次事务中被多次修改，日志层只记录一次块号，这就是 \textbf{log absorption}
+  \item 真正把数据写到日志区，是在后续 \texttt{commit()} 时统一完成的
+\end{itemize}
+
+\textbf{提交流程：\texttt{commit()}}：
+\begin{itemize}
+  \item 第一步 \texttt{write\_log()}：把缓存中的修改块内容复制到磁盘日志区的数据块
+  \item 第二步 \texttt{write\_head()}：把内存中的日志头写到磁盘日志头块，这一步才是真正的提交点
+  \item 第三步 \texttt{install\_trans()}：把日志区中的块逐个拷贝回它们各自的真实 home block
+  \item 第四步把 \texttt{log.lh.n} 清零，再次 \texttt{write\_head()}，表示本次事务已经完成并擦除日志
+\end{itemize}
+
+\textbf{恢复机制}：
+\begin{itemize}
+  \item 文件系统初始化时，\texttt{initlog()} 会调用 \texttt{recover\_from\_log()}
+  \item 该函数先读磁盘日志头；如果发现 \texttt{n > 0}，说明上次崩溃前已经有一个已提交事务写入了日志头
+  \item 此时通过 \texttt{install\_trans(1)} 把日志区内容重新安装回真实块，再清空日志头
+  \item 这保证了系统即使在提交后、安装回 home block 之前突然崩溃，重启后仍能自动补做完整写回
+\end{itemize}
+
+\textbf{日志层在整体文件系统中的意义}：
+\begin{itemize}
+  \item \texttt{bio.c} 解决“块怎么缓存、怎么同步访问”
+  \item \texttt{log.c} 解决“多个块修改怎么作为一个事务安全提交”
+  \item \texttt{fs.c} 才在这两个基础之上实现 inode、目录、位图和文件内容管理
+\end{itemize}
+
+因此，当前文件管理已经不仅具备路径解析、打开文件对象管理、文件描述符映射、文件/目录操作和偏移控制能力，还具备了由 \texttt{log.c} 提供的崩溃一致性保障。也就是说，xv6 文件系统不是简单“把块直接写盘”，而是通过日志事务机制确保多块更新在异常重启后仍能恢复到一致状态。
 
 \newpage
 
@@ -952,7 +1168,9 @@ xv6 在 QEMU 环境中稳定启动，成功进入 shell：
 \begin{lstlisting}[caption={xv6 启动日志}]
 xv6 kernel is booting
 
-init: starting sh
+memory: [0x80000000, 0x90000000) size=0x10000000 (dtb)
+kmalloctest: ok
+[boot animation]
 $
 \end{lstlisting}
 
@@ -971,7 +1189,7 @@ pid=3 state=runble name=ps
 
 \begin{lstlisting}[caption={halt 关机测试}]
 $ halt
-shutting down...
+[shutdown animation]
 [QEMU 正常退出，返回宿主终端]
 \end{lstlisting}
 
@@ -1137,7 +1355,25 @@ semtest3 & $\checkmark$ PASSED & 2 生产者 + 2 消费者，3 信号量协同 \
   \item 空 slab 页归还（4 个 slab 页正确归还）
 \end{itemize}
 
-所有测试通过，系统运行稳定无 panic。
+另外，启动阶段还会输出运行时物理内存探测结果，例如：
+\begin{lstlisting}
+memory: [0x80000000, 0x88000000) size=0x8000000 (dtb)
+memory: [0x80000000, 0x90000000) size=0x10000000 (dtb)
+\end{lstlisting}
+
+这说明系统已经能够随 QEMU \texttt{-m} 参数变化，自动识别并管理实际提供的 RAM 规模。综合 \texttt{kmalloctest}、页表路径和缺页分配逻辑验证，内存管理主路径运行稳定，无 panic。
+
+\subsection{文件管理测试（韩硕）}
+
+文件管理相关能力通过系统调用路径和专门测试程序共同验证：
+\begin{itemize}
+  \item \texttt{open/close/read/write}：验证普通文件创建、打开、关闭和顺序读写
+  \item \texttt{mkdir/unlink/chdir}：验证目录创建、空目录删除以及相对路径/绝对路径切换
+  \item \texttt{dup/fork/exit}：验证文件描述符共享、继承与自动回收
+  \item \texttt{lseektest}：验证 \texttt{SEEK\_SET/SEEK\_CUR/SEEK\_END} 三种定位模式
+\end{itemize}
+
+其中 \texttt{lseektest} 已在 xv6 内实际运行通过，说明文件偏移管理、读写路径和错误边界处理已经具备可用性。
 
 \newpage
 
@@ -1216,12 +1452,16 @@ semtest3 & $\checkmark$ PASSED & 2 生产者 + 2 消费者，3 信号量协同 \
   \item 多组调度测试程序（fcfstest/mlfqtest/throughput/csw）
 \end{itemize}
 
-\textbf{韩硕（内存管理与文件系统）}完成了：
+\textbf{韩硕（系统启动、内存管理与文件管理）}完成了：
 \begin{itemize}
+  \item 系统启动链路实现与分析（\texttt{\_entry -> start() -> main()}）
+  \item 启动栈指针初始化、M 态到 S 态切换与 trap vector 初始化
+  \item 启动时物理内存探测（DTB \texttt{/memory} 解析）与运行时 RAM 上界管理
+  \item 基于空闲链表的物理页框分配器分析与 4KB 页管理
   \item 内核堆分配器 kmalloc/kmfree（slab + 大对象 + 空页归还）
   \item struct pipe 和 struct file 从整页分配优化为精确分配
-  \item 虚拟内存管理完整分析
-  \item 文件描述符表管理完整分析
+  \item Sv39 虚拟内存管理与 lazy \texttt{sbrk} 缺页分配分析
+  \item 文件描述符表管理、路径解析、文件/目录操作与 \texttt{lseek} 支持
 \end{itemize}
 
 \textbf{团队整体}完成了 xv6 环境搭建、编译运行验证、模块联调、文档撰写和汇报准备。

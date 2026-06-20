@@ -15,14 +15,14 @@
 #include "virtio.h"
 
 // virtio-net MMIO base address (second virtio MMIO slot)
-#define R(r) ((volatile uint32 *)(VIRTIO1 + (r)))
+#define R(r) ((volatile uint32 *)(VIRTIO2 + (r)))
 
 // virtio-net config space (offset 0x100 from MMIO base)
 // MAC is at config offset 0, 6 bytes
 static inline uint8
 net_cfg_read8(uint off)
 {
-  return *(volatile uint8 *)(uint64)(VIRTIO1 + VIRTIO_MMIO_CONFIG + off);
+  return *(volatile uint8 *)(uint64)(VIRTIO2 + VIRTIO_MMIO_CONFIG + off);
 }
 
 // legacy virtio-net header (10 bytes)
@@ -343,5 +343,5 @@ virtio_net_intr(void)
 int
 virtio_net_irq(void)
 {
-  return VIRTIO1_IRQ;
+  return VIRTIO2_IRQ;
 }
