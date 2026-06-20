@@ -87,3 +87,5 @@ entry("setcpuaffinity");
 entry("msgget");
 entry("msgsnd");
 entry("msgrcv");
+entry("stride_setweight");
+entry("stride_getstate");

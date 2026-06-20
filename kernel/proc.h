@@ -147,6 +147,11 @@ struct proc {
   // the CPU id this process should run on).
   int cpu_affinity;
 
+  // Phase F3 (创新点): Stride/Lottery 公平调度字段
+  uint64 stride;     // 步长 = STRIDE_BIG / weight
+  uint64 pass;       // 累计虚拟时间（每次调度后 pass += stride）
+  int    weight;     // 权重（1-100），0 表示未初始化
+
   // 共享内存相关字段
   int shm_shmidx;              // 该进程当前映射的共享内存段索引（shm_table 中的下标），-1 表示未映射
 

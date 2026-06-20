@@ -215,6 +215,11 @@ found:
   p->cprev = 0;
   p->child_count = 0;
 
+  // F3 (创新点): Stride/Lottery 公平调度字段初始化
+  p->weight = STRIDE_DEF_W;
+  p->stride = STRIDE_BIG / p->weight;  // 默认 weight=10 -> stride=1000
+  p->pass = 0;
+
   // 给 trapframe 分配内存
   if ((p->trapframe = (struct trapframe *)kalloc()) == 0) {
     freeproc(p, 0);
@@ -696,6 +701,10 @@ scheduler(void)
       prio_scheduler();
     } else if (algo == SCHED_EDF) {
       edf_scheduler();
+    } else if (algo == SCHED_STRIDE) {
+      stride_scheduler();
+    } else if (algo == SCHED_LOTTERY) {
+      lottery_scheduler();
     } else {
       rr_scheduler();
     }
@@ -717,6 +726,10 @@ sched_algo_name(int algo)
     return "PRIO";
   case SCHED_EDF:
     return "EDF";
+  case SCHED_STRIDE:
+    return "STRIDE";
+  case SCHED_LOTTERY:
+    return "LOTTERY";
   default:
     return "RR";
   }
@@ -1152,6 +1165,214 @@ edf_scheduler(void)
       asm volatile("wfi");
     }
   }
+}
+
+// ============================================================
+// Phase F3 (创新点): Stride 调度器
+// 参考: Waldspurger & Weihl, "Stride Scheduling: Deterministic
+// Proportional-Share Resource Management", 1995
+//
+// 核心公式: stride = STRIDE_BIG / weight
+//           每调度一次, best->pass += best->stride
+//           下次选择 pass 最小的 RUNNABLE 进程
+//
+// CPU 时间严格与 weight 成正比, 是 Linux CFS 的理论前身
+// ============================================================
+void
+stride_scheduler(void)
+{
+  struct proc *p;
+  struct proc *best;
+  struct cpu *c = mycpu();
+  uint64 min_pass;
+
+  c->proc = 0;
+  for (;;) {
+    intr_on();
+    intr_off();
+
+    best = 0;
+    min_pass = (uint64)-1;
+
+    // 扫描 proc 表, 选 pass 最小的 RUNNABLE 进程
+    for (p = proc; p < &proc[NPROC]; p++) {
+      acquire(&p->lock);
+      if (p->state == RUNNABLE) {
+        // weight=0 或未初始化的进程, 视为默认 weight
+        if (p->weight <= 0) p->weight = STRIDE_DEF_W;
+        if (p->stride == 0)  p->stride = STRIDE_BIG / p->weight;
+        if (p->pass < min_pass) {
+          min_pass = p->pass;
+          best = p;
+        }
+      }
+      release(&p->lock);
+    }
+
+    if (best) {
+      acquire(&best->lock);
+      if (best->state == RUNNABLE) {
+        uint64 now = ticks;
+        if (best->last_sched != 0)
+          best->wait_time += now - best->last_sched;
+        best->sched_count++;
+        best->state = RUNNING;
+        best->last_sched = now;
+        c->proc = best;
+        swtch(&c->context, &best->context);
+        c->proc = 0;
+        // 关键: 调度后 pass += stride
+        best->pass += best->stride;
+        best->run_time++;
+      }
+      release(&best->lock);
+    } else {
+      asm volatile("wfi");
+    }
+  }
+}
+
+// ============================================================
+// Phase F3 (创新点): Lottery 调度器
+// 参考: Stoica et al., "Lottery Scheduling: Flexible Proportional-Share
+// Resource Management", 1998
+//
+// 核心思想: 每个进程持有 weight 张"彩票", 调度时按权重抽签
+// 期望 CPU 时间与 weight 成正比 (伯努利试验)
+//
+// 优点: 实现极简(比 Stride 还少 5 行)
+// 缺点: 单次调度有随机性, 长时间运行才能稳定
+// ============================================================
+void
+lottery_scheduler(void)
+{
+  struct proc *p;
+  struct proc *best;
+  struct cpu *c = mycpu();
+  int total;
+  int winner;
+
+  c->proc = 0;
+  for (;;) {
+    intr_on();
+    intr_off();
+
+    // 1. 计算所有 RUNNABLE 进程的 ticket 总和
+    total = 0;
+    for (p = proc; p < &proc[NPROC]; p++) {
+      acquire(&p->lock);
+      if (p->state == RUNNABLE) {
+        if (p->weight <= 0) p->weight = STRIDE_DEF_W;
+        total += p->weight;
+      }
+      release(&p->lock);
+    }
+
+    if (total == 0) {
+      asm volatile("wfi");
+      continue;
+    }
+
+    // 2. 伪随机抽签 (使用 ticks 作为随机种子, 保证每次不同)
+    // 注意: 这是教学实现, 不是密码学安全随机
+    winner = (int)(ticks * 1103515245UL + 12345UL) % total;
+    if (winner < 0) winner = -winner;
+
+    // 3. 累减定位胜出进程
+    best = 0;
+    for (p = proc; p < &proc[NPROC]; p++) {
+      acquire(&p->lock);
+      if (p->state == RUNNABLE) {
+        winner -= p->weight;
+        if (winner < 0) {
+          best = p;
+          // 找到后不释放, 后面 swtch 前会再 acquire
+          break;
+        }
+      }
+      release(&p->lock);
+    }
+
+    if (best) {
+      // best 仍持有 lock
+      if (best->state == RUNNABLE) {
+        uint64 now = ticks;
+        if (best->last_sched != 0)
+          best->wait_time += now - best->last_sched;
+        best->sched_count++;
+        best->state = RUNNING;
+        best->last_sched = now;
+        c->proc = best;
+        swtch(&c->context, &best->context);
+        c->proc = 0;
+        best->run_time++;
+      }
+      release(&best->lock);
+    } else {
+      asm volatile("wfi");
+    }
+  }
+}
+
+// ============================================================
+// Phase F3 (创新点): 辅助函数
+// ============================================================
+
+// 设置进程的 weight (用于 Stride/Lottery 调度)
+// 返回 0 成功, -1 失败
+int
+kstride_setweight(int pid, int weight)
+{
+  struct proc *p;
+  int found = 0;
+
+  if (weight < STRIDE_MIN_W || weight > STRIDE_MAX_W)
+    return -1;
+
+  acquire(&wait_lock);
+  for (p = proc; p < &proc[NPROC]; p++) {
+    acquire(&p->lock);
+    if (p->pid == pid && p->state != UNUSED) {
+      p->weight = weight;
+      p->stride = STRIDE_BIG / weight;
+      found = 1;
+    }
+    release(&p->lock);
+  }
+  release(&wait_lock);
+  return found ? 0 : -1;
+}
+
+// 读取进程的 stride 状态
+// 返回 0 成功, -1 失败
+int
+kstride_getstate(int pid, uint64 stride_addr, uint64 pass_addr, uint64 weight_addr)
+{
+  struct proc *p;
+  int found = 0;
+  uint64 stride = 0, pass = 0, weight = 0;
+
+  acquire(&wait_lock);
+  for (p = proc; p < &proc[NPROC]; p++) {
+    acquire(&p->lock);
+    if (p->pid == pid && p->state != UNUSED) {
+      stride = p->stride;
+      pass = p->pass;
+      weight = p->weight;
+      found = 1;
+    }
+    release(&p->lock);
+    if (found) break;
+  }
+  release(&wait_lock);
+
+  if (!found) return -1;
+
+  struct proc *cur = myproc();
+  if (copyout(cur->pagetable, stride_addr, (char *)&stride, sizeof(stride)) < 0) return -1;
+  if (copyout(cur->pagetable, pass_addr, (char *)&pass, sizeof(pass)) < 0) return -1;
+  if (copyout(cur->pagetable, weight_addr, (char *)&weight, sizeof(weight)) < 0) return -1;
+  return 0;
 }
 
 // Set a process's priority (Phase A2).  Used by the

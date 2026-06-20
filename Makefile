@@ -218,7 +218,9 @@ UPROGS=\
 	$(BU)/_rttest\
 	$(BU)/_cpuaffinity\
 	$(BU)/_msgqtest\
-	$(BU)/_mlfq_test_full
+	$(BU)/_stridetest\
+	$(BU)/_cowtest\
+	$(BU)/_kthreadtest
 
 $(FSIMG): $(BM)/mkfs README $(UPROGS) | $(B)
 	$(BM)/mkfs $@ README $(UPROGS)

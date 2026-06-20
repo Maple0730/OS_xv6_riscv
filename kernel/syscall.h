@@ -67,3 +67,6 @@
 #define SYS_msgget               64
 #define SYS_msgsnd               65
 #define SYS_msgrcv               66
+// Phase F3 (创新点): Stride/Lottery 公平调度系统调用
+#define SYS_stride_setweight     67
+#define SYS_stride_getstate      68

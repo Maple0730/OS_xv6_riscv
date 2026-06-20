@@ -149,6 +149,9 @@ extern uint64 sys_setcpuaffinity(void);
 extern uint64 sys_msgget(void);
 extern uint64 sys_msgsnd(void);
 extern uint64 sys_msgrcv(void);
+// Phase F3 (创新点): Stride/Lottery 公平调度系统调用
+extern uint64 sys_stride_setweight(void);
+extern uint64 sys_stride_getstate(void);
 
 // An array mapping syscall numbers from syscall.h
 // to the function that handles the system call.
@@ -222,6 +225,9 @@ static uint64 (*syscalls[])(void) = {
   [SYS_msgget]               sys_msgget,
   [SYS_msgsnd]              sys_msgsnd,
   [SYS_msgrcv]              sys_msgrcv,
+  // Phase F3 (创新点): Stride/Lottery 公平调度系统调用
+  [SYS_stride_setweight]    sys_stride_setweight,
+  [SYS_stride_getstate]     sys_stride_getstate,
   // clang-format on
 };
 

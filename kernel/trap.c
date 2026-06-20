@@ -104,7 +104,9 @@ usertrap(void)
       // SJF mode: non-preemptive. Track run_time for stats, but do not yield.
       p->run_time++;
     } else {
-      // RR or FCFS mode: yield on every timer interrupt
+      // RR / FCFS / STRIDE / LOTTERY / PRIO / EDF: yield on every timer interrupt
+      // STRIDE 和 LOTTERY 是抢占式调度，每次 tick 让出 CPU
+      // PRIO 和 EDF 由 scheduler() 自身选 best，不依赖 tick yield
       yield();
     }
   }

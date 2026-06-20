@@ -133,6 +133,10 @@ int msgget(int key, int size);          // Phase D2: get/create message queue
 int msgsnd(int qid, char *buf, int len); // Phase D2: send message
 int msgrcv(int qid, char *buf, int len); // Phase D2: receive message
 
+// Phase F3 (创新点): Stride/Lottery 公平调度系统调用
+int stride_setweight(int pid, int weight);
+int stride_getstate(int pid, unsigned long *stride, unsigned long *pass, int *weight);
+
 struct sched_stat {
   int pid;
   int queue_level;

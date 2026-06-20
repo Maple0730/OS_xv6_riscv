@@ -330,3 +330,13 @@ msgrcv:
  li a7, SYS_msgrcv
  ecall
  ret
+.global stride_setweight
+stride_setweight:
+ li a7, SYS_stride_setweight
+ ecall
+ ret
+.global stride_getstate
+stride_getstate:
+ li a7, SYS_stride_getstate
+ ecall
+ ret

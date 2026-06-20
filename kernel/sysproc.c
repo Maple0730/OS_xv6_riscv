@@ -240,7 +240,7 @@ sys_shmat(void)
 }
 
 // Change scheduling algorithm at runtime
-// arg0: algo (0=RR, 1=FCFS, 2=MLFQ, 3=SJF, -1=query only)
+// arg0: algo (0=RR, 1=FCFS, 2=MLFQ, 3=SJF, 4=PRIO, 5=EDF, 6=STRIDE, 7=LOTTERY, -1=query only)
 // returns: current algorithm (or previous if changed), -1 on failure
 uint64
 sys_sched_algorithm(void)
@@ -253,8 +253,8 @@ sys_sched_algorithm(void)
     return current_scheduler;
   }
 
-  // Validate algorithm number (0=RR, 1=FCFS, 2=MLFQ, 3=SJF, 4=PRIO)
-  if (algo < 0 || algo > 5)
+  // Validate algorithm number
+  if (algo < 0 || algo > 7)
     return -1;
 
   acquire(&sched_lock);
@@ -737,5 +737,34 @@ sys_deadlock_set(void)
   int prev = detector_enabled;
   detector_enabled = (on != 0);
   return prev;
+}
+
+// ============================================================
+// Phase F3 (创新点): Stride/Lottery 公平调度系统调用
+// ============================================================
+
+// sys_stride_setweight(pid, weight): 设置进程的 weight
+// 用于 Stride 调度时控制 CPU 时间分配比例
+uint64
+sys_stride_setweight(void)
+{
+  int pid, weight;
+  argint(0, &pid);
+  argint(1, &weight);
+  return kstride_setweight(pid, weight);
+}
+
+// sys_stride_getstate(pid, &stride, &pass, &weight):
+// 读取进程的 stride/pass/weight 状态
+uint64
+sys_stride_getstate(void)
+{
+  int pid;
+  uint64 stride_addr, pass_addr, weight_addr;
+  argint(0, &pid);
+  argaddr(1, &stride_addr);
+  argaddr(2, &pass_addr);
+  argaddr(3, &weight_addr);
+  return kstride_getstate(pid, stride_addr, pass_addr, weight_addr);
 }
 

@@ -321,6 +321,83 @@ err:
   return -1;
 }
 
+// Copy-on-Write fork: share physical pages with the parent.
+// Both parent's and child's PTE point at the same PA, marked PTE_COW (no W).
+// The shared refcount (via kref_inc) keeps the page alive until both
+// sides release it (via kfree or the COW fault handler).
+// Returns 0 on success, -1 on failure.
+int
+cow_uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
+{
+  pte_t *pte;
+  uint64 pa, i;
+  uint flags;
+
+  for (i = 0; i < sz; i += PGSIZE) {
+    if ((pte = walk(old, i, 0)) == 0)
+      panic("cow_uvmcopy: pte should exist");
+    if ((*pte & PTE_V) == 0)
+      panic("cow_uvmcopy: page not present");
+    pa = PTE2PA(*pte);
+    flags = PTE_FLAGS(*pte);
+
+    // Strip W, add COW.  Both parent and child point at the same PA.
+    flags = (flags | PTE_COW) & ~PTE_W;
+
+    // Bump the ref count so neither side frees it prematurely.
+    kref_inc((void *)pa);
+
+    if (mappages(new, i, PGSIZE, pa, flags) != 0) {
+      // Roll back: decrement refcounts we incremented.
+      kfree((void *)pa);
+      goto err;
+    }
+
+    // Update parent PTE in place: also remove W, add COW.
+    *pte = (PA2PTE(pa) | flags);
+  }
+  return 0;
+
+err:
+  uvmunmap(new, 0, i / PGSIZE, 0); // do NOT free shared pages (refcount > 1)
+  return -1;
+}
+
+// Handle a copy-on-write page fault.
+// PTE had PTE_COW set and the faulting access was a write.
+// Allocates a new private page, copies the shared content,
+// updates the PTE, decrements the shared page's refcount.
+// Returns 0 on success, -1 on failure.
+int
+cow_alloc_pte(pagetable_t pagetable, pte_t *pte)
+{
+  uint64 pa = PTE2PA(*pte);
+  uint flags = PTE_FLAGS(*pte);
+
+  if (!(flags & PTE_COW))
+    return -1; // not a COW page
+
+  // If we are the sole owner, just clear COW and re-enable W.
+  if (kref_get((void *)pa) == 1) {
+    *pte = PA2PTE(pa) | (flags & ~PTE_COW) | PTE_W;
+    return 0;
+  }
+
+  // Otherwise allocate a new private page, copy content.
+  char *mem = kalloc();
+  if (mem == 0)
+    return -1;
+  memmove(mem, (char *)pa, PGSIZE);
+
+  // Map new page in place of the shared one.
+  uint64 new_flags = (flags & ~PTE_COW) | PTE_W;
+  *pte = PA2PTE((uint64)mem) | new_flags;
+
+  // Decrement shared page's refcount; if it hits 0, kfree returns it to freelist.
+  kfree((void *)pa);
+  return 0;
+}
+
 // 标记一个 PTE 对用户不可访问
 // 由 exec 用于用户栈保护页
 void
@@ -356,6 +433,10 @@ copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len)
     }
 
     pte = walk(pagetable, va0, 0);
+    // If this is a COW page, materialize a private copy before writing.
+    if ((*pte & PTE_COW) && cow_alloc_pte(pagetable, pte) < 0) {
+      return -1;
+    }
     // 禁止复制到只读的用户文本页
     if ((*pte & PTE_W) == 0)
       return -1;

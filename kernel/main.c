@@ -41,6 +41,9 @@ void main()
     // 顺序一致内存屏障：确保此前所有写操作对其它 CPU 可见
     __atomic_thread_fence(__ATOMIC_SEQ_CST);
     started = 1;             // 标记初始化完成，唤醒其他 CPU
+    // G2: kthread_init() removed from build (kthread framework partial).
+    // The kthread.c source is kept as a design document but not linked,
+    // because PCB fields (is_kthread, kthread_*) are not declared yet.
   } 
   else 
   {

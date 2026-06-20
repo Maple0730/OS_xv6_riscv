@@ -16,13 +16,15 @@
 // ============================================
 // 调度算法配置
 // ============================================
-// 调度算法选择: 0=RR, 1=FCFS, 2=MLFQ, 3=SJF, 4=PRIO, 5=EDF
+// 调度算法选择: 0=RR, 1=FCFS, 2=MLFQ, 3=SJF, 4=PRIO, 5=EDF, 6=STRIDE, 7=LOTTERY
 #define SCHED_RR      0  // 时间片轮转（默认）
 #define SCHED_FCFS    1  // 先来先服务
 #define SCHED_MLFQ    2  // 多级反馈队列
 #define SCHED_SJF     3  // 短作业优先（非抢占式，按估算 burst 选择）
 #define SCHED_PRIO    4  // 静态优先级 + aging
 #define SCHED_EDF     5  // 最早截止时间优先 (F2)
+#define SCHED_STRIDE  6  // 步长调度（F3 创新点：严格比例公平）
+#define SCHED_LOTTERY 7  // 彩票调度（F3 创新点：随机比例公平）
 
 // 默认调度算法
 #ifndef SCHED_ALGORITHM
@@ -59,3 +61,11 @@
 // 优先级调度参数（Phase A2）
 #define PRIO_AGING_TICKS   50   // 每 50 ticks 触发一次 aging（提升 RUNNABLE 进程的优先级）
 #define PRIO_AGING_DEC     1    // 每次 aging 减 1（数值越小优先级越高，0=最高）
+
+// Stride/Lottery 公平调度参数（Phase F3 - 创新点）
+// 参考：Waldspurger & Weihl, "Stride Scheduling: Deterministic Proportional-Share
+// Resource Management", 1995；以及 Stoica et al., "Lottery Scheduling", 1998
+#define STRIDE_BIG     10000  // 大常数（用于 stride = STRIDE_BIG / weight）
+#define STRIDE_MIN_W   1      // 最小 weight（极低优先级）
+#define STRIDE_MAX_W   100    // 最大 weight（高优先级）
+#define STRIDE_DEF_W   10     // 默认 weight（与现有 PRRIO 兼容）
