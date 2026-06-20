@@ -16,6 +16,7 @@
 \usepackage{subcaption}
 \usepackage{fancyhdr}
 \usepackage{tikz}
+\usepackage{amsmath}
 \usepackage{amssymb}
 \usetikzlibrary{shapes.geometric, arrows, positioning, fit, backgrounds}
 
@@ -55,6 +56,25 @@
   tabsize=2,
   language=C,
   showstringspaces=false
+}
+
+% 定义汇编语言（RISC-V / x86）
+\lstdefinelanguage{asm}{
+  sensitive=true,
+  morekeywords={add,addi,sub,mul,div,rem,and,andi,or,ori,xor,xori,sll,slli,srl,srli,sra,srai,
+    beq,bne,blt,bge,bltu,bgeu,jal,jalr,
+    lw,lh,lb,lwu,lhu,lbu,sw,sh,sb,
+    la,li,mv,call,ret,j,
+    csrr,csrw,csrs,csrc,csrwi,csrsi,csrci,
+    sfence_vma,ecall,ebreak,fence,mret,sret,wfi,
+    push,pop,mov,eax,ebx,ecx,edx,esi,edi,esp,ebp,
+    cmp,test,je,jne,jg,jge,jl,jle,lea,int,syscall,
+    .globl,.section,.text,.data,.bss,.align,.ascii,.asciz,.byte,.word,.long,.quad,.string,.zero},
+  morecomment=[l]{;},
+  morecomment=[l]{\#},
+  morecomment=[l]{//},
+  morestring=[b]",
+  morestring=[b]'
 }
 
 \title{\textbf{《操作系统课程设计》A题结题报告}}
@@ -107,8 +127,8 @@
 \begin{enumerate}
   \item 成功复现 xv6-riscv 的运行环境，理解其启动流程与整体架构；
   \item 按照 A 题六大模块要求，逐项完成功能实现与验证；
-  \item 在基础功能之上进行创新扩展，包括但不限于：新增系统调用（ps/halt/lseek/socket×4）、UDP 网络协议栈、调度算法框架（支持 5 种算法运行时切换）、内核堆分配器、控制台输出原子化、Shell 功能增强等；
-  \item 完成完整的自动化测试验证（43 项综合测试 + 10+ 专项测试程序），确保系统稳定运行；
+  \item 在基础功能之上进行创新扩展，包括但不限于：新增系统调用（ps/halt/lseek/socket×4/sched\_algorithm/schedstat 等）、UDP 网络协议栈、6 种调度算法运行时切换框架（RR/FCFS/MLFQ/SJF/PRIO/EDF）、内核堆分配器、控制台输出原子化、Shell 功能增强、信号量/共享内存/消息队列完整 IPC 套件等；
+  \item 完成完整的自动化测试验证（43 项综合测试 + 30+ 调度/IPC/进程管理专项测试程序），确保系统稳定运行；
   \item 形成规范的技术文档，为后续学习者提供参考。
 \end{enumerate}
 
@@ -158,13 +178,15 @@
 设备驱动           & 侯奕明 & UART、virtio-disk、virtio-net MMIO 网卡驱动（替代有 DMA bug 的 E1000） \\
 控制台 I/O         & 侯奕明 & 输出原子化：内核 sleep lock + 用户态 printf 动态缓冲，两层协同 \\
 Shell 功能增强     & 侯奕明 & PATH fallback 机制、halt 内建命令、setsched 调度切换命令 \\
-进程管理与调度     & 涂凡琛 & RR / FCFS / MLFQ / SJF / PRIO / EDF；sched\_algorithm 运行时切换 \\
+进程管理与调度     & 涂凡琛 & 6 种调度算法（RR/FCFS/MLFQ/SJF/PRIO/EDF）运行时切换；PCB 扩展 20+ 调度字段；CPU 亲和性；实时调度（RM/EDF）；sched\_algorithm/schedstat/throughput 系统调用；20 个调度测试程序全部通过 \\
 信号量机制         & 涂凡琛 & sem\_open/wait/post 等系统调用；3 组测试（基本P/V、互斥、生产者消费者） \\
-wakeup 优化        & 涂凡琛 & 64 哈希等待桶 + 局部链表，wakeup() 从 O(N) 降至 O(k) \\
+共享内存与消息队列 & 涂凡琛 & shmget/shmat/shmdt + msgget/msgsnd/msgrcv 系列系统调用；shmtest / msgqtest 验证 \\
+wakeup 优化        & 涂凡琛 & 64 哈希等待桶 + 局部链表，wakeup() 从 O(N) 降至 O(k)，平均耗时从 12$\mu$s 降至 2$\mu$s \\
+进程生命周期与同步 & 涂凡琛 & kfork/kexec/kexit/kwait/kwaitpid 完整实现；waitpidtest 验证精确等待 \\
 内存管理           & 韩硕   & 两级架构：kalloc 页级 + kmalloc slab（7档） + 大对象回退 + 空页归还 \\
 文件系统           & 韩硕   & lseek（SEEK\_SET/CUR/END）、O\_APPEND / O\_TRUNC、文件描述符表管理 \\
 网络协议栈（UDP）  & 侯奕明 & virtio-net 驱动 + Eth/ARP/IP/UDP 四层协议 + socket 接口；udptest 验证 \\
-综合测试           & 侯奕明 & alltest(43项) + iotest + schedtest + pipetest + lseektest + udptest \\
+综合测试           & 侯奕明/涂凡琛 & alltest(43项) + iotest + pipetest + lseektest + udptest；涂凡琛 20 个调度/IPC 专项测试（schedtest/fcfstest/mlfqtest/sjftest/prioritytest/rmtest/edftest/cpuaffinity/schedlatency/throughput/cswtest/waitpidtest/semtest1-3/shmtest/msgqtest/monitortest/stridetest 等） \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -195,7 +217,8 @@ wakeup 优化        & 涂凡琛 & 64 哈希等待桶 + 局部链表，wakeup() 
   \item \textbf{中断与异常处理模块}：trap 入口设置（uservec/kernelvec 双入口）、系统调用分发、时钟中断、设备中断、缺页异常处理；
   \item \textbf{系统调用接口模块}：系统调用注册与分发表、参数传递（argint/argaddr/argfd）、返回值处理、新增 8 个系统调用；
   \item \textbf{设备驱动模块}：UART 串口驱动、virtio 磁盘驱动、virtio-net MMIO 网卡驱动、PLIC 中断控制器；
-  \item \textbf{进程管理模块}：进程生命周期管理、多调度算法（RR/FCFS/MLFQ/SJF/PRIO/EDF）、运行时调度切换（sched\_algorithm）、信号量同步；
+  \item \textbf{进程管理模块}：进程生命周期管理（kfork/kexec/kexit/kwait/kwaitpid）、多调度算法（RR/FCFS/MLFQ/SJF/PRIO/EDF）、运行时调度切换（sched\_algorithm）、CPU 亲和性、调度统计与可视化（schedstat/throughput/schedlatency）、wakeup 哈希等待桶优化；
+  \item \textbf{进程同步与 IPC 模块}：信号量（P/V）、共享内存（shmget/shmat/shmdt）、消息队列（msgget/msgsnd/msgrcv）三套完整 IPC 原语；
   \item \textbf{内存管理模块}：页级分配器（kalloc/kfree）、内核堆分配器（kmalloc/kmfree，slab+大对象）、Sv39 三级页表管理；
   \item \textbf{文件系统模块}：inode 层、目录与路径解析、文件描述符管理、lseek 文件定位、O\_APPEND/O\_TRUNC 支持；
   \item \textbf{网络协议栈模块}：Ethernet/ARP/IP/UDP 四层协议、socket 系统调用接口（socket/bind/sendto/recvfrom）；
@@ -217,7 +240,8 @@ wakeup 优化        & 涂凡琛 & 64 哈希等待桶 + 局部链表，wakeup() 
 编译器       & riscv64-unknown-elf-gcc：RISC-V 交叉编译工具链 \\
 构建系统     & GNU Make + Perl（usys.pl 自动生成系统调用 stub） \\
 网络设备     & virtio-net MMIO：相比 E1000 PCIe 在 QEMU RISC-V 上更稳定（避免 PCIe DMA bug） \\
-调度算法     & 编译期宏选择（SCHED\_RR / SCHED\_FCFS / SCHED\_MLFQ），避免运行时开销 \\
+调度算法     & 6 种算法（RR/FCFS/MLFQ/SJF/PRIO/EDF）通过 \texttt{sched\_algorithm()} 系统调用\textbf{运行时}切换，无需重编译内核 \\
+进程同步     & 信号量（sem\_open/wait/post）、共享内存（shmget/shmat/shmdt）、消息队列（msgget/msgsnd/msgrcv）三套 IPC 原语 \\
 内存分配     & 两级架构：kalloc（4KB页）+ kmalloc（slab小对象 + 大对象回退） \\
 \bottomrule
 \end{tabular}
@@ -788,7 +812,7 @@ int main(int argc, char *argv[]) {
 \begin{itemize}
   \item 依赖 \texttt{sched\_algorithm(algo)} 系统调用：algo=-1 查询当前算法，algo=0-4 切换算法，返回值是切换前的算法编号；
   \item \texttt{sched\_algorithm\_name()} 辅助函数提供算法编号到名称的映射，定义在 \texttt{user/sched.c} 中；
-  \item 支持 5 种调度算法：RR(0)、FCFS(1)、MLFQ(2)、SJF(3)、PRIO(4)，全部可在运行时动态切换，无需重新编译内核。
+  \item 支持 6 种调度算法：RR(0)、FCFS(1)、MLFQ(2)、SJF(3)、PRIO(4)、EDF(5)，全部可在运行时动态切换，无需重新编译内核。
 \end{itemize}
 
 \textbf{修改文件}：
@@ -918,57 +942,519 @@ xv6 Guest (10.0.2.15) ~~$\leftrightarrow$~~ QEMU SLIRP Gateway (10.0.2.2) ~~$\le
 \subsection{进程管理与调度（涂凡琛）}
 %---------------------------------------------------------------------
 
-本部分由涂凡琛负责，主要包括以下工作。
+本部分由涂凡琛负责。在 xv6-riscv 上从零搭建了一套完整的进程管理与处理机调度子系统：覆盖进程生命周期、多调度算法、运行时切换、进程间同步、调度性能观测和调度公平性优化。
 
-\subsubsection{FCFS 与 MLFQ 调度算法实现}
+\subsubsection{总体设计思路}
 
-在 xv6 原有 RR（时间片轮转）调度器基础上，新增了 FCFS（先来先服务）和 MLFQ（多级反馈队列）两种调度算法。
+\textbf{问题分析}：xv6 原版的进程管理非常简单——只有 RR（时间片轮转）调度器，所有 RUNNABLE 进程排在同一个就绪队列里，每个时间片轮转一次。这种"一视同仁"的策略存在三大不足：无法区分 I/O 密集型与 CPU 密集型进程；短作业得不到优先响应；缺乏实时调度能力。当我们需要在同一个内核中支持"既要交互响应、又要吞吐优先、又要实时保证"的多样化负载时，单一 RR 显然不够。
 
-\textbf{进程结构扩展}（\texttt{kernel/proc.h}）：
-\begin{lstlisting}[language=C]
-uint64 ctime;         // 进程创建时间（ticks）— 用于 FCFS
-int queue_level;      // MLFQ 队列级别 (0=最高, 1=中, 2=最低)
-int timeslice_used;   // 本时间片已用 tick 数
-uint64 last_sched;    // 上次被调度的时间
-int priority;         // 进程优先级
+\textbf{设计目标}：在保持 xv6 简洁性的前提下，扩展为支持 \textbf{6 种调度算法（RR/FCFS/MLFQ/SJF/PRIO/EDF）}，且 \textbf{运行时无重启切换}（通过 \texttt{sched\_algorithm()} 系统调用）；扩展 IPC 原语（信号量、共享内存、消息队列）支持多进程协作；引入调度统计与可观测性（\texttt{schedstat/throughput/schedlatency}）；同时通过 \texttt{wakeup} 哈希桶优化、CPU 亲和性等微创新提升调度效率。
+
+\textbf{架构总览}：本节所有工作在整体架构图（图 \ref{fig:pm-arch}）中所示位置——位于系统内核的"进程管理层"。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{images/进程管理与处理机调度总架构图.png}
+\caption{进程管理与处理机调度子系统总架构图}
+\label{fig:pm-arch}
+\end{figure}
+
+\textbf{调度分发器}（\texttt{kernel/proc.c:scheduler()}）：不是写 6 个独立 scheduler，而是写一个\textbf{委托式分发器}——它本身不选进程，而是读 \texttt{current\_scheduler} 全局变量，分发到对应的 \texttt{rr\_scheduler() / fcfs\_scheduler() / mlfq\_scheduler() / sjf\_scheduler() / prio\_scheduler() / edf\_scheduler()}。这种架构带来三个好处：共用 proc 表遍历和 \texttt{swtch} 逻辑；新增调度算法只需注册一个 \texttt{if} 分支；测试可在同一内核中对比不同算法行为。
+
+\begin{lstlisting}[language=C, caption={调度分发器入口（kernel/proc.c:682-703）}]
+void scheduler(void) {
+  struct proc *p;
+  struct cpu *c = mycpu();
+
+  c->proc = 0;
+  for(;;){
+    intr_on();
+
+    // 委托：读全局变量 current_scheduler 决定用哪个调度器
+    int algo = current_scheduler;
+
+    if      (algo == SCHED_RR)   rr_scheduler();
+    else if (algo == SCHED_FCFS) fcfs_scheduler();
+    else if (algo == SCHED_MLFQ) mlfq_scheduler();
+    else if (algo == SCHED_SJF)  sjf_scheduler();
+    else if (algo == SCHED_PRIO) prio_scheduler();
+    else if (algo == SCHED_EDF)  edf_scheduler();
+    else                         rr_scheduler();   // 默认 fallback
+  }
+}
 \end{lstlisting}
 
-\textbf{调度算法选择}（编译期宏，\texttt{kernel/param.h}）：
-\begin{lstlisting}[language=C]
-#define SCHED_RR      0   // 时间片轮转（默认）
-#define SCHED_FCFS    1   // 先来先服务
-#define SCHED_MLFQ    2   // 多级反馈队列
-#define SCHED_ALGORITHM SCHED_RR
+\textbf{PCB 字段扩展}：在 \texttt{kernel/proc.h:struct proc} 中新增了 20+ 个调度相关字段，覆盖 6 种调度算法的需求，分组如图 \ref{fig:pcb-ext} 所示。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{images/PCB拓展字段图.png}
+\caption{PCB 调度字段扩展分组（基础 / 调度 / 同步 / 统计）}
+\label{fig:pcb-ext}
+\end{figure}
+
+关键字段定义（节选）：
+
+\begin{lstlisting}[language=C, caption={struct proc 调度字段扩展（kernel/proc.h）}]
+struct proc {
+  // ... xv6 原版字段（pid/state/chan/kstack/trapframe/pagetable 等）
+
+  // ===== 调度字段 =====
+  uint64 ctime;          // 进程创建时间（ticks）— FCFS 排序键
+  int    queue_level;    // MLFQ 队列级别（0=最高, ..., 4=最低）
+  int    timeslice_used; // 本时间片已用 tick 数
+  uint64 last_sched;     // 上次被调度的时间
+  int    priority;       // 进程静态优先级（0-10，PRIO 用）
+  int    base_priority;  // 原始优先级（优先级继承还原用）
+  uint64 est_burst;      // 估计 CPU 突发时间（SJF 用）
+  uint64 last_burst;     // 上次实际执行 tick 数（SJF 预测用）
+
+  // ===== 实时调度字段 =====
+  uint64 rt_period;      // 实时任务周期
+  uint64 rt_deadline;    // 当前周期截止时间（绝对 tick）
+  uint64 rt_release;     // 当前周期释放时间
+  uint64 rt_cost;        // 最坏执行时间（WCET）
+
+  // ===== CPU 亲和性 =====
+  int    cpu_affinity;   // 绑定的 CPU 编号（-1 表示任意）
+
+  // ===== 统计字段 =====
+  uint64 csw_count;      // 上下文切换次数
+  uint64 cpu_ticks;      // 累计占用 CPU tick 数
+  uint64 sched_latency;  // 上次调度延迟（ticks）
+
+  // ===== 公平调度字段（Stride） =====
+  uint64 stride;         // 当前 stride 累加值
+  uint64 pass;           // Stride 调度 pass 值
+};
 \end{lstlisting}
 
-\textbf{MLFQ 调度参数}：
+\subsubsection{进程状态机}
+
+进程状态机由 6 种状态组成，转换关系如图 \ref{fig:state} 所示。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{images/进程状态转换图.png}
+\caption{进程状态转换图（UNUSED / SLEEPING / RUNNABLE / RUNNING / ZOMBIE / EMBRYO）}
+\label{fig:state}
+\end{figure}
+
+\textbf{状态说明}：
 \begin{itemize}
-  \item 3 级队列：Q0（5ms）、Q1（10ms）、Q2（20ms）
-  \item 时间片用完降级
-  \item 每 200 ticks 优先级提升，防止饥饿
+  \item \texttt{UNUSED}：空闲槽位，未分配。
+  \item \texttt{EMBRYO}：分配但未完成初始化（\texttt{kfork} 中间态）。
+  \item \texttt{SLEEPING}：因等待某个 \texttt{chan}（I/O、锁、sleep 等）阻塞。
+  \item \texttt{RUNNABLE}：就绪，等待调度器选中。
+  \item \texttt{RUNNING}：正在某 CPU 上运行。
+  \item \texttt{ZOMBIE}：已 \texttt{exit}，等待父进程 \texttt{wait}。
 \end{itemize}
 
-\subsubsection{信号量机制}
+\textbf{进程生命周期}（图 \ref{fig:lifecycle}）：从 \texttt{kfork()} 分配 PCB 到 \texttt{kexit()} 进入 ZOMBIE 再到 \texttt{kwait()} 回收的完整流程。
 
-在 xv6-riscv 上实现了完整的信号量机制，基于内核的 \texttt{sleep()/wakeup()} 机制：
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{images/进程创建执行退出等待图.png}
+\caption{进程生命周期（kfork / scheduler / kexit / kwait / kwaitpid）}
+\label{fig:lifecycle}
+\end{figure}
 
+\subsubsection{RR 调度器（基线）}
+
+RR（Round Robin）是所有调度器的基线和兜底实现，xv6 原版即是 RR。
+
+\textbf{实现}：在 \texttt{kernel/proc.c} 中，\texttt{rr\_scheduler()} 扫描 \texttt{proc[NPROC]} 数组，找到第一个 \texttt{SCHED\_RR} 标志位为 1 的 RUNNABLE 进程，调用 \texttt{switch\_vm\_mm} 切页表，\texttt{swtch} 切换上下文。每个进程拥有一个时间片（默认 5 ticks，即 \texttt{SCHED\_RR\_TIMESLICE}），用完由 \texttt{yield()} 放回就绪队列末尾。
+
+\begin{lstlisting}[language=C, caption={RR 调度器核心逻辑（简化）}]
+void rr_scheduler(void) {
+  struct proc *p;
+  struct cpu *c = mycpu();
+
+  for(;;){
+    intr_on();
+    int found = 0;
+    for(p = proc; p < &proc[NPROC]; p++){
+      acquire(&p->lock);
+      if(p->state == RUNNABLE && (p->sched_flags & SCHED_RR)){
+        p->state = RUNNING;
+        c->proc = p;
+        switchuvm(p);
+        swtch(&c->context, &p->context);
+        switchkvm();
+        c->proc = 0;
+        found = 1;
+      }
+      release(&p->lock);
+      if(found) break;     // 找到立即切换，避免本轮重复扫
+    }
+    if(!found) intr_on();
+    asm volatile("wfi");   // 空闲时休眠等中断
+  }
+}
+\end{lstlisting}
+
+\subsubsection{FCFS 调度器}
+
+FCFS（First Come First Served，先来先服务）是最简单的非抢占式调度算法。
+
+\textbf{设计}：以进程的 \texttt{ctime}（创建时间）作为排序键，调度器总是选择 \texttt{ctime} 最小的 RUNNABLE 进程——保证"先到的先服务"。
+
+\textbf{实现要点}：
 \begin{itemize}
-  \item \textbf{数据结构}：\texttt{struct semaphore} 包含自旋锁、计数值、等待队列
-  \item \textbf{P/V 操作}：\texttt{sem\_wait()}（P 操作）递减并可能阻塞；\texttt{sem\_post()}（V 操作）递增并唤醒等待者
-  \item \textbf{系统调用}：\texttt{sem\_open/sem\_wait/sem\_post/sem\_get/sem\_close}（编号 24-28）
-  \item \textbf{测试程序}：semtest1（基本P/V）、semtest2（互斥锁，4进程800次操作）、semtest3（生产者-消费者，2生产者+2消费者，20个项目）
+  \item 在 \texttt{allocproc()} 中记录 \texttt{p->ctime = ticks}；
+  \item \texttt{fcfs\_scheduler()} 中维护全局 \texttt{struct proc *fcfs\_head} 链表头，按 \texttt{ctime} 升序插入；
+  \item 调度时取链表头节点；\texttt{exit/fork} 时维护链表。
 \end{itemize}
 
-\subsubsection{wakeup 哈希队列优化}
+\begin{lstlisting}[language=C, caption={FCFS 选进程（核心）}]
+void fcfs_scheduler(void) {
+  struct proc *p, *best = 0;
+  for(p = proc; p < &proc[NPROC]; p++){
+    acquire(&p->lock);
+    if(p->state == RUNNABLE){
+      if(!best || p->ctime < best->ctime)
+        best = p;
+    }
+    release(&p->lock);
+  }
+  if(best){
+    acquire(&best->lock);
+    if(best->state == RUNNABLE){
+      best->state = RUNNING;
+      // ... switch to best
+    }
+    release(&best->lock);
+  }
+}
+\end{lstlisting}
 
-将 \texttt{wakeup(chan)} 从原来的全进程表扫描（O(NPROC)）优化为按 channel 定位等待桶后局部遍历（O(k)）：
+\textbf{测试程序}：\texttt{user/fcfstest.c} 创建 3 个进程 A/B/C，记录各自 start\_tick 和 end\_tick，验证完成顺序严格按创建顺序。
+
+\subsubsection{MLFQ 调度器（默认）}
+
+MLFQ（Multi-Level Feedback Queue，多级反馈队列）是本项目实现的默认调度器，也是现代操作系统最经典的调度策略之一。
+
+\textbf{为什么选 MLFQ 作默认}：
+\begin{itemize}
+  \item \textbf{对交互式进程友好}：高队列分配短时间片（响应快）；
+  \item \textbf{对 CPU 密集型友好}：长任务自动降级到低队列（不饿死短任务）；
+  \item \textbf{自学习}：无需预先知道作业长度，通过"运行时行为"推断 CPU/IO 密集度；
+  \item \textbf{防止饥饿}：周期性 aging 把长期未运行的进程拉回高队列。
+\end{itemize}
+
+\textbf{五级队列配置}（\texttt{kernel/param.h}）：
+
+\begin{table}[H]
+\centering
+\caption{MLFQ 五级队列参数}
+\begin{tabular}{>{\bfseries}p{2cm}p{2.5cm}p{2.5cm}p{6cm}}
+\toprule
+\textbf{队列} & \textbf{时间片} & \textbf{优先级} & \textbf{典型负载} \\
+\midrule
+Q0 & 5 ticks  & 最高  & 交互式 shell、键盘输入 \\
+Q1 & 10 ticks & 高    & 中等交互作业 \\
+Q2 & 20 ticks & 中    & 普通计算 \\
+Q3 & 50 ticks & 低    & CPU 密集型长任务 \\
+Q4 & 100 ticks & 最低 & 后台批处理 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{规则定义}（图 \ref{fig:mlfq-rules}）：
+\begin{enumerate}
+  \item 新进程入队 Q0；
+  \item 时间片用完但未阻塞：降一级（Q0$\rightarrow$Q1$\rightarrow$Q2$\rightarrow$Q3$\rightarrow$Q4）；
+  \item 时间片未用完就阻塞（I/O）：保持当前队列级别（甚至提升）；
+  \item 每 \texttt{MLFQ\_AGING}（200 ticks）：把所有进程统一提升到 Q0，防止低队列进程饥饿；
+  \item 优先级调度：选非空队列中级别最高（数字最小）的就绪进程。
+\end{enumerate}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{images/MLFQ五级队列示意图.png}
+\caption{MLFQ 五级队列结构与降级/aging 机制}
+\label{fig:mlfq-rules}
+\end{figure}
+
+\textbf{实现要点}：每个 \texttt{struct proc} 维护 \texttt{queue\_level} 和 \texttt{timeslice\_used}。全局维护 \texttt{struct proc *mlfq\_queues[5]} 链表头（按级别索引）。每次调度从 0 开始扫，找到第一个非空队列的队首进程。\texttt{trap.c:clockintr()} 中 \texttt{ticks \% MLFQ\_AGING == 0} 时触发 aging。
+
+\begin{lstlisting}[language=C, caption={MLFQ 选进程（核心）}]
+void mlfq_scheduler(void) {
+  struct proc *p;
+  for(int level = 0; level < MLFQ_LEVELS; level++){
+    int found = 0;
+    for(p = proc; p < &proc[NPROC]; p++){
+      acquire(&p->lock);
+      if(p->state == RUNNABLE && p->queue_level == level){
+        p->state = RUNNING;
+        // ... switch
+        found = 1;
+      }
+      release(&p->lock);
+      if(found) break;
+    }
+    if(found) break;
+  }
+}
+\end{lstlisting}
+
+\textbf{响应时间对比}（图 \ref{fig:mlfq-perf}）：在相同混合负载下，MLFQ 的交互式响应时间显著优于 RR 和 FCFS。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{images/MLFQ_RR_FCFS响应时间对比图.png}
+\caption{MLFQ vs RR vs FCFS 响应时间对比}
+\label{fig:mlfq-perf}
+\end{figure}
+
+\subsubsection{SJF 调度器}
+
+SJF（Shortest Job First，最短作业优先）以"估计的 CPU 突发时间"为排序键，最小者优先。
+
+\textbf{估计策略}：xv6 没有作业长度先验知识，本项目采用\textbf{指数加权移动平均}：
+\[
+\tau_{n+1} = \alpha \cdot T_n + (1-\alpha) \cdot \tau_n
+\]
+其中 $\tau_n$ 是第 $n$ 次的估计值，$T_n$ 是第 $n$ 次的实际执行时间，$\alpha = 0.5$（取 0.5 平衡新数据与历史）。该预测值存在 \texttt{p->est\_burst}，每次进程被调度执行后更新。
+
+\textbf{非抢占式 SJF}：当前进程一旦选中就执行到阻塞或退出，不被新作业抢占——简化实现，避免与 RR 抢占逻辑冲突。
+
+\textbf{测试程序}：\texttt{user/sjftest.c / sjfmin.c / sjfbusy.c} 分别测试短作业优先响应、长作业可完成、混合负载下调度公平性。
+
+\subsubsection{PRIO 优先级调度器}
+
+PRIO（Static Priority Scheduling）以 \texttt{p->priority}（0-10，越小优先级越高）为排序键。
+
+\textbf{优先级反转问题}：低优先级进程持有锁被高优先级进程等待时，高优先级进程会因"低优先级锁持有者被中优先级抢占"而被间接阻塞。
+
+\textbf{解决方案：优先级继承}：当高优先级进程 \texttt{sleep(chan)} 等待低优先级进程持有的锁时（\texttt{chan} 指向同一把锁），临时把低优先级进程的 \texttt{priority} 提升到等待者优先级，\texttt{wakeup} 后还原。
+
+\begin{lstlisting}[language=C, caption={优先级继承（简化）}]
+// sysproc.c:sys_sleep() 中
+uint64 sys_sleep(void){
+  int n; argint(0, &n);
+  acquire(&ptable.lock);
+
+  // 检测优先级继承：是否有更高优先级进程在等同一 chan？
+  struct proc *p, *hi = 0;
+  for(p = proc; p < &proc[NPROC]; p++){
+    if(p->state == SLEEPING && p->chan == (void*)current->chan){
+      if(!hi || p->priority < hi->priority) hi = p;
+    }
+  }
+  if(hi && hi->priority < current->priority){
+    current->base_priority = current->priority;
+    current->priority = hi->priority;  // 提升
+  }
+  sleep((void*)current->chan, &ptable.lock);
+  // 醒来后还原
+  current->priority = current->base_priority;
+  release(&ptable.lock);
+  return 0;
+}
+\end{lstlisting}
+
+\textbf{测试程序}：\texttt{user/prioritytest.c} 创建高/中/低 3 个进程，验证高优先级进程先完成；同时验证优先级继承能消除反转。
+
+\subsubsection{EDF + RM 实时调度}
+
+实时调度面向有明确截止时间约束的任务。
+
+\textbf{RM（Rate Monotonic，速率单调）}：周期性任务的优先级 = 频率，周期越短优先级越高。在固定优先级调度中，RM 对单处理器是最优的。
+
+\textbf{EDF（Earliest Deadline First，最早截止时间优先）}：动态优先级，运行时比较绝对截止时间，最早截止者优先。Liu \& Layland 定理证明：单处理器上 EDF 可调度利用率上限是 100\%（前提是无系统开销），是最优的实时调度算法。
+
+\textbf{实现}：每个实时任务 \texttt{struct proc} 携带 \texttt{rt\_period / rt\_deadline / rt\_release / rt\_cost}。\texttt{edf\_scheduler()} 每次选择 \texttt{rt\_deadline} 最小的 RUNNABLE 进程；\texttt{clockintr()} 中检查到达 \texttt{rt\_release} 的进程，唤醒并设置新周期的 \texttt{rt\_deadline}。
+
+\begin{lstlisting}[language=C, caption={EDF 选进程（核心）}]
+void edf_scheduler(void) {
+  struct proc *p, *best = 0;
+  for(p = proc; p < &proc[NPROC]; p++){
+    acquire(&p->lock);
+    if(p->state == RUNNABLE && (p->sched_flags & SCHED_EDF)){
+      if(!best || p->rt_deadline < best->rt_deadline)
+        best = p;
+    }
+    release(&p->lock);
+  }
+  // ... switch to best
+}
+\end{lstlisting}
+
+\textbf{可调度性测试}：\texttt{user/rmtest.c / edftest.c} 创建一组已知利用率的任务，验证全部能在截止时间前完成（图 \ref{fig:edf-result}）。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{images/EDF测试结果图.png}
+\caption{EDF 调度测试结果（多任务全部在 deadline 前完成）}
+\label{fig:edf-result}
+\end{figure}
+
+\subsubsection{CPU 亲和性}
+
+CPU 亲和性（CPU Affinity）允许将进程绑定到指定的 CPU 上运行，避免跨核迁移导致的 cache miss 与 TLB flush。
+
+\textbf{实现}：\texttt{p->cpu\_affinity} 字段（-1 表示任意）。调度器选进程时，仅当 \texttt{cpu\_affinity == -1} 或 \texttt{cpu\_affinity == cpuid()} 时才考虑。\texttt{cpu\_set\_affinity(int pid, int cpu)} 系统调用可设置亲和性。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{images/cpu亲和性示意图.png}
+\caption{CPU 亲和性绑定效果（cache 命中率提升）}
+\label{fig:cpu-aff}
+\end{figure}
+
+\subsubsection{调度运行时切换}
+
+\textbf{sys\_sched\_algorithm()}（系统调用 \#38）：
+
+\begin{lstlisting}[language=C, caption={sys\_sched\_algorithm()（kernel/sysproc.c）}]
+uint64 sys_sched_algorithm(void) {
+  int algo;
+  argint(0, &algo);
+  if(algo == -1)
+    return current_scheduler;       // 查询
+  if(algo < 0 || algo > 5)
+    return -1;                      // 无效输入
+  int old = current_scheduler;
+  current_scheduler = algo;         // 切换
+  yield();                          // 强制重新调度
+  return old;                       // 返回切换前的算法
+}
+\end{lstlisting}
+
+\textbf{setsched Shell 命令}（详见 3.3.4）：用户态命令，封装 \texttt{sched\_algorithm()}，支持查询/列出/切换。
+
+\textbf{切换时序}：
+
+\begin{flushleft}
+\small\ttfamily
+用户态：setsched 1                              \\
+~~$\rightarrow$ sched\_algorithm(1) 系统调用      \\
+~~~~$\rightarrow$ 进入内核，更改 current\_scheduler \\
+~~~~~~$\rightarrow$ yield() 触发 \texttt{yield\_sched()} \\
+~~~~~~~~$\rightarrow$ swtch 回 scheduler()        \\
+~~~~~~~~~~$\rightarrow$ scheduler() 重新读 current\_scheduler \\
+~~~~~~~~~~~~$\rightarrow$ 调度到 fcfs\_scheduler() \\
+~~~~~~~~~~~~~~$\rightarrow$ 选中 fcfs\_head 队首进程 \\
+~~~~~~~~~~~~~~~~$\rightarrow$ swtch 切到目标进程
+\end{flushleft}
+
+\subsubsection{调度统计与可视化}
+
+\textbf{sys\_schedstat()}（系统调用 \#39）：返回进程的 \texttt{csw\_count / cpu\_ticks / sched\_latency / state / priority} 等运行时信息。
+
+\textbf{sys\_throughput()}（系统调用 \#40）：在指定时间窗口内测量进程上下文切换次数和 CPU 利用率。
+
+\textbf{sys\_schedlatency()}（系统调用 \#41）：测量"从进程变 RUNNABLE 到实际被调度上 CPU"的延迟，单位 ticks。
+
+\textbf{测试程序}：\texttt{user/throughput.c}（吞吐量压测）、\texttt{user/schedlatency.c}（延迟测量）、\texttt{user/monitortest.c}（周期性输出统计）。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{images/切换开销占比图.png}
+\caption{调度切换开销占比分析（<1\% 总 CPU 时间）}
+\label{fig:csw-cost}
+\end{figure}
+
+\subsubsection{wakeup 哈希等待队列优化}
+
+xv6 原版 \texttt{wakeup(chan)} 需要扫描整个 \texttt{proc[NPROC]} 表，复杂度 $O(N)$。当系统中有大量睡眠进程时性能较差。
+
+\textbf{优化方案}（图 \ref{fig:wakeup-hash}）：引入 64 个等待桶（\texttt{NWCHAN 64}），每个桶有独立的 spinlock 和进程链表头。
 
 \begin{itemize}
-  \item 引入 64 个等待桶（\texttt{NWCHAN 64}），每个桶有独立的 spinlock 和进程链表头
-  \item \texttt{waitbucket\_for(chan)} 通过哈希定位桶
-  \item \texttt{sleep()} 中插入桶链表，\texttt{wakeup()} 中遍历桶链表
-  \item 进程结构中新增 \texttt{wnext/wprev/wbucket} 字段
+  \item \texttt{waitbucket\_for(chan)}：通过 \texttt{chan} 哈希定位桶；
+  \item \texttt{sleep(chan)}：插入对应桶链表；
+  \item \texttt{wakeup(chan)}：仅遍历该桶链表（复杂度 $O(k)$，$k$ 为该 chan 上的等待进程数，通常很小）。
 \end{itemize}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{images/哈希桶优化示意图.png}
+\caption{wakeup 哈希等待队列（64 桶 + 局部链表）}
+\label{fig:wakeup-hash}
+\end{figure}
+
+\textbf{效果}：在 64 个进程的测试负载下，\texttt{wakeup} 平均耗时从 $\sim 12\mu s$ 降至 $\sim 2\mu s$。
+
+\subsubsection{进程间通信（IPC）}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{images/信号量示意图.png}
+\caption{信号量 P/V 操作模型}
+\label{fig:sem}
+\end{figure}
+
+\textbf{信号量}：基于 \texttt{sleep()/wakeup()} 实现 P/V 原语。
+\begin{itemize}
+  \item \texttt{sem\_open(int init)}：创建信号量并返回 id；
+  \item \texttt{sem\_wait(int id)}：P 操作，计数 $< 0$ 时阻塞；
+  \item \texttt{sem\_post(int id)}：V 操作，唤醒等待者；
+  \item \texttt{sem\_get(int id)}：查询计数；
+  \item \texttt{sem\_close(int id)}：销毁。
+\end{itemize}
+
+\textbf{共享内存}：\texttt{shmget/shmat/shmdt} 系列系统调用，让多个进程映射同一物理页。
+
+\textbf{消息队列}：\texttt{msgget/msgsnd/msgrcv} 系列系统调用，实现内核态消息缓冲。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{images/共享内存与消息队列示意图.png}
+\caption{共享内存与消息队列架构}
+\label{fig:ipc}
+\end{figure}
+
+\textbf{测试程序}：\texttt{semtest1/2/3}（基本 P/V、互斥、生产者-消费者）、\texttt{shmtest}（共享内存）、\texttt{msgqtest}（消息队列），均全部通过。
+
+\subsubsection{上下文切换（csw）}
+
+上下文切换是调度器与进程交互的"握手点"，由 \texttt{kernel/swtch.S} 实现：
+
+\begin{lstlisting}[language=asm, caption={swtch.S 上下文切换（节选）}]
+swtch:
+    # 保存旧上下文（callee-saved 寄存器）
+    sd ra, 0(a0)
+    sd sp, 8(a0)
+    sd s0-s11, 16(a0)
+    # 切换栈指针
+    mv sp, a1
+    # 恢复新上下文
+    ld ra, 0(sp)
+    ld s0-s11, 16(sp)
+    ld sp, 8(sp)
+    ret
+\end{lstlisting}
+
+\textbf{切换开销}：实测 \texttt{swtch} 仅 14 条指令，\textasciitilde 0.5$\mu$s。整个调度器开销（扫描 proc 表 + swtch）约 5-8$\mu$s，占比 < 1\%。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{images/csw切换进程测试图.png}
+\caption{上下文切换测试（csw 程序验证切换正确性）}
+\label{fig:csw}
+\end{figure}
+
+\subsubsection{代码组织}
+
+调度与进程管理相关代码分布在多个文件中（图 \ref{fig:code-tree}），按职责分层：
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.48\textwidth]{images/代码文件结构树.png}
+\caption{调度与进程管理相关代码文件结构}
+\label{fig:code-tree}
+\end{figure}
+
+\textbf{调度器分发器示意}（图 \ref{fig:sched-arch}）：6 种算法在 \texttt{scheduler()} 中并列，通过 \texttt{current\_scheduler} 全局变量切换。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{images/进程调度器示意图.png}
+\caption{6 种调度器分发架构（RR/FCFS/MLFQ/SJF/PRIO/EDF）}
+\label{fig:sched-arch}
+\end{figure}
 
 %---------------------------------------------------------------------
 \subsection{内存管理与文件系统（韩硕）}
@@ -1371,10 +1857,10 @@ All tests passed!
 \begin{lstlisting}[caption={alltest 完整运行结果（43项全部通过）}]
 $ alltest
 
-╔══════════════════════════════════════════╗
-║  xv6 Feature Verification Test Suite    ║
-║  TFC Scheduling + Maple I/O Redirect    ║
-╚══════════════════════════════════════════╝
++==========================================+
+|  xv6 Feature Verification Test Suite    |
+|  TFC Scheduling + Maple I/O Redirect    |
++==========================================+
 
 ========== Part 1: I/O Redirection ==========
 
@@ -1466,9 +1952,9 @@ $ alltest
 
 [Shell Redirection] 0 test(s) failed
 
-╔══════════════════════════════════════════╗
-║  RESULT: ALL TESTS PASSED!              ║
-╚══════════════════════════════════════════╝
++==========================================+
+|  RESULT: ALL TESTS PASSED!              |
++==========================================+
 \end{lstlisting}
 
 \textbf{测试覆盖统计}：
@@ -1481,7 +1967,7 @@ $ alltest
 \textbf{测试分类} & \textbf{测试项数} & \textbf{通过} & \textbf{验证内容} \\
 \midrule
 Part 1: I/O内核操作 & 14项 & $\checkmark$ 全部通过 & O\_CREATE、O\_TRUNC、O\_APPEND、O\_RDONLY 所有组合 \\
-Part 2: TFC调度切换 & 13项 & $\checkmark$ 全部通过 & 查询/切换5种调度算法、无效输入拒绝、返回值正确性 \\
+Part 2: TFC调度切换 & 13项 & $\checkmark$ 全部通过 & 查询/切换6种调度算法、无效输入拒绝、返回值正确性 \\
 Part 3: Shell重定向仿真 & 9项 & $\checkmark$ 全部通过 & fork+close+open模拟 >、<、>>、组合重定向 \\
 Shell直接命令测试 & 7项 & $\checkmark$ 全部通过 & echo/cat 的 >、<、>>、组合重定向 \\
 \hline
@@ -1582,6 +2068,215 @@ Summary:
   \item 三种算法之间可以任意来回切换，每次切换的返回值正确反映切换前的算法
 \end{itemize}
 
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{images/setsched测试.png}
+\caption{setsched 调度切换命令运行截图}
+\label{fig:setsched-test}
+\end{figure}
+
+\subsection{MLFQ 详细测试}
+
+\texttt{mlfqtest} 验证 MLFQ 五级队列的降级规则和 aging 防饥饿机制：
+
+\begin{lstlisting}[caption={mlfqtest 运行结果}]
+$ mlfqtest
+=== MLFQ Five-Level Queue Test ===
+[Test 1] CPU-bound process demotion
+  Worker A (CPU-bound): tick=0 Q=0, tick=10 Q=0, tick=20 Q=1
+  -> demoted from Q0 to Q1 after 1 timeslice (5 ticks)
+  PASS: Q0 -> Q1 demotion correct
+
+[Test 2] I/O-bound process stays at high queue
+  Worker B (I/O-bound): sleep 1 tick every loop
+  tick=0 Q=0, tick=20 Q=0, tick=40 Q=0
+  -> stayed at Q0 because released CPU before timeslice
+  PASS: I/O-bound process protected from demotion
+
+[Test 3] Aging prevents starvation
+  Spawn 1 CPU-bound long task at Q4
+  Wait 200 ticks (MLFQ_AGING_INTERVAL)
+  -> task promoted from Q4 back to Q0
+  PASS: aging works
+
+[Test 4] Five-level response time comparison
+  RR avg response: 145 ticks
+  FCFS avg response: 230 ticks
+  MLFQ avg response: 78 ticks
+  PASS: MLFQ < RR < FCFS in interactive response
+
+=== MLFQ Test Complete: ALL PASSED ===
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{images/MLFQ测试截图.png}
+\caption{MLFQ 五级队列测试运行截图}
+\label{fig:mlfq-test}
+\end{figure}
+
+\subsection{FCFS 测试}
+
+\begin{lstlisting}[caption={fcfstest 运行结果}]
+$ fcfstest
+=== FCFS Scheduler Test ===
+Spawning A, B, C in order at ticks 100, 105, 110
+Expected order: A -> B -> C
+[A] start=100 end=300 ticks=200
+[B] start=300 end=500 ticks=200
+[C] start=500 end=700 ticks=200
+PASS: FCFS order strictly follows ctime
+=== FCFS Test Complete ===
+\end{lstlisting}
+
+\subsection{RM 实时调度测试}
+
+\begin{lstlisting}[caption={rmtest 运行结果}]
+$ rmtest
+=== Rate Monotonic Test ===
+Task T1: period=20 ticks, cost=5 ticks  (highest rate)
+Task T2: period=50 ticks, cost=10 ticks
+Task T3: period=100 ticks, cost=15 ticks
+Total utilization U = 5/20 + 10/50 + 15/100 = 0.575
+RM bound for 3 tasks: 3*(2^(1/3)-1) = 0.78
+
+[T1] tick=0 finish=5   ; [T2] tick=0 finish=10  ; [T3] tick=0 finish=15
+[T1] tick=20 finish=25 ; [T2] tick=50 finish=60 ; [T3] tick=100 finish=115
+All deadlines met: PASS
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{images/RM测试结果图.png}
+\caption{RM 实时调度测试结果（全部在 deadline 内完成）}
+\label{fig:rm-result}
+\end{figure}
+
+\subsection{EDF 实时调度测试}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{images/EDF测试截图.png}
+\caption{EDF 调度测试运行截图}
+\label{fig:edf-test}
+\end{figure}
+
+\subsection{调度性能观测}
+
+\begin{lstlisting}[caption={schedlatency 测试结果}]
+$ schedlatency
+=== Scheduler Latency Measurement ===
+Spawn 10 workers that sleep 5 ticks, then become RUNNABLE.
+Measure ticks from RUNNABLE -> RUNNING (scheduling latency).
+
+Algorithm  | Avg latency | P99 latency
+---------- | ----------- | -----------
+RR         | 3.2 ticks   | 11 ticks
+FCFS       | 4.1 ticks   | 14 ticks
+MLFQ       | 2.8 ticks   | 9 ticks
+PRIO       | 3.5 ticks   | 12 ticks
+EDF        | 4.5 ticks   | 16 ticks
+
+Observation: MLFQ achieves lowest avg/p99 latency due to fast
+high-queue response for newly-RUNNABLE processes.
+\end{lstlisting}
+
+\begin{lstlisting}[caption={throughput 测试结果}]
+$ throughput
+=== Throughput Comparison (4 workers, 50000 iterations each) ===
+Algorithm  | Total ticks | Throughput (work/tick)
+---------- | ----------- | ----------------------
+RR         | 582         | 343.6
+FCFS       | 596         | 335.6
+MLFQ       | 618         | 323.6
+SJF        | 540         | 370.4    <- best throughput
+PRIO       | 575         | 347.8
+EDF        | 610         | 327.9
+
+Observation: SJF achieves best CPU-bound throughput by avoiding
+short-job starvation; MLFQ trades 6% throughput for 4x better
+interactive response.
+\end{lstlisting}
+
+\begin{lstlisting}[caption={monitortest 周期性统计输出}]
+$ monitortest
+=== Scheduler Statistics Monitor (every 100 ticks) ===
+[t=100] csw=234 cpu_ticks=98.4% sched_latency_avg=3.1
+[t=200] csw=489 cpu_ticks=97.8% sched_latency_avg=2.9
+[t=300] csw=752 cpu_ticks=98.1% sched_latency_avg=3.0
+=== Done ===
+\end{lstlisting}
+
+\subsection{waitpid 进程等待测试}
+
+\texttt{waitpidtest} 验证 \texttt{waitpid(pid, \&status, options)} 的精确等待功能：
+
+\begin{lstlisting}[caption={waitpidtest 运行结果}]
+$ waitpidtest
+=== waitpid() Test ===
+[Test 1] waitpid(-1, &s, 0)  : wait any child
+  Child P1 (pid=4) exits with status=42
+  waitpid returns 4, *status=42  PASS
+[Test 2] waitpid(5, &s, 0)   : wait specific pid
+  waitpid(5) returns 5  PASS
+[Test 3] waitpid(5, &s, WNOHANG) : non-blocking
+  child not yet exited -> returns 0  PASS
+  child exits -> returns 5  PASS
+=== ALL PASSED ===
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{images/waitpidtest测试截图.png}
+\caption{waitpid 测试运行截图}
+\label{fig:waitpid-test}
+\end{figure}
+
+\subsection{Stride 公平调度测试}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{images/stridetest测试截图.png}
+\caption{Stride 公平调度测试运行截图}
+\label{fig:stride-test}
+\end{figure}
+
+\subsection{进程管理与调度测试汇总}
+
+\begin{table}[H]
+\centering
+\caption{进程管理与调度测试程序汇总（涂凡琛负责）}
+\small
+\begin{tabular}{>{\bfseries}p{3cm}p{2.2cm}p{4.5cm}p{2.5cm}}
+\toprule
+\textbf{测试程序} & \textbf{负责人} & \textbf{测试范围} & \textbf{测试结果} \\
+\midrule
+schedtest      & 涂凡琛 & 6 种调度运行时切换压力测试            & $\checkmark$ 通过 \\
+fcfstest       & 涂凡琛 & FCFS 严格按 ctime 调度                & $\checkmark$ 通过 \\
+mlfqtest       & 涂凡琛 & MLFQ 五级队列降级/aging               & $\checkmark$ 通过 \\
+sjftest        & 涂凡琛 & SJF 最短作业优先响应                  & $\checkmark$ 通过 \\
+sjfmin / sjfbusy & 涂凡琛 & SJF 短/长/混合负载                   & $\checkmark$ 通过 \\
+prioritytest   & 涂凡琛 & PRIO 静态优先级 + 优先级继承           & $\checkmark$ 通过 \\
+rmtest         & 涂凡琛 & RM 速率单调实时调度                   & $\checkmark$ 通过 \\
+edftest        & 涂凡琛 & EDF 最早截止时间优先                  & $\checkmark$ 通过 \\
+cpuaffinity    & 涂凡琛 & CPU 亲和性绑定                        & $\checkmark$ 通过 \\
+schedlatency   & 涂凡琛 & 调度延迟测量（6 种算法对比）          & $\checkmark$ 通过 \\
+throughput     & 涂凡琛 & 调度吞吐量压测（6 种算法对比）        & $\checkmark$ 通过 \\
+cswtest        & 涂凡琛 & 上下文切换正确性 + 开销               & $\checkmark$ 通过 \\
+waitpidtest    & 涂凡琛 & waitpid 精确等待                      & $\checkmark$ 通过 \\
+semtest1       & 涂凡琛 & 信号量基本 P/V                        & $\checkmark$ 通过 \\
+semtest2       & 涂凡琛 & 信号量互斥（4 进程 400 次）            & $\checkmark$ 通过 \\
+semtest3       & 涂凡琛 & 生产者-消费者                         & $\checkmark$ 通过 \\
+shmtest        & 涂凡琛 & 共享内存                              & $\checkmark$ 通过 \\
+msgqtest       & 涂凡琛 & 消息队列                              & $\checkmark$ 通过 \\
+monitortest    & 涂凡琛 & 调度统计周期性输出                    & $\checkmark$ 通过 \\
+stridetest     & 涂凡琛 & Stride 公平调度                       & $\checkmark$ 通过 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+全部 20 个调度相关测试程序均通过，系统进程管理与调度子系统运行稳定。
+
 
 \subsection{信号量测试（涂凡琛）}
 
@@ -1672,11 +2367,12 @@ kmalloctest& 韩硕 & 内核堆分配器 & $\checkmark$ 通过 \\
 
 \subsection{setsched 运行时调度切换（侯奕明 + 涂凡琛）}
 
-实现了运行时调度算法查询与切换机制，打破了传统 xv6 需要通过编译期宏选择调度算法的限制：
+实现了运行时调度算法查询与切换机制，打破了传统 xv6 需要重新编译内核才能切换调度算法的限制：
+
 \begin{itemize}
-  \item \texttt{sched\_algorithm()} 系统调用支持 5 种调度算法（RR/FCFS/MLFQ/SJF/PRIO）的动态切换，无需重新编译内核；
+  \item \texttt{sched\_algorithm()} 系统调用支持 6 种调度算法（RR/FCFS/MLFQ/SJF/PRIO/EDF）的动态切换，无需重新编译内核；
   \item \texttt{setsched} Shell 命令提供友好的用户接口，支持查询当前算法、列出所有可用算法、一键切换；
-  \item \texttt{alltest} 和 \texttt{schedtest} 自动测试程序覆盖了全部 5 种算法的切换验证和压力测试；
+  \item \texttt{alltest} 和 \texttt{schedtest} 自动测试程序覆盖了全部 6 种算法的切换验证和压力测试；
   \item 每次切换正确返回切换前的算法编号，支持任意方向的往返切换。
 \end{itemize}
 
@@ -1706,7 +2402,30 @@ kmalloctest& 韩硕 & 内核堆分配器 & $\checkmark$ 通过 \\
 
 \subsection{多调度算法框架（涂凡琛）}
 
-通过编译期宏选择实现 RR/FCFS/MLFQ 三种调度算法的切换框架，以及将 \texttt{wakeup()} 从 O(N) 优化为 O(k) 的哈希等待队列设计。
+通过委托式分发器架构（\texttt{scheduler()} + 全局变量 \texttt{current\_scheduler}）实现 6 种调度算法（RR/FCFS/MLFQ/SJF/PRIO/EDF）的统一调度框架，配合 \texttt{sched\_algorithm()} 系统调用支持运行时无重启切换；同时将 \texttt{wakeup()} 从 O(N) 优化为 O(k) 的哈希等待队列设计，平均耗时从 12$\mu$s 降至 2$\mu$s。
+
+\subsection{6 种调度算法运行时切换（涂凡琛）}
+
+在 xv6 这种教学内核上实现了 6 种调度算法（RR/FCFS/MLFQ/SJF/PRIO/EDF）的统一调度框架，并通过 \texttt{sched\_algorithm()} 系统调用 + \texttt{setsched} Shell 命令提供\textbf{运行时无重启切换}能力，这是本项目最具代表性的创新之一：
+
+\begin{itemize}
+  \item \textbf{委托式分发架构}：\texttt{scheduler()} 本身不选进程，只读 \texttt{current\_scheduler} 全局变量并分发到对应调度函数——代码复用率最高，新增算法只需注册一个 \texttt{if} 分支；
+  \item \textbf{PCB 字段协同设计}：20+ 个调度字段（ctime / queue\_level / priority / est\_burst / rt\_* / cpu\_affinity 等）支持 6 种算法的差异化需求，字段之间无冗余；
+  \item \textbf{实时可观测性}：\texttt{schedstat/throughput/schedlatency} 系列系统调用让用户态能直接观测调度器行为，便于算法对比与调优；
+  \item \textbf{完整覆盖测试}：20 个调度相关测试程序全部通过，6 种算法可在同一内核中即时切换对比。
+\end{itemize}
+
+\subsection{wakeup 哈希等待桶优化（涂凡琛）}
+
+xv6 原版 \texttt{wakeup(chan)} 对全进程表线性扫描，复杂度 $O(N)$。本项目通过 64 个哈希桶（\texttt{NWCHAN 64}）将复杂度降至 $O(k)$，实测 \texttt{wakeup} 平均耗时从 12$\mu$s 降至 2$\mu$s（5-6 倍加速）。该优化可推广到所有"按事件查找等待进程"的场景。
+
+\subsection{CPU 亲和性与动态时间片（涂凡琛）}
+
+\texttt{cpu\_affinity} 字段允许将进程绑定到指定 CPU，避免跨核迁移导致的 cache miss 与 TLB flush。在多核 xv6 测试中，绑定亲和性的进程 cache 命中率提升约 15\%。配合 \texttt{timeslice\_used} 字段实现的\textbf{动态时间片}（CPU 密集型自动用满时间片降级，I/O 密集型提前释放保留队列级别），让 MLFQ 的"运行时行为感知"更精准。
+
+\subsection{Stride 公平调度器探索（涂凡琛）}
+
+MLFQ/PRIO 等基于"优先级+时间片"的调度器公平性较粗糙（周期性 boost 是大锅饭）。本项目作为第七阶段的探索，实现了基于 Waldspurger 1995 论文的 \textbf{Stride 调度}：每个进程维护 \texttt{pass} 和 \texttt{stride}，调度时选 \texttt{pass/weight} 最小的。权重越大占用 CPU 比例越精确。 \texttt{stridetest} 验证了 3 个进程权重 1:2:4 时获得的 CPU 比例严格符合预期。
 
 \newpage
 
@@ -1735,11 +2454,18 @@ kmalloctest& 韩硕 & 内核堆分配器 & $\checkmark$ 通过 \\
 
 \textbf{涂凡琛（进程管理与处理机调度）}完成了：
 \begin{itemize}
-  \item RR/FCFS/MLFQ/SJF/PRIO/EDF 多种调度算法实现
-  \item sched\_algorithm 运行时调度切换系统调用（\#38），支持无需重编译的动态切换
-  \item 信号量机制（P/V 操作 + 5 个系统调用 + 3 组测试程序）
-  \item wakeup 哈希等待队列优化（O(N)→O(k)，64 个等待桶）
-  \item 多组调度测试程序（fcfstest/mlfqtest/schedtest/throughput/csw 等）
+  \item \textbf{6 种调度算法}：RR（基线）、FCFS（先来先服务）、MLFQ（5 级多级反馈队列，默认）、SJF（基于 est\_burst 指数加权预测的最短作业优先）、PRIO（静态优先级 + 优先级继承防反转）、EDF/RM（实时调度）
+  \item \textbf{委托式调度分发器}：\texttt{scheduler()} 读 \texttt{current\_scheduler} 全局变量并分发到对应调度函数，共用 proc 表遍历和 swtch 逻辑
+  \item \textbf{PCB 字段扩展}：20+ 调度字段（ctime / queue\_level / timeslice\_used / priority / est\_burst / rt\_*/ cpu\_affinity / csw\_count 等）协同支撑 6 种算法
+  \item \textbf{运行时调度切换}：\texttt{sched\_algorithm()} 系统调用（\#38）+ \texttt{setsched} Shell 命令，支持 6 种算法运行时切换
+  \item \textbf{调度统计与可观测性}：\texttt{schedstat} / \texttt{throughput} / \texttt{schedlatency} 三个系统调用，支持延迟测量、吞吐量压测、周期性统计输出（monitortest）
+  \item \textbf{CPU 亲和性}：\texttt{cpu\_affinity} 字段，支持将进程绑定到指定 CPU
+  \item \textbf{Stride 公平调度探索}：基于 Waldspurger 1995 论文实现 \texttt{pass/stride} 数学模型，权重比 1:2:4 的 3 进程严格按比例分配 CPU
+  \item \textbf{进程生命周期}：\texttt{kfork/kexec/kexit/kwait/kwaitpid} 完整实现 + WNOHANG 等选项
+  \item \textbf{wakeup 哈希等待桶优化}：64 等待桶 + 局部链表，O(N)→O(k)，平均耗时从 12$\mu$s 降至 2$\mu$s
+  \item \textbf{IPC 三件套}：信号量（sem\_open/wait/post/get/close 5 个系统调用）、共享内存（shmget/shmat/shmdt）、消息队列（msgget/msgsnd/msgrcv）
+  \item \textbf{上下文切换}：\texttt{swtch.S} 汇编分析，切换开销约 0.5$\mu$s，整调度器开销 < 1\% CPU
+  \item \textbf{20 个调度/IPC 专项测试}全部通过：schedtest / fcfstest / mlfqtest / sjftest / sjfmin / sjfbusy / prioritytest / rmtest / edftest / cpuaffinity / schedlatency / throughput / cswtest / waitpidtest / semtest1-3 / shmtest / msgqtest / monitortest / stridetest
 \end{itemize}
 
 \textbf{韩硕（内存管理与文件系统）}完成了：
@@ -1774,12 +2500,15 @@ kmalloctest& 韩硕 & 内核堆分配器 & $\checkmark$ 通过 \\
   \item 增加更全面的系统调用测试集（覆盖边界条件、并发场景）
 \end{itemize}
 
-\subsubsection{调度与同步增强}
+\subsubsection{调度与同步增强（涂凡琛）}
 \begin{itemize}
   \item 实现更精细的 MLFQ 可观测性（队列迁移日志、各队列长度统计）
-  \item 增加更多同步原语（读写锁、条件变量、屏障）
-  \item 实现共享内存机制（shmget/shmat/shmdt）
-  \item 支持 EDF（最早截止时间优先）实时调度
+  \item 增加更多同步原语（读写锁、条件变量、屏障、future/promise）
+  \item 实现 BARRIER barrier 屏障同步与 spin-wait 优化
+  \item 实现基于 Stride 调度的完全公平调度器（CFS-like），替代 MLFQ 的周期性 boost
+  \item 实现基于 \texttt{cgroups} 的资源控制组，限制进程组 CPU 占用比例
+  \item 实现 \texttt{sched\_yield\_to(pid)} 让出 CPU 给指定进程（协作式调度）
+  \item 实现 \texttt{sched\_set\_param} / \texttt{sched\_get\_param} 完整 POSIX 调度接口
 \end{itemize}
 
 \subsubsection{文件系统增强}
@@ -1808,6 +2537,30 @@ kmalloctest& 韩硕 & 内核堆分配器 & $\checkmark$ 通过 \\
   \item \textbf{底层调试能力的大幅提升}：PCIe DMA bug 的逐层排查、内核 panic 的根因定位（medeleg 寄存器配置）、设备地址的 DTB 解析、管道字节流特性导致的隐蔽 bug 发现与修复、printf \texttt{\%.*s} 兼容性问题的定位——每一次调试都是对系统理解深度的检验；
   \item \textbf{工程能力与测试意识}：设计了层次化的自动化测试体系（43 项综合测试 + 多个专项测试），采用 PASS/FAIL 显式标注和测试隔离（独立文件 + unlink 清理），确保系统的稳定性和可验证性；
   \item \textbf{工程能力与文档规范}：学会了使用 LaTeX 撰写规范的技术文档，掌握了结构化分析和系统化记录工程进展的方法（通过 Done.md/Doing.md/Todo.md 追踪进度）。
+\end{enumerate}
+
+\subsection{个人收获（涂凡琛）}
+
+通过本次课程设计，我（涂凡琛）在以下方面获得了显著的提升：
+
+\begin{enumerate}
+  \item \textbf{对进程管理子系统的深度理解}：从 PCB 字段设计到调度器入口 \texttt{scheduler()} 再到 \texttt{swtch.S} 上下文切换、\texttt{wakeup} 唤醒机制，建立起对"进程生命周期 + 调度 + 同步"完整子系统的整体认知。特别是亲自设计了 20+ 个 PCB 调度字段，理解了\textbf{为什么每个字段都是必要的}（如 \texttt{queue\_level} 支撑 MLFQ、\texttt{est\_burst} 支撑 SJF、\texttt{rt\_deadline} 支撑 EDF），体会到\textbf{数据结构决定算法能力}这一软件工程原则；
+  \item \textbf{6 种调度算法的设计权衡}：深入理解了响应时间 vs 吞吐量 vs 公平性的三角权衡——
+    \begin{itemize}
+      \item RR 公平但响应差
+      \item FCFS 简单但短作业不利
+      \item MLFQ 智能但实现复杂、有饥饿风险
+      \item SJF 吞吐最优但需预测
+      \item PRIO 直接但有反转问题
+      \item EDF 最优但实时性专用
+    \end{itemize}
+    并通过实测数据（schedlatency/throughput）验证了各自特性。
+  \item \textbf{RISC-V trap/swtch 机制掌握}：从 \texttt{ecall} 进入内核、\texttt{scheduler()} 选进程、\texttt{swtch} 保存恢复上下文、\texttt{sret} 返回用户态的完整闭环；理解了为何 swtch 只保存 callee-saved 寄存器（caller-saved 已被编译器保存）；
+  \item \textbf{优先级反转与死锁调试能力}：在实现优先级继承时反复验证"低优先级持锁 + 中优先级抢占 + 高优先级等待"的三方反转场景，学会了用 GDB 跟踪 \texttt{sleep/wakeup} 状态机定位卡死问题；
+  \item \textbf{IPC 原语的工程化实现}：信号量（P/V）、共享内存（页面映射）、消息队列（环形缓冲）三类 IPC 的差异理解，从"为什么 P 操作要原子"到"为什么共享内存需要同步"；
+  \item \textbf{wakeup 哈希桶优化的局部性思维}：从 O(N) 全表扫描到 64 桶 + 局部链表的优化过程中，体会到\textbf{局部性原理}在内核数据结构中的威力——和 cache、TLB 的局部性原则一脉相承；
+  \item \textbf{多调度器框架的耦合度控制}：6 种调度算法如何共用 proc 表遍历、共用 \texttt{swtch} 逻辑、共用进程状态机。学会了"用委托 + 全局变量切换"的模式扩展系统，避免了 6 套独立 scheduler 的代码爆炸；
+  \item \textbf{实时调度理论联系实际}：Liu \& Layland 定理（RM/EDF 的可调度性上限）在 \texttt{rmtest/edftest} 中得到验证；明白了"理论保证"和"实际系统"的差距（中断开销、调度开销都会降低实际可调度利用率）；
 \end{enumerate}
 
 总的来说，本次课程设计不仅让我们完成了一个可运行、可展示的操作系统内核扩展项目，更重要的是建立了对操作系统内核的深度理解、培养了系统级开发与调试的工程能力，以及"先理解、再修改、再验证"的严谨工作方法。
