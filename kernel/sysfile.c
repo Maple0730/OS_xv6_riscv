@@ -440,6 +440,34 @@ sys_chdir(void)
 }
 
 uint64
+sys_getcwd(void)
+{
+  uint64 addr;
+  int size, n;
+  char buf[MAXPATH];
+
+  argaddr(0, &addr);
+  argint(1, &size);
+  if (size < 2)
+    return -1;
+  if (size > MAXPATH)
+    size = MAXPATH;
+
+  begin_op(ROOTDEV);
+  n = inodepath(myproc()->cwd, buf, size);
+  if (n < 0) {
+    end_op(ROOTDEV);
+    return -1;
+  }
+  if (copyout(myproc()->pagetable, addr, buf, n + 1) < 0) {
+    end_op(ROOTDEV);
+    return -1;
+  }
+  end_op(ROOTDEV);
+  return n;
+}
+
+uint64
 sys_exec(void)
 {
   char path[MAXPATH], *argv[MAXARG];

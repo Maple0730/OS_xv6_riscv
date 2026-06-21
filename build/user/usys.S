@@ -90,6 +90,11 @@ chdir:
  li a7, SYS_chdir
  ecall
  ret
+.global getcwd
+getcwd:
+ li a7, SYS_getcwd
+ ecall
+ ret
 .global dup
 dup:
  li a7, SYS_dup

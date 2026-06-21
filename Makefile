@@ -187,6 +187,7 @@ UPROGS=\
 	$(BU)/_seektest\
 	$(BU)/_pipetest\
 	$(BU)/_ps\
+	$(BU)/_pwd\
 	$(BU)/_fcfstest\
 	$(BU)/_mlfqtest\
 	$(BU)/_csw\

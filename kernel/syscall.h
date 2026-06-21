@@ -67,3 +67,4 @@
 #define SYS_msgget               64
 #define SYS_msgsnd               65
 #define SYS_msgrcv               66
+#define SYS_getcwd               67

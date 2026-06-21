@@ -21,6 +21,7 @@ int fstat(int fd, struct stat *);
 int link(const char *, const char *);
 int mkdir(const char *);
 int chdir(const char *);
+int getcwd(char *, int);
 int dup(int);
 int getpid(void);
 char *sys_sbrk(int, int);
@@ -80,6 +81,7 @@ int recvfrom(int, char*, int, uint32*, uint16*);
 #define SYS_msgget               64
 #define SYS_msgsnd               65
 #define SYS_msgrcv               66
+#define SYS_getcwd               67
 int sem_open(int value);
 int sem_wait(int sem_id);
 int sem_post(int sem_id);

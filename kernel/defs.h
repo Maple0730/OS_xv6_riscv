@@ -42,6 +42,7 @@ int             fileseek(struct file*, int, int);
 void            fsinit(int);
 int             fsdevvalid(int);
 int             fsmountpoint(struct inode*, const char*);
+int             inodepath(struct inode*, char*, int);
 int             dirlink(struct inode*, char*, uint);
 struct inode*   dirlookup(struct inode*, char*, uint*);
 struct inode*   ialloc(uint, short);

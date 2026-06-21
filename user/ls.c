@@ -36,6 +36,7 @@ static char *root_hidden_names[] = {
   "seektest",
   "pipetest",
   "ps",
+  "pwd",
   "fcfstest",
   "mlfqtest",
   "csw",

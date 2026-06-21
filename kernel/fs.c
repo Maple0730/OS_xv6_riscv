@@ -46,6 +46,8 @@ static struct mountent mounts[] = {
 static struct superblock *sb_for(uint dev);
 static struct mountent *mount_by_name(struct inode *dp, const char *name);
 static struct mountent *mount_by_target(struct inode *ip);
+static int dirent_name_by_inum(struct inode *dp, uint inum, char *name);
+static struct inode *iget(uint dev, uint inum);
 
 // Read the super block.
 static void//读取超级块
@@ -81,6 +83,74 @@ int
 fsmountpoint(struct inode *dp, const char *name)
 {
   return mount_by_name(dp, name) != 0;
+}
+
+int
+inodepath(struct inode *ip, char *buf, int size)
+{
+  struct inode *cur, *parent;
+  struct mountent *mnt;
+  char name[DIRSIZ + 1];
+  char *seg;
+  int len;
+  int pos;
+
+  if (size < 2)
+    return -1;
+
+  pos = size - 1;
+  buf[pos] = '\0';
+  cur = idup(ip);
+
+  while (!(cur->dev == ROOTDEV && cur->inum == ROOTINO)) {
+    mnt = mount_by_target(cur);
+    if (mnt != 0) {
+      seg = mnt->name;
+      parent = iget(mnt->parent_dev, mnt->parent_inum);
+    } else {
+      ilock(cur);
+      parent = dirlookup(cur, "..", 0);
+      iunlock(cur);
+      if (parent == 0)
+        goto fail;
+
+      ilock(parent);
+      if (dirent_name_by_inum(parent, cur->inum, name) < 0) {
+        iunlockput(parent);
+        goto fail;
+      }
+      iunlock(parent);
+      seg = name;
+    }
+
+    len = strlen(seg);
+    if (len == 0 || pos < len + 1) {
+      iput(parent);
+      goto fail;
+    }
+    pos -= len;
+    memmove(buf + pos, seg, len);
+    pos--;
+    buf[pos] = '/';
+
+    iput(cur);
+    cur = parent;
+  }
+
+  iput(cur);
+
+  if (pos == size - 1) {
+    buf[0] = '/';
+    buf[1] = '\0';
+    return 1;
+  }
+
+  memmove(buf, buf + pos, size - pos);
+  return strlen(buf);
+
+fail:
+  iput(cur);
+  return -1;
 }
 
 // Zero a block.
@@ -284,8 +354,6 @@ iinit()
     initsleeplock(&itable.inode[i].lock, "inode");
   }
 }
-
-static struct inode *iget(uint dev, uint inum);
 
 // Allocate an inode on device dev.
 // Mark it as allocated by  giving it type type.
@@ -876,4 +944,28 @@ mount_by_target(struct inode *ip)
       return &mounts[i];
   }
   return 0;
+}
+
+static int
+dirent_name_by_inum(struct inode *dp, uint inum, char *name)
+{
+  uint off;
+  struct dirent de;
+
+  if (dp->type != T_DIR)
+    return -1;
+
+  for (off = 0; off < dp->size; off += sizeof(de)) {
+    if (readi(dp, 0, (uint64)&de, off, sizeof(de)) != sizeof(de))
+      panic("dirent_name_by_inum read");
+    if (de.inum != inum)
+      continue;
+    if (namecmp(de.name, ".") == 0 || namecmp(de.name, "..") == 0)
+      continue;
+    memmove(name, de.name, DIRSIZ);
+    name[DIRSIZ] = '\0';
+    return 0;
+  }
+
+  return -1;
 }
