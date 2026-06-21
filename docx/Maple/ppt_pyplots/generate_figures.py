@@ -163,7 +163,7 @@ def save(fig, name: str) -> None:
 
 
 def plot_p3_system_boot() -> None:
-    fig, ax = init_canvas("第 3 页：系统启动整体框架")
+    fig, ax = init_canvas("系统启动整体框架")
 
     xs = [4, 17, 30, 43, 57, 71, 84]
     labels = [
@@ -196,7 +196,7 @@ def plot_p3_system_boot() -> None:
 
 
 def plot_p6_memory_overview() -> None:
-    fig, ax = init_canvas("第 6 页：内存系统整体结构")
+    fig, ax = init_canvas("内存系统整体结构")
 
     add_group(ax, 14, 66, 72, 18, "堆级分配")
     add_box(ax, 22, 70, 16, 10, "kmalloc(n)", fc="#E0F2FE")
@@ -232,7 +232,7 @@ def plot_p6_memory_overview() -> None:
 
 
 def plot_p8_memory_extensions() -> None:
-    fig, ax = init_canvas("第 8 页：内存系统扩展")
+    fig, ax = init_canvas("内存系统扩展")
 
     add_group(ax, 6, 18, 40, 66, "扩展一：运行时物理内存探测")
     add_box(ax, 11, 66, 14, 10, "启动保存\nDTB 指针", fc="#ECFDF5", ec=GREEN)
@@ -268,7 +268,7 @@ def plot_p8_memory_extensions() -> None:
 
 
 def plot_p10_filesystem_layers() -> None:
-    fig, ax = init_canvas("第 10 页：文件系统整体结构")
+    fig, ax = init_canvas("文件系统整体结构")
 
     add_box(ax, 38, 78, 24, 10, "用户命令\nls / cat / echo / open", fc="#F8FAFC")
     add_box(ax, 38, 64, 24, 10, "sysfile.c\n系统调用入口")
@@ -291,7 +291,7 @@ def plot_p10_filesystem_layers() -> None:
 
 
 def plot_p12_log_and_dualdisk() -> None:
-    fig, ax = init_canvas("第 12 页：日志机制与双独立磁盘")
+    fig, ax = init_canvas("日志机制与双独立磁盘")
 
     add_group(ax, 4, 52, 34, 32, "日志事务机制")
     add_box(ax, 8, 64, 8, 8, "begin_op()", fc="#FEF3C7", ec=ACCENT, fs=11)
