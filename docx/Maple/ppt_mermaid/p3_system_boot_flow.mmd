@@ -1,0 +1,17 @@
+---
+title: 系统启动整体框架
+---
+flowchart LR
+    QEMU["QEMU virt\n-kernel 加载"] --> LOAD["内核镜像\n0x80000000"]
+    LOAD --> ENTRY["_entry\nkernel/entry.S"]
+    ENTRY --> STACK["早期栈准备\nstack0 / sp 初始化"]
+    STACK --> START["start()\nM 态初始化"]
+    START --> MODE["M -> S\nmstatus / mepc / mret"]
+    MODE --> MAIN["main()\n内核主初始化"]
+    MAIN --> INIT1["userinit()\n创建首个用户进程"]
+    INIT1 --> INIT2["init"]
+    INIT2 --> SH["sh shell"]
+
+    START --> DTB["保存 DTB 指针\na1 -> boot 参数"]
+    DTB -.供后续使用.-> MEM["运行时内存探测"]
+

@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+  <rect x="84" y="54" width="112" height="6" fill="#1E3A8A"/>
+  <text x="84" y="112" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="34" font-weight="700" fill="#1E3A8A">文件系统基础功能</text>
+  <text x="84" y="150" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="18" fill="#4B5563">在扩展之前，文件描述符、路径解析和基本文件操作链路已经完整可用</text>
+  <text x="1160" y="82" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="16" fill="#6B7280">11</text>
+
+  <rect x="84" y="198" width="386" height="430" fill="#F4F7FB" stroke="#D7E0EC"/>
+  <text x="112" y="242" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="22" font-weight="700" fill="#111827">从进程视角看文件访问</text>
+  <text x="112" y="282" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="18" fill="#4B5563">
+    <tspan x="112" dy="0">用户态拿到的是 <tspan font-family='Consolas, "Courier New", monospace'>fd</tspan>，</tspan>
+    <tspan x="112" dy="30">内核先通过文件描述符表找到</tspan>
+    <tspan x="112" dy="30"><tspan fill="#1E3A8A">struct file</tspan>，再沿着 inode 和</tspan>
+    <tspan x="112" dy="30">目录项路径把操作落实到底层块。</tspan>
+  </text>
+  <text x="112" y="430" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="17" fill="#6B7280">
+    这也是后续解释 `lseek`、双盘与日志为什么都要改文件系统主路径的原因。
+  </text>
+
+  <rect x="520" y="198" width="676" height="120" fill="#FFFFFF" stroke="#D7E0EC"/>
+  <rect x="520" y="354" width="676" height="120" fill="#FFFFFF" stroke="#D7E0EC"/>
+  <rect x="520" y="510" width="676" height="118" fill="#FFFFFF" stroke="#D7E0EC"/>
+
+  <use data-icon="tabler-outline/folder-open" x="548" y="230" width="28" height="28" fill="#1E3A8A" stroke-width="2"/>
+  <text x="590" y="252" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="21" font-weight="700" fill="#111827">基本文件/目录操作</text>
+  <text x="590" y="284" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="17" fill="#4B5563">支持创建、删除、打开、关闭、读写，以及目录切换和文件描述符管理。</text>
+
+  <use data-icon="tabler-outline/route" x="548" y="386" width="28" height="28" fill="#1E3A8A" stroke-width="2"/>
+  <text x="590" y="408" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="21" font-weight="700" fill="#111827">绝对路径与相对路径解析</text>
+  <text x="590" y="440" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="17" fill="#4B5563">路径遍历能够从当前目录或根目录出发，把用户路径解析到具体 inode。</text>
+
+  <use data-icon="tabler-outline/chart-bar" x="548" y="542" width="28" height="28" fill="#1E3A8A" stroke-width="2"/>
+  <text x="590" y="564" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="21" font-weight="700" fill="#111827">lseek 支持随机访问</text>
+  <text x="590" y="596" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="17" fill="#4B5563">已补齐 `SEEK_SET / SEEK_CUR / SEEK_END`，既能重定位读写偏移，也能获取文件大小。</text>
+</svg>

@@ -1,0 +1,15 @@
+---
+title: 文件系统整体结构
+---
+flowchart TB
+    USER["用户命令\nls / cat / echo / open"] --> SYS["sysfile.c\n系统调用入口"]
+    SYS --> FILE["file.c\nstruct file / 偏移 / 引用计数"]
+    FILE --> FS["fs.c\ninode / 目录项 / 路径解析"]
+    FS --> LOG["log.c\n事务边界 / 崩溃一致性"]
+    LOG --> BIO["bio.c\n块缓存 / bread / bwrite"]
+    BIO --> DISK["virtio disk\n磁盘块读写"]
+
+    FS --> PATH["namex / namei\n绝对路径 + 相对路径"]
+    FILE --> FD["ofile[NOFILE]\n文件描述符表"]
+    FILE --> SEEK["lseek\nSEEK_SET/CUR/END"]
+

@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF" />
+  <rect x="84" y="54" width="112" height="6" fill="#1E3A8A" />
+  <text x="84" y="112" font-family="&quot;Microsoft YaHei&quot;, &quot;Noto Sans CJK SC&quot;, Arial, sans-serif" font-size="34" font-weight="700" fill="#1E3A8A">个人负责范围与汇报结构</text>
+  <text x="84" y="150" font-family="&quot;Microsoft YaHei&quot;, &quot;Noto Sans CJK SC&quot;, Arial, sans-serif" font-size="18" fill="#4B5563">三个模块，统一按“框架、基础、扩展、测试”四层展开</text>
+  <text x="1160" y="82" font-family="&quot;Microsoft YaHei&quot;, &quot;Noto Sans CJK SC&quot;, Arial, sans-serif" font-size="16" fill="#6B7280">02</text>
+
+  <rect x="84" y="202" width="344" height="250" fill="#F4F7FB" stroke="#D7E0EC" />
+  <rect x="468" y="202" width="344" height="250" fill="#F4F7FB" stroke="#D7E0EC" />
+  <rect x="852" y="202" width="344" height="250" fill="#F4F7FB" stroke="#D7E0EC" />
+
+  
+  <g transform="translate(112, 228) scale(1.41667)" fill="none" stroke="#1E3A8A" stroke-width="2">
+    <path d="M5 12l-2 0l9 -9l9 9l-2 0" />
+    <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+    <path d="M10 12h4v4h-4l0 -4" />
+  </g>
+  
+  <g transform="translate(496, 228) scale(1.41667)" fill="none" stroke="#1E3A8A" stroke-width="2">
+    <path d="M5 6a1 1 0 0 1 1 -1h12a1 1 0 0 1 1 1v12a1 1 0 0 1 -1 1h-12a1 1 0 0 1 -1 -1l0 -12" />
+    <path d="M8 10v-2h2m6 6v2h-2m-4 0h-2v-2m8 -4v-2h-2" />
+    <path d="M3 10h2" />
+    <path d="M3 14h2" />
+    <path d="M10 3v2" />
+    <path d="M14 3v2" />
+    <path d="M21 10h-2" />
+    <path d="M21 14h-2" />
+    <path d="M14 21v-2" />
+    <path d="M10 21v-2" />
+  </g>
+  
+  <g transform="translate(880, 228) scale(1.41667)" fill="none" stroke="#1E3A8A" stroke-width="2">
+    <path d="M5 19l2.757 -7.351a1 1 0 0 1 .936 -.649h12.307a1 1 0 0 1 .986 1.164l-.996 5.211a2 2 0 0 1 -1.964 1.625h-14.026a2 2 0 0 1 -2 -2v-11a2 2 0 0 1 2 -2h4l3 3h7a2 2 0 0 1 2 2v2" />
+  </g>
+
+  <text x="160" y="255" font-family="&quot;Microsoft YaHei&quot;, &quot;Noto Sans CJK SC&quot;, Arial, sans-serif" font-size="28" font-weight="700" fill="#111827">系统启动</text>
+  <text x="544" y="255" font-family="&quot;Microsoft YaHei&quot;, &quot;Noto Sans CJK SC&quot;, Arial, sans-serif" font-size="28" font-weight="700" fill="#111827">内存系统</text>
+  <text x="928" y="255" font-family="&quot;Microsoft YaHei&quot;, &quot;Noto Sans CJK SC&quot;, Arial, sans-serif" font-size="28" font-weight="700" fill="#111827">文件系统</text>
+
+  <text font-family="&quot;Microsoft YaHei&quot;, &quot;Noto Sans CJK SC&quot;, Arial, sans-serif" font-size="18" fill="#4B5563" x="112" y="302">- 启动入口与特权级切换</text><text font-family="&quot;Microsoft YaHei&quot;, &quot;Noto Sans CJK SC&quot;, Arial, sans-serif" font-size="18" fill="#4B5563" x="112" y="332">- DTB 指针保存</text><text font-family="&quot;Microsoft YaHei&quot;, &quot;Noto Sans CJK SC&quot;, Arial, sans-serif" font-size="18" fill="#4B5563" x="112" y="362">- shell 默认进入 /desktop</text><text font-family="&quot;Microsoft YaHei&quot;, &quot;Noto Sans CJK SC&quot;, Arial, sans-serif" font-size="18" fill="#4B5563" x="112" y="392">- 启动日志与验证</text><text font-family="&quot;Microsoft YaHei&quot;, &quot;Noto Sans CJK SC&quot;, Arial, sans-serif" font-size="18" fill="#4B5563" x="496" y="302">- 运行时物理内存探测</text><text font-family="&quot;Microsoft YaHei&quot;, &quot;Noto Sans CJK SC&quot;, Arial, sans-serif" font-size="18" fill="#4B5563" x="496" y="332">- Sv39 页表与 lazy sbrk</text><text font-family="&quot;Microsoft YaHei&quot;, &quot;Noto Sans CJK SC&quot;, Arial, sans-serif" font-size="18" fill="#4B5563" x="496" y="362">- kmalloc/kmfree 两级架构</text><text font-family="&quot;Microsoft YaHei&quot;, &quot;Noto Sans CJK SC&quot;, Arial, sans-serif" font-size="18" fill="#4B5563" x="496" y="392">- 主路径回归测试</text><text font-family="&quot;Microsoft YaHei&quot;, &quot;Noto Sans CJK SC&quot;, Arial, sans-serif" font-size="18" fill="#4B5563" x="880" y="302">- 文件描述符与路径解析</text><text font-family="&quot;Microsoft YaHei&quot;, &quot;Noto Sans CJK SC&quot;, Arial, sans-serif" font-size="18" fill="#4B5563" x="880" y="332">- lseek 文件定位</text><text font-family="&quot;Microsoft YaHei&quot;, &quot;Noto Sans CJK SC&quot;, Arial, sans-serif" font-size="18" fill="#4B5563" x="880" y="362">- 双独立磁盘与 /disk1</text><text font-family="&quot;Microsoft YaHei&quot;, &quot;Noto Sans CJK SC&quot;, Arial, sans-serif" font-size="18" fill="#4B5563" x="880" y="392">- 隐藏与颜色显示</text><rect x="84" y="500" width="1112" height="140" fill="#FFFFFF" stroke="#D7E0EC" />
+  <text x="112" y="542" font-family="&quot;Microsoft YaHei&quot;, &quot;Noto Sans CJK SC&quot;, Arial, sans-serif" font-size="22" font-weight="700" fill="#111827">答辩重点</text>
+  <text font-family="&quot;Microsoft YaHei&quot;, &quot;Noto Sans CJK SC&quot;, Arial, sans-serif" font-size="18" fill="#4B5563" x="112" y="580">先对齐课程要求，再说明本人在 xv6 原有能力之外补充了什么，最后用真实测试结果证明这些扩展已经跑通。</text><text font-family="&quot;Microsoft YaHei&quot;, &quot;Noto Sans CJK SC&quot;, Arial, sans-serif" font-size="18" fill="#4B5563" x="112" y="610">整套汇报不把 xv6 原版能力说成从零实现，而是强调“理解、扩展、验证”三步。</text></svg>

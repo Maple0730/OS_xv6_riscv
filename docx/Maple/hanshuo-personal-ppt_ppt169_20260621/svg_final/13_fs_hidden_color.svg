@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF" />
+  <rect x="84" y="54" width="112" height="6" fill="#1E3A8A" />
+  <text x="84" y="112" font-family="&quot;Microsoft YaHei&quot;, &quot;Noto Sans CJK SC&quot;, Arial, sans-serif" font-size="34" font-weight="700" fill="#1E3A8A">文件系统扩展二：隐藏与颜色显示</text>
+  <text x="84" y="150" font-family="&quot;Microsoft YaHei&quot;, &quot;Noto Sans CJK SC&quot;, Arial, sans-serif" font-size="18" fill="#4B5563">隐藏和着色被实现为 ls 的展示策略，因此不改磁盘格式，也不破坏双盘语义</text>
+  <text x="1160" y="82" font-family="&quot;Microsoft YaHei&quot;, &quot;Noto Sans CJK SC&quot;, Arial, sans-serif" font-size="16" fill="#6B7280">13</text>
+
+  <rect x="84" y="198" width="520" height="390" fill="#F4F7FB" stroke="#D7E0EC" />
+  <rect x="676" y="198" width="520" height="390" fill="#F4F7FB" stroke="#D7E0EC" />
+
+  
+  <g transform="translate(110, 222) scale(1.25)" fill="none" stroke="#1E3A8A" stroke-width="2">
+    <path d="M10.585 10.587a2 2 0 0 0 2.829 2.828" />
+    <path d="M16.681 16.673a8.717 8.717 0 0 1 -4.681 1.327c-3.6 0 -6.6 -2 -9 -6c1.272 -2.12 2.712 -3.678 4.32 -4.674m2.86 -1.146a9.055 9.055 0 0 1 1.82 -.18c3.6 0 6.6 2 9 6c-.666 1.11 -1.379 2.067 -2.138 2.87" />
+    <path d="M3 3l18 18" />
+  </g>
+  <text x="152" y="246" font-family="&quot;Microsoft YaHei&quot;, &quot;Noto Sans CJK SC&quot;, Arial, sans-serif" font-size="22" font-weight="700" fill="#111827">隐藏规则</text>
+  <text font-family="&quot;Microsoft YaHei&quot;, &quot;Noto Sans CJK SC&quot;, Arial, sans-serif" font-size="18" fill="#4B5563" x="112" y="290">- `.` 与 `..` 默认隐藏</text><text font-family="&quot;Microsoft YaHei&quot;, &quot;Noto Sans CJK SC&quot;, Arial, sans-serif" font-size="18" fill="#4B5563" x="112" y="320">- 以 `.` 开头的文件或目录默认隐藏</text><text font-family="&quot;Microsoft YaHei&quot;, &quot;Noto Sans CJK SC&quot;, Arial, sans-serif" font-size="18" fill="#4B5563" x="112" y="350">- 根目录中 mkfs 预装的系统程序和设备入口默认隐藏</text><text font-family="&quot;Microsoft YaHei&quot;, &quot;Noto Sans CJK SC&quot;, Arial, sans-serif" font-size="18" fill="#4B5563" x="112" y="380">- 隐藏只影响列表输出，不影响显式路径访问</text><text font-family="&quot;Microsoft YaHei&quot;, &quot;Noto Sans CJK SC&quot;, Arial, sans-serif" font-size="18" fill="#4B5563" x="112" y="410">- `ls -a` 用于展开全部隐藏项</text><g transform="translate(702, 222) scale(1.25)" fill="none" stroke="#1E3A8A" stroke-width="2">
+    <path d="M5 19l2.757 -7.351a1 1 0 0 1 .936 -.649h12.307a1 1 0 0 1 .986 1.164l-.996 5.211a2 2 0 0 1 -1.964 1.625h-14.026a2 2 0 0 1 -2 -2v-11a2 2 0 0 1 2 -2h4l3 3h7a2 2 0 0 1 2 2v2" />
+  </g>
+  <text x="744" y="246" font-family="&quot;Microsoft YaHei&quot;, &quot;Noto Sans CJK SC&quot;, Arial, sans-serif" font-size="22" font-weight="700" fill="#111827">颜色规则</text>
+  <text font-family="&quot;Microsoft YaHei&quot;, &quot;Noto Sans CJK SC&quot;, Arial, sans-serif" font-size="18" fill="#4B5563" x="712" y="290">- 目录显示为蓝色，突出可进入的命名空间入口</text><text font-family="&quot;Microsoft YaHei&quot;, &quot;Noto Sans CJK SC&quot;, Arial, sans-serif" font-size="18" fill="#4B5563" x="712" y="320">- 设备文件显示为黄色，和普通文件区分</text><text font-family="&quot;Microsoft YaHei&quot;, &quot;Noto Sans CJK SC&quot;, Arial, sans-serif" font-size="18" fill="#4B5563" x="712" y="350">- 隐藏项在 `ls -a` 中显示为灰色</text><text font-family="&quot;Microsoft YaHei&quot;, &quot;Noto Sans CJK SC&quot;, Arial, sans-serif" font-size="18" fill="#4B5563" x="712" y="380">- 普通文件保持终端默认颜色</text><text font-family="&quot;Microsoft YaHei&quot;, &quot;Noto Sans CJK SC&quot;, Arial, sans-serif" font-size="18" fill="#4B5563" x="712" y="410">- 仅着色文件名字段，不改 inode 和大小等列</text><rect x="84" y="616" width="1112" height="46" fill="#FFF7E8" stroke="#F59E0B" />
+  <text x="108" y="646" font-family="&quot;Microsoft YaHei&quot;, &quot;Noto Sans CJK SC&quot;, Arial, sans-serif" font-size="16" fill="#111827">
+    这一实现把“隐藏/颜色”控制在用户态 `ls` 中，因而不会增加 inode 元数据，也不会影响双盘路径解析和文件存储语义。
+  </text>
+</svg>

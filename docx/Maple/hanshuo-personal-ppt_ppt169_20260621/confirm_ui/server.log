@@ -1,0 +1,18 @@
+[07:45:45] [INFO] confirm_ui: running at http://localhost:5050
+[07:45:45] [INFO] confirm_ui: project: /home/hanshuo/office/OS/xv6-riscv/docx/Maple/hanshuo-personal-ppt_ppt169_20260621
+[07:45:45] [INFO] confirm_ui: idle timeout: 900s (0 = disabled)
+ * Serving Flask app 'server'
+ * Debug mode: off
+[07:45:45] [INFO] confirm_ui: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5050
+[07:45:45] [INFO] confirm_ui: [33mPress CTRL+C to quit[0m
+[07:45:45] [INFO] confirm_ui: 127.0.0.1 - - [21/Jun/2026 07:45:45] "GET / HTTP/1.1" 200 -
+[07:45:45] [INFO] confirm_ui: 127.0.0.1 - - [21/Jun/2026 07:45:45] "GET /static/style.css HTTP/1.1" 200 -
+[07:45:45] [INFO] confirm_ui: 127.0.0.1 - - [21/Jun/2026 07:45:45] "GET /static/app.js HTTP/1.1" 200 -
+[07:45:46] [INFO] confirm_ui: 127.0.0.1 - - [21/Jun/2026 07:45:46] "GET /api/recommendations HTTP/1.1" 200 -
+[07:45:46] [INFO] confirm_ui: 127.0.0.1 - - [21/Jun/2026 07:45:46] "GET /api/catalogs HTTP/1.1" 200 -
+[07:45:46] [INFO] confirm_ui: 127.0.0.1 - - [21/Jun/2026 07:45:46] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+[07:46:25] [INFO] confirm_ui: confirmation written to /home/hanshuo/office/OS/xv6-riscv/docx/Maple/hanshuo-personal-ppt_ppt169_20260621/confirm_ui/result.json
+[07:46:25] [INFO] confirm_ui: 127.0.0.1 - - [21/Jun/2026 07:46:25] "POST /api/confirm HTTP/1.1" 200 -
+[07:46:25] [INFO] confirm_ui: 127.0.0.1 - - [21/Jun/2026 07:46:25] "POST /api/shutdown HTTP/1.1" 200 -
+[07:46:25] [INFO] confirm_ui: shutting down (confirmed)

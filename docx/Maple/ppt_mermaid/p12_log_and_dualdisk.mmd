@@ -1,0 +1,38 @@
+---
+title: 日志机制与双独立磁盘
+---
+flowchart LR
+    subgraph LOGTX["日志事务机制"]
+        B["begin_op()"]
+        W["log_write()"]
+        C["commit()"]
+        I["install_trans()"]
+        R["recover_from_log()"]
+        B --> W --> C --> I
+        R -.崩溃恢复.-> I
+    end
+
+    subgraph ROOT["根盘 ROOTDEV"]
+        R0["/\nroot namespace"]
+        R1["desktop"]
+        R2["disk1\n静态挂载点"]
+        R0 --> R1
+        R0 --> R2
+    end
+
+    subgraph DISK1["第二盘 DISK1DEV"]
+        D0["第二盘根目录"]
+        D1["x"]
+        D2["..."]
+        D0 --> D1
+        D0 --> D2
+    end
+
+    R2 ==跨盘切换==> D0
+    D0 -. cd .. 返回 .-> R0
+
+    NOTE1["文件不能跨盘\nfs.img 与 fs1.img 独立管理"]
+    NOTE2["禁止删除 /disk1\n保护挂载点"]
+    ROOT -.-> NOTE1
+    DISK1 -.-> NOTE2
+

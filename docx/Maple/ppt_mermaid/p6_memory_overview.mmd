@@ -1,0 +1,33 @@
+---
+title: 内存系统整体结构
+---
+flowchart TB
+    subgraph HEAP["堆级分配"]
+        KM1["kmalloc(n)"]
+        KM2["kmfree(p)"]
+        KM3["小对象 slab / 大对象回退"]
+    end
+
+    subgraph VM["虚拟内存管理"]
+        VM1["页表创建\nkvmmake / uvmcreate"]
+        VM2["地址映射\nwalk / mappages"]
+        VM3["地址回收\nuvmunmap / uvmfree"]
+        VM4["lazy sbrk\n缺页后再分配"]
+    end
+
+    subgraph PHYS["物理页框管理"]
+        PH1["运行时内存探测\nDTB /memory/reg"]
+        PH2["kalloc()"]
+        PH3["kfree()"]
+        PH4["freelist\n4KB 页框"]
+    end
+
+    KM1 --> VM1
+    KM2 --> VM3
+    VM4 --> PH2
+    VM2 --> PH2
+    VM3 --> PH3
+    PH1 --> PH4
+    PH2 --> PH4
+    PH3 --> PH4
+

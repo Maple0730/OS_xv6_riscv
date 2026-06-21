@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+  <rect x="84" y="54" width="112" height="6" fill="#1E3A8A"/>
+  <text x="84" y="112" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="34" font-weight="700" fill="#1E3A8A">内存系统扩展：运行时探测与 kmalloc</text>
+  <text x="84" y="150" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="18" fill="#4B5563">关键增量在于把教学型固定上界实现推进为可自适应、可精细分配的运行版本</text>
+  <text x="1160" y="82" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="16" fill="#6B7280">08</text>
+
+  <rect x="84" y="190" width="612" height="334" fill="#F4F7FB" stroke="#D7E0EC"/>
+  <image href="../images/p8_memory_extensions.png" x="98" y="204" width="584" height="306" preserveAspectRatio="xMidYMid meet"/>
+
+  <rect x="740" y="190" width="456" height="154" fill="#FFFFFF" stroke="#D7E0EC"/>
+  <rect x="740" y="370" width="456" height="154" fill="#FFFFFF" stroke="#D7E0EC"/>
+  <rect x="84" y="558" width="1112" height="92" fill="#FFF7E8" stroke="#F59E0B"/>
+
+  <text x="768" y="230" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="22" font-weight="700" fill="#111827">运行时物理内存探测</text>
+  <text x="768" y="264" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="17" fill="#4B5563">
+    <tspan x="768" dy="0">启动时解析 DTB 的 <tspan font-family='Consolas, "Courier New", monospace'>/memory/reg</tspan>，</tspan>
+    <tspan x="768" dy="26">不再写死物理内存上界，可适配</tspan>
+    <tspan x="768" dy="26"><tspan fill="#1E3A8A">QEMU -m 128M / 256M</tspan> 等不同配置。</tspan>
+  </text>
+
+  <text x="768" y="410" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="22" font-weight="700" fill="#111827">kmalloc/kmfree 两级架构</text>
+  <text x="768" y="444" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="17" fill="#4B5563">
+    <tspan x="768" dy="0">7 个 slab 档位负责小对象，大对象回退整页分配，</tspan>
+    <tspan x="768" dy="26">空 slab 页可自动归还；<tspan fill="#1E3A8A">struct pipe</tspan> 与</tspan>
+    <tspan x="768" dy="26"><tspan fill="#1E3A8A">struct file</tspan> 已真实接入该分配路径。</tspan>
+  </text>
+
+  <text x="112" y="594" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="18" fill="#111827">
+    这一页的重点不是“又加了一个接口”，而是让内存子系统同时具备 <tspan fill="#1E3A8A">规模自适应</tspan> 与 <tspan fill="#1E3A8A">对象级分配精度</tspan> 两个能力。
+  </text>
+</svg>

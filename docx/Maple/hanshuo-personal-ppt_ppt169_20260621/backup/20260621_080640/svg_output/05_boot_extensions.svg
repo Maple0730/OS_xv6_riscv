@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+  <rect x="84" y="54" width="112" height="6" fill="#1E3A8A"/>
+  <text x="84" y="112" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="34" font-weight="700" fill="#1E3A8A">系统启动扩展与验证</text>
+  <text x="84" y="150" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="18" fill="#4B5563">启动阶段已经为后续模块和用户体验预留了直接入口</text>
+  <text x="1160" y="82" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="16" fill="#6B7280">05</text>
+
+  <rect x="658" y="192" width="538" height="430" fill="#F4F7FB" stroke="#D7E0EC"/>
+  <image href="../images/system_boot_terminal.png" x="672" y="206" width="510" height="402" preserveAspectRatio="xMidYMid meet"/>
+
+  <use data-icon="tabler-outline/home-2" x="96" y="208" width="30" height="30" fill="#1E3A8A" stroke-width="2"/>
+  <text x="142" y="232" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="22" font-weight="700" fill="#111827">默认目录进入 /desktop</text>
+  <text x="142" y="264" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="18" fill="#4B5563">
+    启动后不直接停留在根目录，而是把根目录保留给系统入口和挂载点。
+  </text>
+
+  <use data-icon="tabler-outline/terminal-2" x="96" y="322" width="30" height="30" fill="#1E3A8A" stroke-width="2"/>
+  <text x="142" y="346" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="22" font-weight="700" fill="#111827">启动日志接入 kmalloctest</text>
+  <text x="142" y="378" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="18" fill="#4B5563">
+    <tspan x="142" dy="0">启动阶段即可看到 <tspan fill="#059669">kmalloctest: ok</tspan>，</tspan>
+    <tspan x="142" dy="28">便于在内核早期发现堆分配异常。</tspan>
+  </text>
+
+  <use data-icon="tabler-outline/cpu-2" x="96" y="452" width="30" height="30" fill="#1E3A8A" stroke-width="2"/>
+  <text x="142" y="476" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="22" font-weight="700" fill="#111827">保存 DTB 指针</text>
+  <text x="142" y="508" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="18" fill="#4B5563">
+    <tspan x="142" dy="0">启动时把 DTB 指针从 <tspan font-family='Consolas, "Courier New", monospace'>a1</tspan> 保存下来，</tspan>
+    <tspan x="142" dy="28">后续内存探测即可读取 <tspan font-family='Consolas, "Courier New", monospace'>/memory/reg</tspan>。</tspan>
+  </text>
+
+  <rect x="84" y="574" width="534" height="48" fill="#FFF7E8" stroke="#F59E0B"/>
+  <text x="104" y="606" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="16" fill="#111827">
+    这三项扩展分别对应：后续模块输入、启动期自测能力、以及用户进入系统后的默认工作区体验。
+  </text>
+</svg>

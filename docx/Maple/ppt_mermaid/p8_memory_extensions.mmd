@@ -1,0 +1,30 @@
+---
+title: 内存系统扩展
+---
+flowchart LR
+    subgraph DETECT["扩展一：运行时物理内存探测"]
+        D1["启动保存 DTB 指针"]
+        D2["解析 /memory/reg"]
+        D3["得到 phys_ram_start\nphys_ram_end"]
+        D4["kinit 按运行时范围\n加入空闲页链表"]
+        D5["QEMU -m 128M / 256M\n自动适配"]
+        D1 --> D2 --> D3 --> D4 --> D5
+    end
+
+    subgraph KHEAP["扩展二：kmalloc / kmfree"]
+        K1["kmalloc(n)"]
+        K2{"大小判断"}
+        K3["size-class slab\n32B ~ 2048B"]
+        K4["大对象回退\n整页分配"]
+        K5["kmfree(p)"]
+        K6["空 slab 页归还\n到底层 kfree"]
+        K7["真实接入对象\nstruct pipe / struct file"]
+        K1 --> K2
+        K2 -->|<= 2048B| K3
+        K2 -->|> 2048B| K4
+        K3 --> K5
+        K4 --> K5
+        K5 --> K6
+        K3 --> K7
+    end
+

@@ -1,0 +1,162 @@
+{
+  "lang": "zh",
+  "recommend": {
+    "canvas": "ppt169",
+    "mode": "instructional",
+    "visual_style": "swiss-minimal",
+    "icons": "tabler-outline",
+    "image_usage": "provided",
+    "formula_policy": "text-only",
+    "generation_mode": "continuous"
+  },
+  "page_count": {
+    "value": "12-15"
+  },
+  "audience": {
+    "value": "操作系统课程设计答辩老师与同学"
+  },
+  "content_divergence": {
+    "value": "允许在现有实现基础上重组表达，但不引入超出项目实现的新事实。"
+  },
+  "color": {
+    "selected": 0,
+    "candidates": [
+      {
+        "name_zh": "方案 A：学术蓝白",
+        "name_en": "Plan A: Academic Blue",
+        "note_zh": "最稳妥的答辩风格，适合技术结构图和终端截图。",
+        "note_en": "A safe academic defense style for technical diagrams and terminal screenshots.",
+        "palette": {
+          "background": "#FFFFFF",
+          "secondary_bg": "#F4F7FB",
+          "primary": "#1E3A8A",
+          "accent": "#F59E0B",
+          "secondary_accent": "#3B82F6",
+          "body_text": "#111827"
+        }
+      },
+      {
+        "name_zh": "方案 B：冷静青灰",
+        "name_en": "Plan B: Slate Teal",
+        "note_zh": "更克制，适合强调工程性和结构感。",
+        "note_en": "More restrained, suitable for engineering structure and hierarchy.",
+        "palette": {
+          "background": "#FFFFFF",
+          "secondary_bg": "#F3F6F8",
+          "primary": "#1F4E5F",
+          "accent": "#D97706",
+          "secondary_accent": "#64748B",
+          "body_text": "#111827"
+        }
+      },
+      {
+        "name_zh": "方案 C：纸张金属感",
+        "name_en": "Plan C: Ink and Gold",
+        "note_zh": "更有展示感，但仍保持学术文档气质。",
+        "note_en": "More presentational while still keeping an academic-document tone.",
+        "palette": {
+          "background": "#FFFCF5",
+          "secondary_bg": "#F3EFE3",
+          "primary": "#1F2937",
+          "accent": "#C58B00",
+          "secondary_accent": "#4B5563",
+          "body_text": "#111827"
+        }
+      }
+    ]
+  },
+  "typography": {
+    "selected": 0,
+    "candidates": [
+      {
+        "name_zh": "方案 A：理性无衬线",
+        "name_en": "Plan A: Rational Sans",
+        "note_zh": "最适合技术答辩，清楚、稳定、现代。",
+        "note_en": "Clear, stable, and modern for a technical defense deck.",
+        "heading": {
+          "cjk": "Noto Sans CJK SC",
+          "latin": "Arial",
+          "css": "'Noto Sans CJK SC','Arial',sans-serif",
+          "sample_cjk": "系统启动整体框架",
+          "sample_latin": "System Boot Overview"
+        },
+        "body": {
+          "cjk": "Noto Sans CJK SC",
+          "latin": "Arial",
+          "css": "'Noto Sans CJK SC','Arial',sans-serif",
+          "sample_cjk": "运行时物理内存探测与 kmalloc 扩展",
+          "sample_latin": "Runtime memory detection and kmalloc extension"
+        },
+        "body_size": 20
+      },
+      {
+        "name_zh": "方案 B：标题带衬线",
+        "name_en": "Plan B: Serif Titles",
+        "note_zh": "标题更像正式报告，正文仍保持技术可读性。",
+        "note_en": "Report-like headings with readable technical body text.",
+        "heading": {
+          "cjk": "Noto Serif CJK SC",
+          "latin": "Georgia",
+          "css": "'Noto Serif CJK SC','Georgia',serif",
+          "sample_cjk": "文件系统整体结构",
+          "sample_latin": "Filesystem Architecture"
+        },
+        "body": {
+          "cjk": "Noto Sans CJK SC",
+          "latin": "Arial",
+          "css": "'Noto Sans CJK SC','Arial',sans-serif",
+          "sample_cjk": "日志事务机制与双独立磁盘",
+          "sample_latin": "Log transactions and dual-disk support"
+        },
+        "body_size": 20
+      },
+      {
+        "name_zh": "方案 C：紧凑技术风",
+        "name_en": "Plan C: Compact Technical",
+        "note_zh": "适合信息密度略高的页面，结构感更强。",
+        "note_en": "Better for denser pages with stronger technical rhythm.",
+        "heading": {
+          "cjk": "Noto Sans CJK SC",
+          "latin": "Verdana",
+          "css": "'Noto Sans CJK SC','Verdana',sans-serif",
+          "sample_cjk": "内存系统扩展",
+          "sample_latin": "Memory Extensions"
+        },
+        "body": {
+          "cjk": "Noto Sans CJK SC",
+          "latin": "Verdana",
+          "css": "'Noto Sans CJK SC','Verdana',sans-serif",
+          "sample_cjk": "运行时探测、slab、双盘、隐藏显示",
+          "sample_latin": "Runtime detection, slab, dual disk, hidden display"
+        },
+        "body_size": 18
+      }
+    ]
+  },
+  "visual_style_spectrum": [
+    {
+      "id": "swiss-minimal",
+      "tag_zh": "稳妥专业",
+      "tag_en": "Safe & professional",
+      "note_zh": "像高校课程答辩的规范技术稿",
+      "note_en": "Like a disciplined university technical defense deck"
+    },
+    {
+      "id": "editorial",
+      "tag_zh": "编辑质感",
+      "tag_en": "Editorial depth",
+      "note_zh": "像一份经过编排的技术专题页",
+      "note_en": "Like a carefully edited technical feature spread"
+    },
+    {
+      "id": "blueprint",
+      "tag_zh": "工程感更强",
+      "tag_en": "More engineering-forward",
+      "note_zh": "像系统结构说明图集",
+      "note_en": "Like a set of architecture explanation boards"
+    }
+  ],
+  "refine_spec": {
+    "value": false
+  }
+}

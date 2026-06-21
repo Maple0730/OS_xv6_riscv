@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+  <rect x="84" y="54" width="112" height="6" fill="#1E3A8A"/>
+  <text x="84" y="112" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="34" font-weight="700" fill="#1E3A8A">文件系统整体结构</text>
+  <text x="84" y="150" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="18" fill="#4B5563">从系统调用层到底层块设备层，可以按分层方式理解文件系统主干</text>
+  <text x="1160" y="82" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="16" fill="#6B7280">10</text>
+
+  <rect x="84" y="186" width="1112" height="316" fill="#F4F7FB" stroke="#D7E0EC"/>
+  <image href="../images/p10_filesystem_layers.png" x="98" y="200" width="1084" height="288" preserveAspectRatio="xMidYMid meet"/>
+
+  <rect x="84" y="538" width="532" height="114" fill="#FFFFFF" stroke="#D7E0EC"/>
+  <rect x="664" y="538" width="532" height="114" fill="#FFFFFF" stroke="#D7E0EC"/>
+
+  <text x="112" y="576" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="20" font-weight="700" fill="#111827">上层到下层的解释路径</text>
+  <text x="112" y="608" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="16" fill="#4B5563">
+    <tspan x="112" dy="0"><tspan fill="#1E3A8A">sysfile.c</tspan> → <tspan fill="#1E3A8A">file.c</tspan> → <tspan fill="#1E3A8A">fs.c</tspan> → <tspan fill="#1E3A8A">log.c</tspan> → <tspan fill="#1E3A8A">bio.c</tspan> → virtio disk</tspan>
+  </text>
+
+  <text x="692" y="576" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="20" font-weight="700" fill="#111827">理解重点</text>
+  <text x="692" y="608" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="16" fill="#4B5563">
+    最上层是用户可见接口，最下层是块设备与缓存，中间的 inode、日志与路径解析才是扩展的关键位置。
+  </text>
+</svg>

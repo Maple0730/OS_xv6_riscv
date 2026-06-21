@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+  <rect x="84" y="54" width="112" height="6" fill="#1E3A8A"/>
+  <text x="84" y="112" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="34" font-weight="700" fill="#1E3A8A">系统启动基础功能</text>
+  <text x="84" y="150" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="18" fill="#4B5563">课程要求中的关键启动指标均有对应实现</text>
+  <text x="1160" y="82" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="16" fill="#6B7280">04</text>
+
+  <rect x="84" y="206" width="524" height="188" fill="#F4F7FB" stroke="#D7E0EC"/>
+  <rect x="672" y="206" width="524" height="188" fill="#F4F7FB" stroke="#D7E0EC"/>
+  <rect x="84" y="432" width="524" height="188" fill="#F4F7FB" stroke="#D7E0EC"/>
+  <rect x="672" y="432" width="524" height="188" fill="#F4F7FB" stroke="#D7E0EC"/>
+
+  <text x="112" y="250" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="22" font-weight="700" fill="#111827">1. 特权级切换</text>
+  <text x="112" y="288" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="18" fill="#4B5563">
+    <tspan x="112" dy="0">设置 <tspan font-family='Consolas, "Courier New", monospace'>mstatus.MPP = S</tspan>，</tspan>
+    <tspan x="112" dy="28">将 <tspan font-family='Consolas, "Courier New", monospace'>mepc</tspan> 指向 <tspan fill="#1E3A8A">main</tspan>，最终通过 <tspan font-family='Consolas, "Courier New", monospace'>mret</tspan></tspan>
+    <tspan x="112" dy="28">从 M 态切换到 S 态。</tspan>
+  </text>
+
+  <text x="700" y="250" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="22" font-weight="700" fill="#111827">2. 启动栈准备</text>
+  <text x="700" y="288" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="18" fill="#4B5563">
+    <tspan x="700" dy="0"><tspan fill="#1E3A8A">entry.S</tspan> 为每个 hart 计算独立栈顶，</tspan>
+    <tspan x="700" dy="28">在进入 <tspan fill="#1E3A8A">start()</tspan> 之前就完成 <tspan font-family='Consolas, "Courier New", monospace'>sp</tspan></tspan>
+    <tspan x="700" dy="28">初始化，保证后续 C 调用稳定。</tspan>
+  </text>
+
+  <text x="112" y="476" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="22" font-weight="700" fill="#111827">3. trap 入口初始化</text>
+  <text x="112" y="514" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="18" fill="#4B5563">
+    <tspan x="112" dy="0">RISC-V 没有 x86 风格的 GDT/IDT，</tspan>
+    <tspan x="112" dy="28">这里通过异常/中断委托与 <tspan fill="#1E3A8A">stvec</tspan> 完成</tspan>
+    <tspan x="112" dy="28">等价的 trap vector 准备。</tspan>
+  </text>
+
+  <text x="700" y="476" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="22" font-weight="700" fill="#111827">4. 进入主函数与 shell</text>
+  <text x="700" y="514" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="18" fill="#4B5563">
+    <tspan x="700" dy="0"><tspan fill="#1E3A8A">main()</tspan> 完成控制台、页表、进程、设备、</tspan>
+    <tspan x="700" dy="28">文件系统初始化，随后创建首个用户进程，</tspan>
+    <tspan x="700" dy="28">最终进入交互式 shell。</tspan>
+  </text>
+</svg>

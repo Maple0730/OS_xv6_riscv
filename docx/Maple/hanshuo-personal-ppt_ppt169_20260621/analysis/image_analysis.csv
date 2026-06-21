@@ -1,0 +1,10 @@
+No,Filename,Width,Height,AspectRatio,PixelAspectRatio,RatioSource,UsageCount,DisplayRatioVariants,AssetKind,SvgRenderable,PptxNativeSupported,SizeKB,Category,ImageArea_SxS,TextArea_SxS
+1,hidden_color_ls.png,669,673,0.99,0.99,pixel,1,,bitmap,True,True,97.3,Near square,596x600,544x600
+2,kmalloctest_boot_log.png,882,735,1.20,1.20,pixel,1,,bitmap,True,True,168.4,Near square,720x600,420x600
+3,lseektest.png,831,403,2.06,2.06,pixel,1,,bitmap,True,True,87.6,Ultra-wide,812x394,328x600
+4,p10_filesystem_layers.png,2250,1265,1.78,1.78,pixel,1,,bitmap,True,True,173.5,Wide landscape,812x457,328x600
+5,p12_log_and_dualdisk.png,2250,1265,1.78,1.78,pixel,1,,bitmap,True,True,186.1,Wide landscape,812x457,328x600
+6,p3_system_boot_flow.png,2250,1265,1.78,1.78,pixel,1,,bitmap,True,True,169.2,Wide landscape,812x457,328x600
+7,p6_memory_overview.png,2250,1265,1.78,1.78,pixel,1,,bitmap,True,True,186.0,Wide landscape,812x457,328x600
+8,p8_memory_extensions.png,2250,1265,1.78,1.78,pixel,1,,bitmap,True,True,223.4,Wide landscape,812x457,328x600
+9,system_boot_terminal.png,1714,1230,1.39,1.39,pixel,1,,bitmap,True,True,279.1,Standard landscape,836x600,304x600

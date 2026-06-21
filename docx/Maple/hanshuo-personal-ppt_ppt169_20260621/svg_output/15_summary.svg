@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+  <rect x="84" y="54" width="112" height="6" fill="#1E3A8A"/>
+  <text x="84" y="112" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="34" font-weight="700" fill="#1E3A8A">总结</text>
+  <text x="84" y="150" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="18" fill="#4B5563">本次个人工作是在 xv6 基础上完成理解、扩展和验证，而不是脱离真实代码的概念设计</text>
+  <text x="1160" y="82" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="16" fill="#6B7280">15</text>
+
+  <rect x="84" y="214" width="324" height="262" fill="#F4F7FB" stroke="#D7E0EC"/>
+  <rect x="478" y="214" width="324" height="262" fill="#F4F7FB" stroke="#D7E0EC"/>
+  <rect x="872" y="214" width="324" height="262" fill="#F4F7FB" stroke="#D7E0EC"/>
+
+  <text x="112" y="260" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="24" font-weight="700" fill="#111827">系统启动</text>
+  <text x="112" y="300" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="17" fill="#4B5563">
+    <tspan x="112" dy="0">- 从 QEMU 到 shell 的链路稳定贯通</tspan>
+    <tspan x="112" dy="28">- 保存 DTB 指针</tspan>
+    <tspan x="112" dy="28">- 启动日志接入 kmalloctest</tspan>
+    <tspan x="112" dy="28">- shell 默认进入 /desktop</tspan>
+  </text>
+
+  <text x="506" y="260" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="24" font-weight="700" fill="#111827">内存系统</text>
+  <text x="506" y="300" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="17" fill="#4B5563">
+    <tspan x="506" dy="0">- 运行时物理内存探测</tspan>
+    <tspan x="506" dy="28">- Sv39 页表与 lazy sbrk</tspan>
+    <tspan x="506" dy="28">- kmalloc/kmfree 两级架构</tspan>
+    <tspan x="506" dy="28">- pipe/file 主路径验证</tspan>
+  </text>
+
+  <text x="900" y="260" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="24" font-weight="700" fill="#111827">文件系统</text>
+  <text x="900" y="300" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="17" fill="#4B5563">
+    <tspan x="900" dy="0">- lseek 随机访问</tspan>
+    <tspan x="900" dy="28">- 日志机制与双独立磁盘</tspan>
+    <tspan x="900" dy="28">- /disk1 静态挂载</tspan>
+    <tspan x="900" dy="28">- 隐藏与颜色显示</tspan>
+  </text>
+
+  <rect x="84" y="540" width="1112" height="90" fill="#FFF7E8" stroke="#F59E0B"/>
+  <text x="112" y="577" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="21" font-weight="700" fill="#111827">最终结论</text>
+  <text x="112" y="611" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="17" fill="#111827">
+    三个模块的扩展都已经具备真实运行证据，说明本人负责部分不仅完成了代码实现，也完成了可复现、可答辩的系统级验证。
+  </text>
+</svg>

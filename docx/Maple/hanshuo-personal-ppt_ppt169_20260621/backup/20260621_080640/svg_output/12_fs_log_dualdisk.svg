@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+  <rect x="84" y="54" width="112" height="6" fill="#1E3A8A"/>
+  <text x="84" y="112" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="34" font-weight="700" fill="#1E3A8A">文件系统扩展一：日志机制与双独立磁盘</text>
+  <text x="84" y="150" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="18" fill="#4B5563">重点不是多接一个镜像，而是把日志、superblock、inode 和路径解析都改成按设备解释</text>
+  <text x="1160" y="82" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="16" fill="#6B7280">12</text>
+
+  <rect x="84" y="192" width="588" height="344" fill="#F4F7FB" stroke="#D7E0EC"/>
+  <image href="../images/p12_log_and_dualdisk.png" x="98" y="206" width="560" height="316" preserveAspectRatio="xMidYMid meet"/>
+
+  <rect x="724" y="192" width="472" height="154" fill="#FFFFFF" stroke="#D7E0EC"/>
+  <rect x="724" y="382" width="472" height="154" fill="#FFFFFF" stroke="#D7E0EC"/>
+  <rect x="84" y="570" width="1112" height="64" fill="#FFF7E8" stroke="#F59E0B"/>
+
+  <use data-icon="tabler-outline/database" x="750" y="220" width="30" height="30" fill="#1E3A8A" stroke-width="2"/>
+  <text x="792" y="244" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="22" font-weight="700" fill="#111827">日志事务机制</text>
+  <text x="792" y="276" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="17" fill="#4B5563">
+    <tspan x="792" dy="0"><tspan fill="#1E3A8A">begin_op()/end_op()</tspan> 管理事务边界，</tspan>
+    <tspan x="792" dy="26"><tspan fill="#1E3A8A">log_write()/commit()/recover_from_log()</tspan></tspan>
+    <tspan x="792" dy="26">保证多块更新在崩溃后仍能恢复一致。</tspan>
+  </text>
+
+  <use data-icon="tabler-outline/route" x="750" y="410" width="30" height="30" fill="#1E3A8A" stroke-width="2"/>
+  <text x="792" y="434" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="22" font-weight="700" fill="#111827">双独立磁盘与 /disk1</text>
+  <text x="792" y="466" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="17" fill="#4B5563">
+    <tspan x="792" dy="0">根盘使用 <tspan fill="#1E3A8A">fs.img</tspan>，第二盘使用 <tspan fill="#1E3A8A">fs1.img</tspan>，</tspan>
+    <tspan x="792" dy="26">文件不能跨盘分配；<tspan fill="#1E3A8A">/disk1</tspan> 是静态挂载边界，</tspan>
+    <tspan x="792" dy="26"><tspan font-family='Consolas, "Courier New", monospace'>cd /disk1; cd ..</tspan> 可回到根盘 `/`。</tspan>
+  </text>
+
+  <text x="108" y="610" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="18" fill="#111827">
+    创新点在于：路径遍历、superblock、日志路由和挂载点语义被统一调整为“按设备解释”，而不是只在 QEMU 里多挂一块盘。
+  </text>
+</svg>

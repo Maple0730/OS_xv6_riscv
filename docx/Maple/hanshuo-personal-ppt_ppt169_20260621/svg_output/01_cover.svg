@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1280" height="720" viewBox="0 0 1280 720">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+  <rect x="84" y="64" width="126" height="8" fill="#1E3A8A"/>
+  <rect x="84" y="612" width="1112" height="1" fill="#E5EAF2"/>
+
+  <text x="84" y="168" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="52" font-weight="700" fill="#111827">
+    <tspan x="84" dy="0">基于 xv6-riscv 的系统启动、</tspan>
+    <tspan x="84" dy="68">内存系统与文件系统扩展</tspan>
+  </text>
+
+  <text x="84" y="290" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="24" fill="#4B5563">
+    <tspan x="84" dy="0">操作系统课程设计 A 题个人汇报</tspan>
+    <tspan x="84" dy="34">韩硕 / xv6-riscv / 2026.06</tspan>
+  </text>
+
+  <rect x="84" y="386" width="324" height="132" fill="#F4F7FB" stroke="#D7E0EC"/>
+  <rect x="478" y="386" width="324" height="132" fill="#F4F7FB" stroke="#D7E0EC"/>
+  <rect x="872" y="386" width="324" height="132" fill="#F4F7FB" stroke="#D7E0EC"/>
+
+  <text x="112" y="438" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="18" fill="#6B7280">模块一</text>
+  <text x="112" y="478" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="30" font-weight="700" fill="#1E3A8A">系统启动</text>
+
+  <text x="506" y="438" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="18" fill="#6B7280">模块二</text>
+  <text x="506" y="478" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="30" font-weight="700" fill="#1E3A8A">内存系统</text>
+
+  <text x="900" y="438" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="18" fill="#6B7280">模块三</text>
+  <text x="900" y="478" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="30" font-weight="700" fill="#1E3A8A">文件系统</text>
+
+  <text x="84" y="572" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="18" fill="#4B5563">
+    在 xv6 教学内核基础上，围绕启动链路、运行时内存管理和文件系统扩展给出结构说明与测试证据。
+  </text>
+
+  <text x="1160" y="82" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="16" fill="#6B7280">01</text>
+</svg>

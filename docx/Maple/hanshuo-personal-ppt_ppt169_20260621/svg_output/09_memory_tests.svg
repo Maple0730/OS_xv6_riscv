@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+  <rect x="84" y="54" width="112" height="6" fill="#1E3A8A"/>
+  <text x="84" y="112" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="34" font-weight="700" fill="#1E3A8A">内存系统测试与验证</text>
+  <text x="84" y="150" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="18" fill="#4B5563">测试重点在于：不仅自测通过，而且真实对象路径已经切换到 kmalloc</text>
+  <text x="1160" y="82" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="16" fill="#6B7280">09</text>
+
+  <rect x="84" y="196" width="476" height="402" fill="#F4F7FB" stroke="#D7E0EC"/>
+  <image href="../images/kmalloctest_boot_log.png" x="98" y="210" width="448" height="374" preserveAspectRatio="xMidYMid meet"/>
+
+  <text x="610" y="236" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="22" font-weight="700" fill="#111827">验证结论</text>
+  <text x="610" y="278" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="18" fill="#4B5563">
+    <tspan x="610" dy="0">1. 启动日志出现 <tspan fill="#059669">kmalloctest: ok</tspan>，说明</tspan>
+    <tspan x="610" dy="30">边界检查、读写检查、复用检查和跨页增长检查均通过。</tspan>
+    <tspan x="610" dy="42">2. `pipe` 和 `file` 对象已经改走 `kmalloc`，</tspan>
+    <tspan x="610" dy="30">证明改动进入了真实内核主路径。</tspan>
+    <tspan x="610" dy="42">3. 运行时物理内存探测能随 QEMU 内存规模变化，</tspan>
+    <tspan x="610" dy="30">说明 DTB 探测不是静态演示，而是实际生效。</tspan>
+  </text>
+
+  <rect x="610" y="520" width="586" height="78" fill="#FFF7E8" stroke="#F59E0B"/>
+  <use data-icon="tabler-outline/chart-bar" x="632" y="544" width="26" height="26" fill="#F59E0B" stroke-width="2"/>
+  <text x="674" y="570" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="17" fill="#111827">
+    这组测试的意义在于：`kmalloc` 已经从“实验代码”进入“真实运行路径”。
+  </text>
+
+  <text x="84" y="628" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="14" fill="#6B7280">截图来源：启动阶段 kmalloctest 自测日志</text>
+</svg>

@@ -1,0 +1,44 @@
+{
+  "canvas": "ppt169",
+  "page_count": "12-15",
+  "audience": "操作系统课程设计答辩老师与同学",
+  "content_divergence": "允许在现有实现基础上重组表达，但不引入超出项目实现的新事实。",
+  "mode": "instructional",
+  "visual_style": "swiss-minimal",
+  "color": {
+    "name": "",
+    "palette": {
+      "background": "#FFFFFF",
+      "secondary_bg": "#F4F7FB",
+      "primary": "#1E3A8A",
+      "accent": "#F59E0B",
+      "secondary_accent": "#3B82F6",
+      "body_text": "#111827"
+    }
+  },
+  "icons": "tabler-outline",
+  "typography": {
+    "name": "",
+    "heading": {
+      "cjk": "Noto Sans CJK SC",
+      "css": "'Noto Sans CJK SC','Arial',sans-serif",
+      "latin": "Arial",
+      "sample_cjk": "系统启动整体框架",
+      "sample_latin": "System Boot Overview"
+    },
+    "body": {
+      "cjk": "Noto Sans CJK SC",
+      "css": "'Noto Sans CJK SC','Arial',sans-serif",
+      "latin": "Arial",
+      "sample_cjk": "运行时物理内存探测与 kmalloc 扩展",
+      "sample_latin": "Runtime memory detection and kmalloc extension"
+    },
+    "body_size": "20"
+  },
+  "formula_policy": "text-only",
+  "image_usage": "provided",
+  "generation_mode": "continuous",
+  "refine_spec": false,
+  "status": "confirmed",
+  "confirmed_at": "2026-06-21T07:46:25"
+}

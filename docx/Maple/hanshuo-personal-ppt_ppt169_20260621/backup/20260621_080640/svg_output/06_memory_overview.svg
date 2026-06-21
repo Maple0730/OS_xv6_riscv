@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+  <rect x="84" y="54" width="112" height="6" fill="#1E3A8A"/>
+  <text x="84" y="112" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="34" font-weight="700" fill="#1E3A8A">内存系统整体结构</text>
+  <text x="84" y="150" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="18" fill="#4B5563">当前内存系统已经形成页框、页表与内核堆的三层结构</text>
+  <text x="1160" y="82" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="16" fill="#6B7280">06</text>
+
+  <rect x="84" y="186" width="1112" height="316" fill="#F4F7FB" stroke="#D7E0EC"/>
+  <image href="../images/p6_memory_overview.png" x="98" y="200" width="1084" height="288" preserveAspectRatio="xMidYMid meet"/>
+
+  <rect x="84" y="538" width="344" height="114" fill="#FFFFFF" stroke="#D7E0EC"/>
+  <rect x="468" y="538" width="344" height="114" fill="#FFFFFF" stroke="#D7E0EC"/>
+  <rect x="852" y="538" width="344" height="114" fill="#FFFFFF" stroke="#D7E0EC"/>
+
+  <use data-icon="tabler-outline/cpu-2" x="108" y="560" width="28" height="28" fill="#1E3A8A" stroke-width="2"/>
+  <text x="148" y="580" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="20" font-weight="700" fill="#111827">物理页框分配</text>
+  <text x="108" y="612" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="16" fill="#4B5563">`kalloc/kfree` 负责 4KB 页级资源。</text>
+
+  <use data-icon="tabler-outline/route" x="492" y="560" width="28" height="28" fill="#1E3A8A" stroke-width="2"/>
+  <text x="532" y="580" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="20" font-weight="700" fill="#111827">虚拟内存管理</text>
+  <text x="492" y="612" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="16" fill="#4B5563">Sv39 页表、映射、解除映射与用户空间维护。</text>
+
+  <use data-icon="tabler-outline/chart-bar" x="876" y="560" width="28" height="28" fill="#1E3A8A" stroke-width="2"/>
+  <text x="916" y="580" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="20" font-weight="700" fill="#111827">内核堆分配</text>
+  <text x="876" y="612" font-family='"Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif' font-size="16" fill="#4B5563">`kmalloc/kmfree` 提供小对象与大对象两条路径。</text>
+</svg>
