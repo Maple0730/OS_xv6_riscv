@@ -176,6 +176,7 @@ UPROGS=\
 	$(BU)/_rm\
 	$(BU)/_sh\
 	$(BU)/_stressfs\
+	$(BU)/_sprite\
 	$(BU)/_usertests\
 	$(BU)/_grind\
 	$(BU)/_wc\

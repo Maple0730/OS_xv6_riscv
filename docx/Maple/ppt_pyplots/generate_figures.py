@@ -267,6 +267,45 @@ def plot_p8_memory_extensions() -> None:
     save(fig, "p8_memory_extensions")
 
 
+def plot_memory_structure_layers() -> None:
+    fig, ax = init_canvas("内存结构视图：物理内存 / 内核虚拟内存 / 用户虚拟地址")
+
+    add_group(ax, 6, 67, 88, 18, "第 1 层：用户虚拟地址空间（每个进程）")
+    add_box(ax, 10, 71, 12, 10, "代码段\ntext", fc="#EFF6FF")
+    add_box(ax, 25, 71, 12, 10, "数据段\n.data / bss", fc="#EFF6FF")
+    add_box(ax, 40, 71, 12, 10, "堆\nsbrk / lazy sbrk", fc="#FEF3C7", ec=ACCENT)
+    add_box(ax, 55, 71, 12, 10, "用户栈\nexec 初始化", fc="#EFF6FF")
+    add_box(ax, 70, 71, 18, 10, "高地址固定映射\nTRAPFRAME / TRAMPOLINE", fc="#F8FAFC", ec=GRAY, fs=11)
+
+    add_group(ax, 6, 39, 88, 20, "第 2 层：内核虚拟内存（全局共享）")
+    add_box(ax, 10, 43, 14, 10, "内核代码\ntext", fc="#EFF6FF")
+    add_box(ax, 27, 43, 14, 10, "内核数据\n.data / bss", fc="#EFF6FF")
+    add_box(ax, 44, 43, 18, 10, "直接映射可分配区\netext ~ phys_ram_end", fc="#ECFDF5", ec=GREEN)
+    add_box(ax, 65, 43, 12, 10, "页表 / vm.c\nSv39 管理", fc="#F8FAFC", fs=11)
+    add_box(ax, 80, 43, 10, 10, "内核栈 / kmalloc\n都在这里取页", fc="#FFF7ED", ec=ACCENT, fs=9)
+
+    add_group(ax, 6, 10, 88, 20, "第 3 层：物理内存（RAM）")
+    add_box(ax, 10, 14, 18, 10, "内核代码所在页\nKERNBASE ~ etext", fc="#EFF6FF")
+    add_box(ax, 32, 14, 18, 10, "内核数据所在页\netext 之后", fc="#EFF6FF")
+    add_box(ax, 54, 14, 30, 10, "可分配页框区\nfree page frames (4KB × N)", fc="#ECFDF5", ec=GREEN)
+
+    add_arrow(ax, (16, 67), (71, 53), color=PRIMARY)
+    add_arrow(ax, (31, 67), (71, 53), color=PRIMARY)
+    add_arrow(ax, (46, 67), (71, 53), color=ACCENT)
+    add_arrow(ax, (61, 67), (71, 53), color=PRIMARY)
+    add_arrow(ax, (79, 67), (71, 53), color=GRAY, dashed=True)
+
+    add_arrow(ax, (53, 43), (69, 24), color=GREEN)
+    add_arrow(ax, (71, 43), (69, 24), text="页表把虚拟页映射到页框", color=PRIMARY, fs=10)
+    add_arrow(ax, (85, 43), (69, 24), text="kstack / kmalloc backing page", color=ACCENT, dashed=True, rad=-0.1, fs=9)
+    add_arrow(ax, (17, 43), (19, 24), color=PRIMARY)
+    add_arrow(ax, (34, 43), (41, 24), color=PRIMARY)
+
+    add_box(ax, 8, 2.5, 84, 5, "实现要点：物理内存按“代码页 / 数据页 / 可分配页框区”理解更准确；用户页、trapframe、内核栈以及 kmalloc 需要的新页，本质上都从可分配页框区取得。", fc="#F8FAFC", ec=GRAY, fs=10)
+
+    save(fig, "memory_structure_layers")
+
+
 def plot_p10_filesystem_layers() -> None:
     fig, ax = init_canvas("文件系统整体结构")
 
@@ -332,6 +371,7 @@ def main() -> None:
     plot_p3_system_boot()
     plot_p6_memory_overview()
     plot_p8_memory_extensions()
+    plot_memory_structure_layers()
     plot_p10_filesystem_layers()
     plot_p12_log_and_dualdisk()
     print(f"generated figures in: {OUT}")

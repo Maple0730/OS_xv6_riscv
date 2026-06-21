@@ -25,6 +25,7 @@ static char *root_hidden_names[] = {
   "rm",
   "sh",
   "stressfs",
+  "sprite",
   "usertests",
   "grind",
   "wc",
